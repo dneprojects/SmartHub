@@ -108,10 +108,14 @@ class EventServer:
             try:
                 # Get prefix
                 if self.msg_appended:
-                    # Don't read new message, generate new prefix
-                    prefix = ("\xff#" + chr(rtr_id) + chr(len(tail) + 4)).encode(
-                        "iso8859-1"
-                    )
+                    try:
+                        # Don't read new message, generate new prefix
+                        prefix = ("\xff#" + chr(rtr_id) + chr(len(tail) + 4)).encode(
+                            "iso8859-1"
+                        )
+                    except:
+                        # If something goes wrong, rtr_id and tail are without value
+                        prefix = ("\xff#" + chr(0) + chr(4)).encode("iso8859-1")
                 elif recvd_byte == b"\xff":
                     # Last loop of while found first byte, reduce prefix to 3
                     prefix = recvd_byte + await rt_rd.readexactly(3)

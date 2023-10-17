@@ -597,7 +597,8 @@ def prepare_table(app, mod_addr, key) -> str:
     """Prepare settings table with form of edit fields."""
     # action="settings_update-{mod_addr}-{key}"
     key_prompt = app["prompt"]
-    covers = getattr(app["settings"], "covers")
+    if hasattr(app["settings"],"covers"):
+        covers = getattr(app["settings"], "covers")
     tbl_data = getattr(app["settings"], key)
     tbl = (
         indent(4) + f'<form id="settings_table" action="settings_step" method="post">\n'
@@ -635,16 +636,17 @@ def prepare_table(app, mod_addr, key) -> str:
                     cvr_chkd = ""
                 tbl += f'<td><label for="{id_name}_out">Ausgang</label><input type="radio" name="data[{ci},1]" id="{id_name}_out" value="out" {out_chkd}></td>'
                 tbl += f'<td><label for="{id_name}_cvr">Rollladen</label><input type="radio" name="data[{ci},1]" id="{id_name}_cvr" value="cvr" {cvr_chkd}></td>'
-        elif (key == "covers") & (covers[ci].type != 0):
-            cov_t = app["settings"].cover_times
-            bld_t = app["settings"].blade_times
-            if tbl_data[ci].type > 0:
-                ipol_chkd = "checked"
-            else:
-                ipol_chkd = ""
-            tbl += f'<td></td><td><input name="data[{ci},1]" type="text" id="{id_name}_tc" maxlength="4" placeholder="Verfahrzeit in s" value = {cov_t[ci]} style="width: 40px;"></td>'
-            tbl += f'<td></td><td><input name="data[{ci},2]" type="text" id="{id_name}_tb" maxlength="4" placeholder="Jalousiezeit in s (0 falls Rollladen)" value = {bld_t[ci]} style="width: 40px;"></td>'
-            tbl += f'<td><input type="checkbox" name="data[{ci},3]" value="pol_nrm" id="{id_name}_pinv" {ipol_chkd}><label for="{id_name}_pinv">Polarität, Ausg. A: auf</label></td>'
+        elif (key == "covers"):
+            if covers[ci].type != 0:
+                cov_t = app["settings"].cover_times
+                bld_t = app["settings"].blade_times
+                if tbl_data[ci].type > 0:
+                    ipol_chkd = "checked"
+                else:
+                    ipol_chkd = ""
+                tbl += f'<td></td><td><input name="data[{ci},1]" type="text" id="{id_name}_tc" maxlength="4" placeholder="Verfahrzeit in s" value = {cov_t[ci]} style="width: 40px;"></td>'
+                tbl += f'<td></td><td><input name="data[{ci},2]" type="text" id="{id_name}_tb" maxlength="4" placeholder="Jalousiezeit in s (0 falls Rollladen)" value = {bld_t[ci]} style="width: 40px;"></td>'
+                tbl += f'<td><input type="checkbox" name="data[{ci},3]" value="pol_nrm" id="{id_name}_pinv" {ipol_chkd}><label for="{id_name}_pinv">Polarität, Ausg. A: auf</label></td>'
         tbl += "</tr>\n"
     if key in ["glob_flags", "flags", "groups", "dir_cmds", "coll_cmds"]:
         # Add additional line to append
