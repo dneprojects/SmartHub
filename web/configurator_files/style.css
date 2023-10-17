@@ -1,0 +1,1253 @@
+/*************************************************************/
+/*                    Habitron                               */
+/*                                                           */
+/*            Stylesheet von C.Stetter                       */
+/*        für Blueforest Design - und Medienbüro             */
+/*               http://www.blueforest.ch                    */
+/*                        									 */
+/*************************************************************/
+* {
+   margin: 0;
+   padding: 0;
+}
+
+html,
+body,
+div,
+span,
+applet,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+font,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+sub,
+sup,
+tt,
+var,
+dl,
+dt,
+dd,
+fieldset,
+form,
+label,
+legend,
+table,
+caption {
+   border: 0;
+   outline: 0;
+   font-weight: inherit;
+   font-style: inherit;
+   font-size: 100%;
+   /*   font-family: inherit;
+*/
+   vertical-align: baseline;
+}
+
+em {
+   font-style: italic !important;
+}
+
+strong {
+   font-weight: bold !important;
+}
+
+/* tables still need 'cellspacing="0"' in the markup */
+/*table {
+   border-collapse:collapse;
+   border-spacing: 0;
+   font-size:inherit;
+   font:100%;
+}
+td { vertical-align: top; }
+
+caption,
+th,
+td {
+   text-align: left;
+   font-weight: normal;
+}*/
+address,
+caption,
+cite,
+code,
+dfn,
+em,
+strong,
+th,
+var,
+optgroup {
+   font-style: inherit;
+   font-weight: inherit;
+}
+
+ins {
+   text-decoration: none;
+}
+
+del {
+   text-decoration: line-through;
+}
+
+blockquote:before,
+blockquote:after,
+q:before,
+q:after {
+   content: "";
+}
+
+blockquote,
+q {
+   quotes: "" "";
+}
+
+abbr,
+acronym {
+   border: 0;
+   font-variant: normal;
+}
+
+input,
+button,
+textarea,
+select,
+optgroup,
+option {
+   font-family: inherit;
+   font-size: inherit;
+   font-style: inherit;
+   font-weight: inherit;
+}
+
+input,
+button,
+textarea,
+select {
+   *font-size: 100%;
+}
+
+select,
+input,
+button,
+textarea,
+button {
+   font: 99% arial, helvetica, clean, sans-serif;
+}
+
+body {
+   font: 13px/1.231 arial, helvetica, clean, sans-serif;
+   *font-size: small;
+   *font: x-small;
+   text-align: center;
+   margin-bottom: 10px;
+   z-index: 1;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   background-color: #8d8e90;
+   background: -moz-linear-gradient(top, #6b6c6d 0%, #8d8e90 100%) fixed;
+   /* firefox */
+   background: -webkit-gradient(linear, top, bottom, color-stop(0%, #6b6c6d), color-stop(100%, #8d8e90)) fixed;
+   /* webkit */
+   background: -webkit-gradient(linear, left top, left bottom, from(#6b6c6d), to(#8d8e90));
+   background: -o-linear-gradient(top, #6b6c6d 0%, #8d8e90 100%);
+   /* opera */
+   background: linear-gradient(top, #e6e6e6 0%, #8d8e90 30%);
+   behavior: url("ie-css3.htc");
+}
+
+pre,
+code,
+kbd,
+samp,
+tt {
+   *font-size: 108%;
+   line-height: 100%;
+}
+
+html {
+   /*----------Dauer-Scrollbalken-verhindert Springen--------*/
+   height: 100%;
+   padding: 0 0 1px 0;
+}
+
+a,
+a img,
+:focus,
+a:hover,
+img a:hover,
+img:hover,
+fieldset {
+   outline: 0;
+   text-decoration: none;
+   border: none;
+}
+
+/* .ce_text a::before {
+content: "\00BB\00A0";
+}
+ a[href^='mailto:']::before {
+/*content: "\25A0\00A0" !important;
+content: "\2709\00A0 ";
+
+}*/
+*/ body.kooperation .ce_text a::before,
+table.schnellzugriff a::before {
+   content: "\00A0\00A0" !important;
+}
+
+span.mandatory {
+   color: #c0372d;
+   font-weight: bold;
+}
+
+p.error {
+   color: #d30800;
+}
+
+p.back {
+   padding-top: 20px;
+}
+
+/* ------------------------------------------------Typolight Formulare---------------------------- */
+.radio_container {
+   display: block;
+}
+
+.radio_container span {
+   padding-top: 5px;
+   float: left;
+   clear: both;
+}
+
+.radio_container label,
+.checkbox_container label {
+   vertical-align: top;
+   padding-left: 5px;
+}
+
+.checkbox_container {
+   padding-top: 5px;
+}
+
+.checkbox_container span {
+   float: left;
+   clear: both;
+}
+
+body.kontakt table td.submit_container {
+   padding-top: 10px;
+   padding-bottom: 25px;
+}
+
+div.tableform input.checkbox {
+   float: left;
+}
+
+div.tableform label {
+   float: left;
+}
+
+#ctrl_publicFields span {
+   display: block;
+   width: 250px;
+   float: left;
+}
+
+form input,
+form select {
+   display: block;
+   float: left;
+}
+
+form td.col_0 {
+   width: 150px;
+}
+
+form table td {
+   padding-bottom: 4px;
+}
+
+form table td.col_first {
+   padding-right: 10px;
+}
+
+body.kontakt table td {
+   vertical-align: top;
+   padding-top: 3px;
+}
+
+body.kontakt table td.explanation {
+   padding-top: 8px;
+   padding-bottom: 5px;
+}
+
+.pagination {
+   text-align: center;
+   display: block;
+   float: left;
+   width: 400px;
+   padding-top: 20px;
+}
+
+.pagination p {
+   float: left;
+}
+
+.pagination ul {
+   float: right;
+   list-style: none;
+   list-style-type: none;
+}
+
+.pagination ul li {
+   float: left;
+   padding-left: 3px;
+   padding-right: 3px;
+   list-style: none;
+   list-style-type: none !important;
+}
+
+p.url {
+   font-weight: bold;
+}
+
+/* ---------------------------------------------------Listen--------------------------- */
+.mod_navigation li,
+.mod_navigation ul,
+.mod_navigation ol {
+   margin: 0;
+   padding: 0;
+   list-style: none;
+   list-style-type: none;
+}
+
+ul,
+li {
+   list-style-position: inside;
+   list-style: disc;
+   margin-left: 5px;
+   padding-left: 2px;
+}
+
+.ce_text ul {
+   margin-left: 10px;
+   padding-left: 0px;
+   list-style-type: disc;
+   list-style-position: outside;
+}
+
+.ce_text ul li {
+   margin-left: 20px;
+   padding-left: 0px;
+   list-style-type: disc;
+   list-style-position: outside;
+}
+
+.ce_text ol li {
+   margin-left: 10px;
+   padding-left: 0px;
+   list-style-type: decimal;
+   list-style-position: outside;
+}
+
+/* ----------------------------------------------------Sitemap--------------------------- */
+.mod_sitemap {
+   position: relative;
+   left: 20px;
+}
+
+.mod_sitemap .level_1 li.nositemap {
+   visibility: hidden;
+}
+
+.mod_sitemap li {
+   position: relative;
+   list-style: disc;
+   list-style-position: inside;
+}
+
+.mod_sitemap ul.level_1 li {
+   padding-left: 10px;
+   padding-bottom: 3px;
+}
+
+.mod_sitemap ul.level_2 li {
+   list-style-image: none;
+   padding-left: 20px;
+   padding-bottom: 0px;
+}
+
+.mod_sitemap ul.level_3 li {
+   padding-left: 30px;
+   padding-bottom: 0px;
+}
+
+.mod_sitemap .level_2,
+.mod_sitemap .level_2 li.submenu {
+   visibility: visible;
+   font-size: 14px;
+}
+
+/*--------------------------------------------------Accordeon allgemein-----------------------------------*/
+.toggler {
+   height: 21px;
+   margin-top: 5px;
+   padding-left: 35px;
+   padding-top: 2px;
+   cursor: pointer;
+   cursor: hand;
+   color: #c0372d;
+}
+
+.ce_accordion .toggler,
+.ce_accordion .toggler.inactive {
+   background: url(design/acc.gif) no-repeat left bottom;
+   border: 1px solid #d0d0d0;
+}
+
+.ce_accordion .toggler:hover {
+   background: url(design/acc.gif) no-repeat left top;
+   border: 1px solid #d0d0d0;
+}
+
+.ce_accordion .toggler.active {
+   background: url(design/acc.gif) no-repeat left -23px;
+   color: #666;
+}
+
+.ce_accordion .toggler h2 {
+   padding-bottom: 2px;
+   font-size: 13px;
+   padding-top: 1px;
+   z-index: 500;
+}
+
+div.accordion {
+   border-bottom: 1px solid #d0d0d0;
+   border-left: 1px solid #d0d0d0;
+   border-right: 1px solid #d0d0d0;
+   padding-left: 35px;
+   padding-right: 15px;
+   margin-bottom: 5px;
+   background-color: #FFF;
+   background-repeat: repeat-x;
+   background-position: left bottom;
+   background-image: url(design/border.gif);
+}
+
+div.accordion div div {
+   padding-top: 10px;
+   padding-bottom: 10px;
+}
+
+div.accordion img {
+   padding-right: 10px;
+   padding-bottom: 5px;
+}
+
+div.accordion h1 {
+   font-size: 14px;
+}
+
+/*---------------------------------------------Headlines-----------------------------------------*/
+h0 {
+   padding-bottom: 25px;
+   font-size: 26px;
+   text-align: right;
+   color: #667;
+}
+
+h1 {
+   padding-bottom: 25px;
+   font-size: 16px;
+   color: #c0372d;
+}
+
+h2 {
+   padding-bottom: 18px;
+   padding-top: 22px;
+   font-size: 14px;
+   font-weight: bold;
+}
+
+h1+h2,
+h2+h3,
+table td h2,
+h1+h3 {
+   padding-top: 0px;
+}
+
+#clear {
+   clear: both;
+   height: 3px;
+}
+
+h3 {
+   padding-bottom: 14px;
+   padding-top: 18px;
+   font-size: 12px;
+   font-weight: bold;
+}
+
+hr {
+   border-top: 1px solid #e2e2e2;
+   height: 0px;
+}
+
+/* ----------CONTAINER---------------------------- */
+html,
+body,
+#container,
+#content {
+   min-height: 100%;
+}
+
+#container {
+   position: relative;
+   width: 1000px;
+   margin-right: auto;
+   margin-left: auto;
+   z-index: 2;
+   background: #FFF;
+   color: #6b6c6e;
+   font-size: 11px;
+   line-height: 16px;
+}
+
+#content {
+   padding: 0;
+   margin: 0;
+   text-align: left;
+   position: relative;
+   z-index: 3;
+   padding-right: 10px;
+   padding-left: 10px;
+   background: url(design/dehn.png) repeat-y center top;
+}
+
+a {
+   color: #c0372d;
+   text-decoration: none;
+}
+
+a:hover {
+   color: #c0372d;
+   text-decoration: underline;
+}
+
+/* ---------------------------------------------------------Anordnung Design---------------------------- */
+#header {
+   position: relative;
+   height: 280px;
+   z-index: 10;
+   background: url(design/header_bg.png) repeat-x left top;
+   margin-bottom: -150px;
+}
+
+#inhalt {
+   position: relative;
+   min-height: 100%;
+   z-index: 100;
+}
+
+#right {
+   float: right;
+   position: relative;
+   left: -48px;
+   top: 0px;
+   z-index: 450;
+   width: 217px;
+   overflow: visible;
+   min-height: 300px;
+   padding-top: 59px;
+}
+
+#mitte {
+   z-index: 400;
+   margin-right: 49px;
+   margin-left: 49px;
+   position: relative;
+   background: #FFF url(design/dehn.png) repeat-y center top;
+}
+
+#left {
+   float: left;
+   position: relative;
+   z-index: 450;
+}
+
+#footer {
+   position: relative;
+   background: #c0372d;
+   border-top: 1px solid #722e29;
+}
+
+/* ---------------------------------------------------------Elemente---------------------------- */
+
+#pic {
+   height: 150px;
+   width: 980px;
+   position: relative;
+   z-index: 90;
+   top: 20px;
+   left: 0px;
+}
+
+#header #logo_habitron {
+   position: absolute;
+   top: 15px;
+   left: 50px;
+}
+
+#mitte {
+   padding-bottom: 20px;
+   padding-left: 0px;
+   padding-right: 70px;
+   padding-top: 40px;
+}
+
+/* ---------------------------------------------------------Rechte Spalte---------------------------- */
+
+#right img {
+   position: relative;
+   padding-top: 58px;
+   padding-bottom: 0px;
+   left: 0px;
+}
+
+body.start #right img {
+   top: 0px;
+   padding-top: 0px;
+   padding-bottom: 0px;
+}
+
+body.produkte.sub #right img {
+   padding-top: 0px;
+   padding-bottom: 0px;
+}
+
+body.produkte.sub #right h1 {
+   padding-top: 0px;
+   padding-bottom: 0px;
+}
+
+body.produkte.sub #right .ce_text a {
+   padding-left: 23px;
+   line-height: 50px;
+   background: url(images/icon_pdf.png) no-repeat left center;
+   display: block;
+   height: 50px;
+}
+
+.downloadicon span a {
+   padding-left: 23px;
+   background: url(images/icon_pdf.png) no-repeat left center;
+}
+
+#right .ce_text {
+   padding-right: 25px;
+}
+
+#footer .inside {
+   min-height: 50px;
+   position: relative;
+   margin-top: 25px;
+   margin-right: 189px;
+   margin-left: 189px;
+   background: url(footer_inside_bg.png) repeat-x left top;
+}
+
+.ce_text li {
+   padding-bottom: 8px;
+}
+
+#config_button {
+   height: 22px;
+   width: 100px;
+   margin-left: 0px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
+
+#file_button {
+   height: 22px;
+   width: 100px;
+   top: 0;
+   margin-right: 0px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
+
+#files_button {
+   height: 22px;
+   width: 140px;
+   margin-left: 0px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
+
+/* ---------------------------------------------------------Design Startseite---------------------------- */
+body.start h1 {
+   color: #c0372d;
+   text-transform: uppercase;
+   padding-top: 0px;
+   padding-bottom: 10px;
+}
+
+body.start h1.ce_headline {
+   font-size: 14px;
+}
+
+body.start #header {
+   height: 378px;
+   margin-bottom: -25px;
+}
+
+body.start #pic {
+   height: 258px;
+}
+
+body.start #mitte {
+   padding-bottom: 25px;
+   padding-top: 10px;
+   padding-left: 20px;
+   margin-right: 220px;
+   height: 169px;
+   max-height: 169px;
+}
+
+body.start #right {
+   float: right;
+   padding-top: 0px;
+   position: absolute;
+   left: 807px;
+   top: 0px;
+   z-index: 450;
+   width: 343px;
+   overflow: visible;
+   min-height: 160px;
+   background-color: #b90315 !important;
+   background: -moz-linear-gradient(left, #fe6633 0%, #b90315 100%);
+   background: -webkit-gradient(linear, left top, right top, color-stop(0%, #fe6633), color-stop(100%, #b90315));
+   background: -webkit-gradient(linear, left top, left bottom, from(#fe6633), to(#b90315));
+   background: -o-linear-gradient(left, #fe6633 0%, #b90315 100%);
+   background: linear-gradient(top, #fe6633 0%, #b90315 30%);
+}
+
+body.start #right h1 {
+   color: #fff;
+   padding-left: 10px;
+   line-height: 25px;
+   padding-bottom: 0px;
+   font-size: 12px;
+}
+
+body.start #right img {
+   top: 0px;
+   padding-bottom: 0px;
+}
+
+body.start #footertop {
+   padding-left: 190px;
+   height: 105px;
+   background: url(design/footertop.jpg) no-repeat center top;
+}
+
+body.start #footertop h1 {
+   padding-left: 20px;
+   padding-top: 10px;
+   padding-bottom: 10px;
+}
+
+table.schnellzugriff {
+   width: 940px;
+   margin-left: 20px;
+}
+
+table.schnellzugriff td a {
+   color: #6b6b6d;
+}
+
+table.schnellzugriff td a:hover {
+   text-decoration: none;
+}
+
+table.schnellzugriff td.odd {
+   width: 80px;
+}
+
+table.schnellzugriff td.even {
+   vertical-align: middle;
+   padding-left: 5px;
+}
+
+/* ---------------------------------------------------------Design Fullwidth---------------------------- */
+
+body.fullwidth #content,
+body.fullwidth #mitte,
+body.start #content,
+body.start #mitte {
+   background: url(design/dehn_fullwidth.png) repeat-y center top;
+}
+
+body.fullwidth #right {
+   left: 0px;
+   top: 0px;
+}
+
+body.fullwidth #mitte {
+   margin-right: 189px;
+   margin-left: 189px;
+   padding-right: 50px;
+}
+
+/* ---------------------------------------------------------Design Accordion_Seiten---------------------------- */
+
+body.acc #content,
+body.acc #mitte {
+   background: url(design/dehn_fullwidth.png) repeat-y center top;
+}
+
+body.acc #right {
+   float: right;
+   position: relative;
+   left: -188px;
+   top: 30px;
+   width: 400px;
+   padding-top: 45px;
+}
+
+body.acc #mitte {
+   margin-right: 189px;
+   margin-left: 189px;
+   padding-right: 50px;
+   padding-right: 400px;
+}
+
+body.acc #right .image_container,
+body.acc #right img {
+   position: relative;
+   left: 0;
+   top: 0;
+   padding-top: 0px;
+}
+
+/*-----------------------------------------------------------Startseite News-------------*/
+.mod_newslist {
+   height: 190px;
+   max-height: 190px;
+}
+
+.mod_newslist h1 a {
+   color: #c0372d;
+}
+
+.mod_newslist h1 {
+   color: #c0372d;
+   font-size: 12px;
+   font-weight: bold;
+   padding-bottom: 5px;
+}
+
+.layout_short.first {
+   padding-top: 0px;
+}
+
+.layout_short {
+   padding-bottom: 5px;
+   padding-top: 5px;
+   line-height: 16px;
+}
+
+.layout_short.first {
+   padding-top: 0px;
+}
+
+.layout_short.last {
+   border-bottom: none;
+}
+
+/*-----------------------------------------------------------News Leser-------------*/
+p.info {
+   color: #666;
+   font-style: italic;
+   background: none;
+   font-weight: bold;
+}
+
+.mod_newsreader .image_container img {
+   padding-left: 10px;
+   padding-bottom: 10px;
+}
+
+/* --------------------------------------------------------Formulare---------------------------- */
+/*.feld
+{
+   width:250px;
+   display:block;
+   float:left;
+}*/
+body.kontakt table td {
+   vertical-align: top;
+   padding-top: 3px;
+}
+
+body.kontakt table td.explanation {
+   padding-top: 8px;
+   padding-bottom: 5px;
+}
+
+input[type="text"],
+input[type="file"],
+input[type="password"],
+textarea,
+select {
+   background: url(design/input_shadow.gif) no-repeat left top;
+   width: 180px;
+   padding-top: 2px;
+   color: #333;
+   border: 1px solid #C0372D;
+}
+
+input[type="checkbox"],
+input[type="radio"],
+select {
+   margin-top: 2px;
+   margin-left: 10px;
+   margin-right: 10px;
+   accent-color: #C0372D;
+}
+
+input[type="text"],
+input[type="file"],
+input[type="password"],
+select {
+   height: 18px;
+   padding-left: 3px;
+   margin-left: 10px;
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+   background: url(design/input_shadow.gif) no-repeat left top;
+   background: #fff;
+   color: #C0372D;
+   border: 1px solid #c0372d;
+}
+
+/*input[type="text"] { background: url(design/formfeld_bg.gif) no-repeat left top; }*/
+input#clear:hover,
+input#send:hover {
+   cursor: default;
+   cursor: pointer;
+   cursor: hand;
+   /*   cursor:crosshair;*/
+}
+
+textarea {
+   background: url(design/input_shadow.gif) no-repeat left top;
+   font-family: Verdana, Arial, Helvetica, sans-serif;
+   font-size: 12px;
+}
+
+input.submit {
+   padding: 1px 2px;
+   border: 1px solid #c0372d;
+   text-decoration: none;
+   color: #fff;
+   background: #FE6533;
+}
+
+input.submit:hover {
+   padding: 1px 2px;
+   color: #343434;
+}
+
+.routinglink input.submit {
+   height: 24px;
+}
+
+input.captcha {
+   width: 50px;
+}
+
+span.captcha_text {
+   padding-left: 10px;
+}
+
+body.login p.error {
+   padding-top: 5px;
+   padding-bottom: 5px;
+}
+
+body.login .mod_article {
+   padding-bottom: 35px;
+}
+
+/*---------------------------------------------------------Contao Suche-------------------------------*/
+form#confbutton {
+   padding-right: 10px;
+   padding-top: 20px;
+   float: right;
+   position: relative;
+}
+
+form#confbuttons {
+   padding-right: 10px;
+   padding-top: 20px;
+   float: right;
+   position: relative;
+}
+
+.mod_search input.submit {
+   padding: 3px 2px;
+   margin-left: 15px;
+}
+
+#suche input#keywords {
+   width: 118px !important;
+   height: 16px;
+   border: 1px solid #000;
+   font-size: 11px;
+   padding: 1px;
+   padding-top: 3px;
+   padding-left: 3px;
+   text-transform: uppercase;
+}
+
+#suche input#keywords:focus {
+   background: #fff;
+}
+
+.mod_search #ctrl_keywords_2 {
+   width: 250px;
+   height: 22px;
+   padding: 1px;
+   border: 1px solid #dcd7d2;
+   z-index: 500;
+   font-size: 13px;
+}
+
+.mod_search p.header {
+   font-size: .9em;
+   float: left;
+   clear: left;
+   padding-top: 3px;
+   padding-bottom: 3px;
+}
+
+.mod_search h3 {
+   font-size: 11px;
+   padding-bottom: 1px;
+}
+
+.mod_search div.even,
+.mod_search div.odd {
+   font-size: 1em;
+   display: block;
+   padding-top: 5px;
+   float: left;
+   clear: both;
+}
+
+/*---------------------------------------------------------Anwendungdbeispiele Boxen-----------------------------------*/
+div.produkte_box {
+   position: relative;
+   width: 326px;
+   min-height: 170px;
+   background: #FFF url(design/produkte_box_bg.jpg) repeat-y left top;
+   padding: 10px;
+   margin-bottom: 21px;
+   display: inline;
+   float: left;
+   vertical-align: top;
+   z-index: 400;
+   line-height: 16px;
+}
+
+div.produkte_box h1 {
+   font-size: 12px;
+   font-weight: bold;
+   top: 38px;
+   padding-bottom: 10px;
+   text-transform: none;
+   color: #666;
+}
+
+div.produkte_box img {
+   width: 155px;
+   height: 111px;
+   margin-right: 20px;
+   padding-top: 0;
+   top: 0;
+}
+
+/*----------------------------------------------------------Diverse-----------------------------------*/
+
+.grid_row {
+   display: flex;
+   flex-wrap: wrap;
+}
+
+.grid_col {
+   flex: 100%;
+   width: 800px;
+   max-width: 100%;
+}
+
+.grid_row img {
+   vertical-align: middle;
+   width: 80%;
+   margin-left: auto;
+   margin-right: auto;
+}
+
+.grid_row p {
+   color: #667;
+   margin-top: auto;
+}
+
+.figd_grid {
+   margin: 20px;
+   width: 140px;
+   height: 140px;
+   text-align: center;
+   vertical-align: middle;
+   box-shadow: 0px 0px 18px 2px grey;
+}
+
+.fig_grid {
+   width: 130px;
+   height: 130px;
+   display: grid;
+   padding: 5px;
+}
+
+figcaption {
+   text-align: center;
+   vertical-align: baseline;
+}
+
+body.kooperation img {
+   margin-right: 20px;
+   margin-bottom: 20px;
+}
+
+body.kooperation td {
+   padding-top: 10px;
+   padding-bottom: 10px;
+   border-top: 1px solid #e2e2e2;
+}
+
+body.unternehmen td {
+   width: 50%;
+}
+
+div.left {
+   float: left;
+   position: relative;
+   min-width: 400px;
+}
+
+/*----------------------------------------------------------Tabellen ohne rand-----------------------------------*/
+table.noborder {
+   width: 100%;
+   text-align: left;
+   text-align-last: right;
+   border: none;
+   margin-top: 20px;
+   margin-bottom: 20px;
+}
+
+.noborder tr {
+   width: 100%;
+}
+
+.noborder td {
+   padding: 18px;
+   border: none;
+   text-align: left;
+   vertical-align: top;
+}
+
+.noborder td:first-child {
+   padding-left: 0px;
+}
+
+.noborder td:last-child {
+   padding-right: 0px;
+   text-align: right;
+}
+
+.noborder tr:first-child {
+   font-size: 14px;
+   font-weight: bold !important;
+}
+
+/*----------------------------------------------------------Tabellen: oben und unten Rand-----------------------------------*/
+
+table.linetopbottom {
+   width: 100%;
+   text-align: left;
+   text-align-last: right;
+   border-top: thin solid #999;
+   border-right: none;
+   border-bottom: thin solid #999;
+   border-left: none;
+   margin-top: 30px;
+   margin-bottom: 30px;
+}
+
+.linetopbottom tr {
+   width: 100%;
+}
+
+.linetopbottom td {
+   padding: 18px;
+   border: none;
+   text-align: left;
+   vertical-align: top;
+}
+
+.linetopbottom td:first-child {
+   padding-left: 0px;
+}
+
+.linetopbottom td:last-child {
+   padding-right: 0px;
+   text-align: right;
+}
+
+.linetopbottom tr:first-child {
+   font-size: 14px;
+   font-weight: bold !important;
+}

@@ -1,0 +1,325 @@
+#mininavi {
+   position: absolute;
+   width: 40%;
+   top: 35px;
+   right: 320px;
+   z-index: 500;
+   color: #4b4b4d;
+}
+
+#mininavi ul {
+   list-style: none;
+   float: right;
+}
+
+#mininavi li {
+   list-style: none;
+   float: left;
+   padding-left: 10px;
+}
+
+#mininavi li a,
+#mininavi li span {
+   padding-right: 10px;
+   font-size: 1em;
+   color: #4b4b4d;
+   border-right: 1px solid #4b4b4d;
+   text-transform: uppercase;
+}
+
+#mininavi li a.last,
+#mininavi li span.last {
+   border-right: none;
+}
+
+/* ------------------------HauptNAVI--------------------------- */
+#navi {
+   position: absolute;
+   padding-left: 60px;
+   top: 85px;
+   width: 1130px;
+   z-index: 400;
+   height: 33px;
+   border-top: 1px solid #ff6633;
+   border-bottom: 1px solid #ae2b2b;
+   background: url(design/navi_bg.png) repeat-x left top;
+}
+
+#navi li,
+#navi ul,
+.mod_navigation li {
+   margin: 0;
+   padding: 0;
+   border: 0;
+   outline: 0;
+   font-weight: inherit;
+   font-style: inherit;
+   font-size: 100%;
+   font-family: inherit;
+   vertical-align: baseline;
+   text-decoration: none;
+   list-style: none;
+   list-style-type: none;
+}
+
+#navi ul.level_1 {
+   padding-top: 9px;
+   list-style: none;
+   float: left;
+}
+
+#navi ul.level_1 li {
+   float: left;
+}
+
+#navi ul.level_1 li a,
+#navi ul.level_1 li span,
+#navi ul.level_1 li p {
+   padding-left: 20px;
+   padding-right: 20px;
+}
+
+#navi ul.level_1 li a.first,
+#navi ul.level_1 li.first span,
+#navi ul.level_1 li.first p {
+   padding-left: 0px;
+}
+
+#navi a,
+#navi li {
+   color: #fff;
+   text-decoration: none;
+   font-size: 14px;
+   font-weight: bold;
+}
+
+#navi ul.level_1 li a:hover,
+#navi ul.level_1 li a.active,
+#navi ul.level_1 li span.active,
+#navi ul.level_1 li p.active,
+#navi ul.level_1 li.trail,
+#navi ul.level_1 li.trail a.trail {
+   text-decoration: none;
+   color: #cbcbcb;
+}
+
+#navi ul.level_1 li.first,
+#navi ul.level_1 a.first {
+   padding-left: 0px;
+}
+
+#navi ul.level_1 li ul.level_2 {
+   display: none;
+}
+
+/* ----------------------------------------------------------------------Subnavi--------------------------- */
+#subnavi {
+   width: 150px;
+   position: relative;
+   left: 40px;
+   top: 75px;
+   padding-bottom: 60px;
+}
+
+#subnavi li.sign {
+   display: none !important;
+}
+
+#subnavi ul.level_1 {
+   list-style: none;
+   float: left;
+}
+
+#subnavi ul.level_1 li {
+   float: left;
+   padding-top: 7px;
+   padding-left: 19px;
+   padding-bottom: 7px;
+   display: block;
+   position: relative;
+   width: 100%;
+   z-index: 490;
+}
+
+#subnavi ul.level_1 li a,
+#subnavi ul.level_1 li span,
+#subnavi ul.level_1 li p {
+   background: url(navi_dot.png) no-repeat left center;
+   padding-top: 1px;
+   padding-bottom: 1px;
+   padding-left: 23px;
+   font-size: 14px;
+   color: #d6002f;
+}
+
+#subnavi ul.level_1 li a:hover,
+#subnavi ul.level_1 li a.active,
+#subnavi ul.level_1 li span.active,
+#subnavi ul.level_1 li p.active,
+#subnavi ul.level_1 li.trail,
+#subnavi ul.level_1 li.trail a.trail {
+   text-decoration: none;
+   color: #888a8c;
+}
+
+#subnavi ul.level_1 li ul.level_2 {
+   display: none;
+}
+
+#subnavi ul.level_1 li.active ul.level_2,
+#subnavi ul.level_1 li.trail ul.level_2 {
+   display: block;
+}
+
+#subnavi ul.level_2 li {
+   float: left;
+   clear: both;
+   position: relative;
+   display: block;
+   padding-left: 1px;
+   z-index: 495;
+   padding-top: 2px;
+   padding-bottom: 1px;
+   width: 100%;
+}
+
+#subnavi ul.level_2 li.last {
+   padding-bottom: 0px;
+}
+
+#subnavi ul.level_2 li.first {
+   padding-top: 9px;
+}
+
+#subnavi ul.level_2 li a {
+   z-index: 500;
+   text-transform: none;
+   font-size: 14px;
+   z-index: 496;
+   white-space: nowrap;
+}
+
+#subnavi ul.level_2 li a,
+#subnavi ul.level_2 li span,
+#subnavi ul.level_2 li p {
+   background: none;
+}
+
+#subnavi ul.level_2 li a:hover,
+#subnavi ul.level_2 li span,
+#subnavi ul.level_2 li a.active {
+   background: none;
+}
+
+#subnavi ul.level_1 li.trail ul.level_2 span,
+#subnavi ul.level_1 li.active ul.level_2 span,
+#subnavi ul.level_1 li.trail ul.level_2 li.active,
+#subnavi ul.level_1 li.active ul.level_2 li.active,
+#subnavi ul.level_1 li.trail ul.level_2 li a,
+#subnavi ul.level_1 li.active ul.level_2 li a {
+   text-transform: none;
+   font-size: 11.5px;
+}
+
+/* ----------------------------------------------------------------------Footernavi--------------------------- */
+#footernavi {
+   width: 100%;
+   top: 35px;
+   z-index: 500;
+}
+
+#footernavi ul.level_1 {
+   list-style: none;
+   float: left;
+   padding-left: 35px;
+   margin-bottom: 9px;
+}
+
+#footernavi ul.level_1 li {
+   float: left;
+   display: block;
+}
+
+#footernavi a,
+#footernavi ul.level_1 li span {
+   padding-right: 5px;
+   padding-left: 5px;
+   color: #FE6633;
+   border-right: 1px solid #FE6633;
+}
+
+#footernavi ul.level_1 li a.last,
+#footernavi ul.level_1 li span.last {
+   border-right: none;
+}
+
+#footernavi ul.level_1 li a.first,
+#footernavi ul.level_1 li span.first {
+   border-right: none;
+   padding-right: none;
+}
+
+#footernavi ul.level_1 li a.sign.first {
+   position: relative;
+   left: 10px;
+
+}
+
+#footernavi ul.level_1 li a.und {
+   position: relative;
+   left: 5px;
+   border-right: none;
+}
+
+#footernavi ul.level_1 li a.und:hover {
+
+   text-decoration: none;
+   border-right: none;
+}
+
+/* ----------------------------------------------------------------------Footer Individuelle Navi quattro--------------------------- */
+
+
+#navi_indiv {
+   color: #999999;
+}
+
+#navi_indiv ul.level_1 {
+   list-style: none;
+   width: 100%;
+   float: left;
+   height: 160px;
+   padding-top: 40px;
+}
+
+#navi_indiv ul.level_1 li {
+   float: left;
+   display: block;
+   width: 25%;
+}
+
+#navi_indiv ul.level_1 li a,
+#navi_indiv ul.level_1 li span {
+   color: #FFF;
+   padding-left: 50px;
+   font-size: 14px;
+   text-transform: uppercase;
+   white-space: nowrap;
+}
+
+#navi_indiv ul.level_2 li {
+   float: left;
+   clear: both;
+   display: block;
+}
+
+#navi_indiv ul.level_2 li a,
+#navi_indiv ul.level_2 li span {
+   color: #FE6633;
+   font-size: 12px;
+   text-transform: none;
+}
+
+#navi_indiv ul.level_2 li.first {
+   padding-top: 15px;
+}

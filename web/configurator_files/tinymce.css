@@ -1,0 +1,54 @@
+ /*----------------------------------------------------------Tabellen ohne rand-----------------------------------*/
+#tinymce .noborder {
+   width:100%;
+   text-align:left;
+   text-align-last:right;
+   border: none;
+   margin-top:20px;
+   margin-bottom:20px;
+}
+#tinymce .noborder tr { width:100%; }
+#tinymce .noborder td {
+   padding:18px;
+   border:none;
+   text-align: left;
+}
+#tinymce .noborder td:first-child { padding-left:0px; }
+#tinymce .noborder td:last-child {
+   padding-right:0px;
+   text-align:right;
+}
+#tinymce .noborder tr:first-child {
+   font-size: 14px;
+   font-weight: bold !important;
+}
+
+
+/*----------------------------------------------------------Tabellen: oben und unten Rand-----------------------------------*/
+
+#tinymce .linetopbottom {
+   width:100%;
+   text-align:left;
+   text-align-last:right;
+   border-top: thin solid #999;
+   border-right: none;
+   border-bottom: thin solid #999;
+   border-left: none;
+   margin-top:30px;
+   margin-bottom:30px;
+}
+#tinymce .linetopbottom tr { width:100%; }
+#tinymce .linetopbottom td {
+   padding:18px;
+   border:none;
+   text-align: left;
+}
+#tinymce .linetopbottom td:first-child { padding-left:0px; }
+.linetopbottom td:last-child {
+   padding-right:0px;
+   text-align:right;
+}
+#tinymce .linetopbottom tr:first-child {
+   font-size: 14px;
+   font-weight: bold !important;
+}

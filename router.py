@@ -1,0 +1,246 @@
+from pymodbus.utilities import computeCRC as ModbusComputeCRC
+from os.path import isfile
+from const import SYS_MODES, RT_STAT_CODES, DATA_FILES_DIR
+from router_hdlr import RtHdlr
+from module import HbtnModule
+from module_hdlr import ModHdlr
+from configuration import RouterSettings
+
+
+class HbtnRouter:
+    """Router object, holds status."""
+
+    def __init__(self, api_srv, id: int) -> None:
+        self._ready = False
+        self._id = id
+        self._name = "Router"
+        self._in_config_mode: bool = False
+        self.recent_mode: int = 0x20
+        self.api_srv = api_srv
+        self.logger = api_srv.logger
+        self.status = b""
+        self.status_upload = b""
+        self.chan_status = b""
+        self.status_idx = []
+        self.mod_addrs = []
+        self.modules = []
+        self.hdlr = RtHdlr(self, self.api_srv)
+        self.descriptions: str = ""
+        self.smr: bytes = b""
+        self.smr_crc: int = 0
+        self.smr_upload: bytes = b""
+        self.fw_upload: bytes = b""
+        self.name: bytes = b""
+        self.channels: bytes = b""
+        self.timeout: bytes = b""
+        self.groups: bytes = b""
+        self.mode_dependencies: bytes = b""
+        self.mode0 = 0
+        self.user_modes: bytes = b""
+        self.serial: bytes = b""
+        self.day_night: bytes = b""
+        self.version: bytes = b""
+        self.date: bytes = b""
+        self.settings = []
+        self.properties, self.prop_keys = self.get_properties()
+
+    def __del__(self):
+        """Clean up."""
+        del self.logger
+        del self.api_srv
+        del self.hdlr
+
+    def mirror_running(self) -> bool:
+        """Return mirror status based on chan_status."""
+        return self.chan_status[-1] == RT_STAT_CODES.MIRROR_ACTIVE
+
+    async def get_full_status(self):
+        """Startup procedure: wait for router #1, get router info, start modules."""
+
+        # await self.hdlr.rt_reboot()
+        # self.logger.info("Router reboot finished")
+
+        await self.set_config_mode(True)
+        self.status = await self.hdlr.get_rt_full_status()
+        self.chan_status = await self.hdlr.get_rt_status()
+        await self.set_config_mode(False)
+        self.build_smr()
+        self.logger.info("Router status initialized")
+        resp = await self.hdlr.get_rt_modules()
+        self.load_descriptions()
+
+        for m_idx in range(resp[0]):
+            self.mod_addrs.append(resp[m_idx + 1])
+        self.mod_addrs.sort()
+        for mod_addr in self.mod_addrs:
+            try:
+                self.modules.append(
+                    HbtnModule(mod_addr, ModHdlr(mod_addr, self.api_srv), self)
+                )
+                self.logger.debug(f"Module {mod_addr} instantiated")
+                await self.modules[-1].initialize()
+                self.logger.info(f"Module {mod_addr} initialized")
+            except Exception as err_msg:
+                self.logger.error(f"Failed to setup module {mod_addr}: {err_msg}")
+                self.modules.remove(self.modules[-1])
+                self.mod_addrs.remove(mod_addr)
+                self.logger.warning(f"Module {mod_addr} removed")
+
+    async def get_status(self) -> str:
+        """Returns router channel status"""
+        # await self.set_config_mode(True)
+        self.chan_status = await self.hdlr.get_rt_status()
+        # await self.set_config_mode(False)
+        return self.chan_status
+
+    def get_module(self, mod_id):
+        """Return module object."""
+        return self.modules[self.mod_addrs.index(mod_id)]
+
+    def get_modules(self) -> str:
+        """Return id, type, and name of all modules."""
+        mod_str = ""
+        for mod in self.modules:
+            mod_str += chr(mod._id) + mod._typ.decode("iso8859-1")
+            mod_str += chr(len(mod._name)) + mod._name
+        return mod_str
+
+    def build_smr(self):
+        """Build SMR file content from status."""
+        st_idx = self.status_idx
+        chan_buf = self.channels
+        chan_list = b""
+        ch_idx = 1
+        for ch_i in range(4):
+            cnt = chan_buf[ch_idx]
+            chan_list += chan_buf[ch_idx : ch_idx + cnt + 1]
+            ch_idx += cnt + 2
+
+        self.smr = (
+            chr(self._id).encode("iso8859-1")
+            + chan_list
+            + self.timeout
+            + self.groups
+            + self.mode_dependencies
+            + self.name
+            + self.user_modes
+            + self.serial
+            + self.day_night
+            + self.version
+        )
+        self.calc_SMR_crc(self.smr)
+
+    def calc_SMR_crc(self, smr_buf: bytes) -> None:
+        """Calculate and store crc of SMR data."""
+        self.smr_crc = ModbusComputeCRC(smr_buf)
+
+    async def set_config_mode(self, set_not_reset: bool):
+        """Switches to config mode and back."""
+        if set_not_reset:
+            if self._in_config_mode:
+                return
+            current_mode = await self.hdlr.get_mode(0)
+            if current_mode[0] != SYS_MODES.Config:
+                self.recent_mode = current_mode[0]
+            await self.hdlr.set_mode(0, SYS_MODES.Config)
+            self._in_config_mode = True
+            self.logger.debug("Set system to Config mode")
+        elif self._in_config_mode:
+            new_mode = await self.hdlr.set_mode(0, self.recent_mode)
+            self._in_config_mode = False
+            self.logger.debug(
+                f"Set system back to mode {ord(new_mode.decode('iso8859-1')):#x}"
+            )
+
+    def save_descriptions(self):
+        """Save descriptions to file."""
+        file_name = f"Rtr_{self._name}_descriptions.smb"
+        file_path = DATA_FILES_DIR
+        fid = open(file_path + file_name, "w")
+        desc_buf = self.descriptions.encode("iso8859-1")
+        desc_no = int.from_bytes(desc_buf[0:2], "little")
+        for ptr in range(4):
+            fid.write(f"{desc_buf[ptr]};")
+        fid.write("\n")
+        ptr = 4
+        for desc_i in range(desc_no):
+            l_len = desc_buf[ptr + 8] + 9
+            line = desc_buf[ptr : ptr + l_len]
+            for li in range(l_len):
+                fid.write(f"{line[li]};")
+            fid.write("\n")
+            ptr += l_len
+        fid.close()
+        self.logger.debug(f"Descriptions saved to {file_path + file_name}")
+
+    def load_descriptions(self):
+        """Load descriptions from file."""
+        self.descriptions = ""
+        file_name = f"Rtr_{self._name}_descriptions.smb"
+        file_path = DATA_FILES_DIR
+        if isfile(file_path + file_name):
+            fid = open(file_path + file_name, "r")
+            line = fid.readline().split(";")
+            for ci in range(len(line) - 1):
+                self.descriptions += chr(int(line[ci]))
+            desc_no = int(line[0]) + 256 * int(line[1])
+            for li in range(desc_no):
+                line = fid.readline().split(";")
+                for ci in range(len(line) - 1):
+                    self.descriptions += chr(int(line[ci]))
+            fid.close()
+            self.logger.debug(f"Descriptions loaded from {file_path + file_name}")
+        else:
+            self.logger.info(f"Descriptions file {file_path + file_name} not found")
+
+    def save_firmware(self, bin_data):
+        "Save firmware binary to file and fw_data buffer."
+        file_path = DATA_FILES_DIR
+        file_name = f"Firmware_{bin_data[0]:02d}_{bin_data[1]:02d}.bin"
+        fid = open(file_path + file_name, "wb")
+        fid.write(bin_data)
+        fid.close()
+        self.fw_upload = bin_data
+        self.logger.debug(f"Firmware file {file_path + file_name} saved")
+
+    def load_firmware(self, mod_type) -> bytes:
+        "Load firmware binary from file to fw_data buffer."
+        if isinstance(mod_type, str):
+            mod_type = mod_type.encode("iso8859-1")
+        file_path = DATA_FILES_DIR
+        file_name = f"Firmware_{mod_type[0]:02d}_{mod_type[1]:02d}.bin"
+        if isfile(file_path + file_name):
+            fid = open(file_path + file_name, "rb")
+            self.fw_upload = fid.read()
+            fid.close()
+            self.logger.debug(f"Firmware file {file_path + file_name} loaded")
+            return True
+        self.fw_upload = b""
+        self.logger.error(
+            f"Failed to load firmware file 'Firmware_{mod_type[0]:02d}_{mod_type[1]:02d}.bin'"
+        )
+        return False
+
+    def get_router_settings(self):
+        """Collect all settings and prepare for config server."""
+        self.settings = RouterSettings(self)
+        self.settings.id = 0  # to distinguish from modules
+        self.settings.typ = b"\0\0"  # to distinguish from modules
+        return self.settings
+
+    def get_properties(self):
+        """Return number of flags, commands, etc."""
+
+        props: dict = {}
+        props["glob_flags"] = 16
+        props["coll_cmds"] = 16
+        props["groups"] = 16
+
+        keys = ["glob_flags", "coll_cmds", "groups"]
+        no_keys = 0
+        for key in keys:
+            if props[key] > 0:
+                no_keys += 1
+        props["no_keys"] = no_keys
+
+        return props, keys
