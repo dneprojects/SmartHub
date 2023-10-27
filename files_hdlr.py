@@ -31,6 +31,34 @@ class FilesHdlr(HdlrBase):
                 rtr = self.api_srv.routers[rt - 1]
                 self.response = rtr.read_desriptions()
                 return
+            case spec.SMM_SEND:
+                self.check_router_module_no(rt, mod)
+                if self.args_err:
+                    return
+                self.api_srv.routers[rt - 1].get_module(
+                    mod
+                ).smg_upload = self.msg._cmd_data[:156]
+                self.api_srv.routers[rt - 1].get_module(
+                    mod
+                ).smc_upload = self.msg._cmd_data[156:]
+                self.response = "OK"
+                return
+            case spec.SMM_TO_MOD:
+                self.check_router_no(rt)
+                if self.args_err:
+                    return
+                summary = await self.send_smgs(rt)
+                summary += await self.send_smcs(rt)
+                await self.api_srv.respond_client(summary)
+                self.response = summary
+            case spec.SMM_DISC:
+                self.check_router_no(rt)
+                if self.args_err:
+                    return
+                for module in self.api_srv.routers[rt - 1].modules:
+                    module.smg_upload = b""
+                    module.smc_upload = b""
+                self.response = "OK"
             case spec.SMG_SEND:
                 self.check_router_module_no(rt, mod)
                 if self.args_err:
@@ -159,7 +187,7 @@ class FilesHdlr(HdlrBase):
                     if file_name.endswith(".bin"):
                         os.remove(DATA_FILES_DIR + file_name)
                         self.logger.debug(
-                            "Firmware file deleted: ", DATA_FILES_DIR + file_name
+                            "Firmware file deleted: " + DATA_FILES_DIR + file_name
                         )
                 self.api_srv.routers[rt - 1].fw_upload = b""
                 self.response = "OK"
@@ -196,7 +224,7 @@ class FilesHdlr(HdlrBase):
                     postfix = ""
                 else:
                     postfix = f".{self._p4}"
-                log_file = open(f"smip.log{postfix}", "r")
+                log_file = open(f"smhub.log{postfix}", "r")
                 self.response = log_file.read()
                 log_file.close()
                 return

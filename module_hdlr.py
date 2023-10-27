@@ -39,7 +39,7 @@ class ModHdlr(HdlrBase):
         self.mod.status = chr(mod_addr).encode() + self.rt_msg._resp_msg
 
     async def send_module_smg(self, mod_addr: int):
-        """Send SMG data from SMIP to router/module."""
+        """Send SMG data from Smart Hub to router/module."""
         await self.set_module_name()
         await self.set_buttons_times()
         if int(self.mod._typ[0]) in [1, 0x32, 0x0B]:
@@ -133,7 +133,7 @@ class ModHdlr(HdlrBase):
         return smc_buffer
 
     async def send_module_list(self, mod_addr: int):
-        """Send SMC data from SMIP to router/module."""
+        """Send SMC data from Smart Hub to router/module."""
         mod_list = self.mod.list_upload
         l_len = len(mod_list)
         l_cnt = 0
@@ -172,6 +172,7 @@ class ModHdlr(HdlrBase):
         """Send module name to module."""
         base_idx = SMGIdx.index(MirrIdx.MOD_NAME)
         md_name = self.mod.smg_upload[base_idx : base_idx + 32]
+        self.mod._name = md_name.decode("iso8859-1").strip()
         for cnt in range(4):
             cmd = (
                 RT_CMDS.SET_MOD_NAME.replace("<rtr>", chr(self.rt_id))

@@ -14,14 +14,14 @@ class DataHdlr(HdlrBase):
 
         rt, mod = self.get_router_module()
         match self._spec:
-            case spec.SMIP_BOOTQUEST:
+            case spec.SMHUB_BOOTQUEST:
                 self.response = b"\x01"  # bool True
 
-            case spec.SMIP_GETVERSION:
-                self.response = self.api_srv.smip.get_version()
+            case spec.SMHUB_GETVERSION:
+                self.response = self.api_srv.sm_hub.get_version()
 
-            case spec.SMIP_GETINFO:
-                self.response = self.api_srv.smip.get_info()
+            case spec.SMHUB_GETINFO:
+                self.response = self.api_srv.sm_hub.get_info()
 
             case spec.RT_NAME_FW_NM_PCREAD:
                 rt_id = chr(rt).encode("iso8859-1")

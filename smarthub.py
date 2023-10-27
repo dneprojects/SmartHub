@@ -12,7 +12,7 @@ import psutil
 import cpuinfo
 from const import (
     OWN_IP,
-    SMIP_PORT,
+    SMHUB_PORT,
     QUERY_PORT,
     ANY_IP,
     RT_DEF_ADDR,
@@ -24,7 +24,7 @@ from api_server import ApiServer
 from config_server import ConfigServer
 
 
-class SMIP_INFO:
+class SMHUB_INFO:
     """Holds information."""
 
     SW_VERSION = "0.8.8"
@@ -34,28 +34,28 @@ class SMIP_INFO:
 
 
 class QueryServer:
-    """Server class for network queries seraching SMIPs"""
+    """Server class for network queries seraching Smart Hubs"""
 
-    def __init__(self, lp, smip):
+    def __init__(self, lp, sm_hub):
         self.loop = lp
-        self.smip = smip
+        self.sm_hub = sm_hub
         self.logger = logging.getLogger(__name__)
         self._q_running = False
 
     def __del__(self):
         """Clean up."""
         del self.logger
-        del self.smip
+        del self.sm_hub
 
     async def initialize(self):
         """Starting the server"""
         resp_header = "\x00\x00\x00\xf7"
-        version_str = SMIP_INFO.SW_VERSION.replace(".", "")[::-1]
-        type_str = SMIP_INFO.TYPE_CODE
-        serial_str = SMIP_INFO.SERIAL
+        version_str = SMHUB_INFO.SW_VERSION.replace(".", "")[::-1]
+        type_str = SMHUB_INFO.TYPE_CODE
+        serial_str = SMHUB_INFO.SERIAL
         empty_str_10 = "0000000000"
         mac_str = ""
-        for nmbr in self.smip.mac.split(":"):
+        for nmbr in self.sm_hub.mac.split(":"):
             mac_str += chr(int(nmbr, 16))
         self.resp_str = (
             resp_header
@@ -67,7 +67,7 @@ class QueryServer:
             + mac_str
         ).encode("iso8859-1")
 
-    async def handle_smip_query(self, ip_reader, ip_writer):
+    async def handle_smhub_query(self, ip_reader, ip_writer):
         """Network server handler to receive api commands."""
 
         while True:
@@ -77,7 +77,7 @@ class QueryServer:
             await asyncio.sleep(0.04)
 
     async def run_query_srv(self):
-        """Server for handling SMIP queries."""
+        """Server for handling Smart Hub queries."""
         try:
             self.q_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.q_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, True)
@@ -102,8 +102,8 @@ class QueryServer:
         self.q_sock.close()
 
 
-class SmartIp:
-    """Holds methods of Smart IP"""
+class SmartHub:
+    """Holds methods of Smart Hub."""
 
     def __init__(self, loop, logger) -> None:
         self.loop = loop
@@ -119,8 +119,9 @@ class SmartIp:
         self._host = ""
         self._host_ip = ""
         self.info = self.get_info()
-        self.logger.info("Smart IP2 starting...")
+        self.logger.info("Smart Hub starting...")
         self.skip_init = False
+        self.restart = False
 
     def __del__(self):
         """Clean up."""
@@ -130,13 +131,14 @@ class SmartIp:
 
     def reboot(self):
         """Reboot hardware."""
-        self.logger.warning("Reboot of smip host requested")
+        self.logger.warning("Reboot of Smart Hub host requested")
         os.system("sudo reboot")
 
     def restart(self, skip_init):
         """Restart SmartIP software."""
         self.skip_init = skip_init > 0
-        self.logger.warning("Restart of smip process requested")
+        self.restart = True
+        self.logger.warning("Restart of sm_hub process requested")
         self.server.close()
         self.q_srv.close_query_srv()
         for tsk in self.tg._tasks:
@@ -149,15 +151,15 @@ class SmartIp:
 
     def get_version(self):
         """Return version string"""
-        return SMIP_INFO.SW_VERSION
+        return SMHUB_INFO.SW_VERSION
 
     def get_serial(self):
         """Return version string"""
-        return SMIP_INFO.SERIAL
+        return SMHUB_INFO.SERIAL
 
     def get_type(self):
         """Return version string"""
-        return SMIP_INFO.TYPE
+        return SMHUB_INFO.TYPE
 
     def get_info(self):
         """Return information on Smart Gateway hardware and software"""  # Get cpu statistics
@@ -251,8 +253,8 @@ class SmartIp:
         info_str = info_str + f"    mac: {self.mac}\n"
 
         info_str = info_str + "software:\n"
-        info_str = info_str + f"  type: {SMIP_INFO.TYPE}\n"
-        info_str = info_str + f"  version: {SMIP_INFO.SW_VERSION}\n"
+        info_str = info_str + f"  type: {SMHUB_INFO.TYPE}\n"
+        info_str = info_str + f"  version: {SMHUB_INFO.SW_VERSION}\n"
 
         # Get logging levels
         log_level_cons = self.logger.root.handlers[0].level
@@ -265,7 +267,7 @@ class SmartIp:
     async def run_api_server(self, loop, api_srv):
         """Main server for serving Smart IP calls."""
         self.server = await asyncio.start_server(
-            api_srv.handle_api_command, OWN_IP, SMIP_PORT
+            api_srv.handle_api_command, OWN_IP, SMHUB_PORT
         )
         self.logger.info("API server started")
         async with self.server:
@@ -279,7 +281,7 @@ class SmartIp:
 def setup_logging():
     """Initialze logging settings."""
 
-    with open("./smip_logging.yaml", "r") as stream:
+    with open("./smhub_logging.yaml", "r") as stream:
         config = yaml.load(stream, Loader=yaml.FullLoader)
     if logging.root.handlers == []:
         logging.config.dictConfig(config)
@@ -319,7 +321,13 @@ async def init_serial(logger):
         await rt_serial[0].readexactly(len(rt_serial[0]._buffer))
         logger.debug("Emptied serial read buffer")
     try:
-        resp_buf = b""
+        # resp_buf = b""
+        # rt_cmd = calc_CRC(RT_CMDS.CLEAR_RT_SENDBUF.replace("<rtr>", chr(RT_DEF_ADDR)))
+        # rt_serial[1].write(rt_cmd.encode("iso8859-1"))
+        # reading = asyncio.ensure_future(rt_serial[0].read(1024))
+        # await asyncio.sleep(0.2)
+        # if reading._state == "FINISHED":
+        #     resp_buf = reading.result()
         rt_cmd = calc_CRC(RT_CMDS.GET_GLOB_MODE.replace("<rtr>", chr(RT_DEF_ADDR)))
         rt_serial[1].write(rt_cmd.encode("iso8859-1"))
         reading = asyncio.ensure_future(rt_serial[0].read(1024))
@@ -350,8 +358,8 @@ async def main(init_flag, ev_loop):
     retry_serial = 2
     logger = setup_logging()
     try:
-        # Instantiate SmartIP object
-        smip = SmartIp(ev_loop, logger)
+        # Instantiate SmartHub object
+        sm_hub = SmartHub(ev_loop, logger)
         rt_serial = None
         while (rt_serial == None) & (retry_serial >= 0):
             if retry_serial < 2:
@@ -365,48 +373,50 @@ async def main(init_flag, ev_loop):
             logger.error(f"Initialization of serial connection failed")
         # Instantiate config server object
         logger.debug("Initializing config server")
-        smip.conf_srv = ConfigServer(smip)
-        await smip.conf_srv.initialize()
+        sm_hub.conf_srv = ConfigServer(sm_hub)
+        await sm_hub.conf_srv.initialize()
         # Instantiate query object
         logger.debug("Initializing query server")
-        smip.q_srv = QueryServer(ev_loop, smip)
-        await smip.q_srv.initialize()
+        sm_hub.q_srv = QueryServer(ev_loop, sm_hub)
+        await sm_hub.q_srv.initialize()
         # Instantiate api_server object
         logger.debug("Initializing API server")
-        smip.api_srv = ApiServer(ev_loop, smip, rt_serial)
+        sm_hub.api_srv = ApiServer(ev_loop, sm_hub, rt_serial)
         if init_flag:
-            await smip.api_srv.get_initial_status()
+            await sm_hub.api_srv.get_initial_status()
         else:
             logger.warning("Initialization of router and modules skipped")
         startup_ok = True
     except Exception as error_msg:
         # Start failed ...
-        logger.error(f"Exception: {error_msg}")
+        logger.error(f"Smart Hub start failed, exception: {error_msg}")
     if not (startup_ok):
         # ... retry restarting main()
-        logger.warning("Smart IP main restarting")
+        logger.warning("Smart Hub main restarting")
         return 0
 
     # Initialization successfulle done, start servers
-    async with smip.tg:
+    async with sm_hub.tg:
         logger.debug("Starting API server")
-        skip_init = smip.tg.create_task(
-            smip.run_api_server(ev_loop, smip.api_srv), name="api_srv"
+        skip_init = sm_hub.tg.create_task(
+            sm_hub.run_api_server(ev_loop, sm_hub.api_srv), name="api_srv"
         )
         logger.debug("Starting query server")
-        smip.tg.create_task(smip.q_srv.run_query_srv(), name="q_srv")
+        sm_hub.tg.create_task(sm_hub.q_srv.run_query_srv(), name="q_srv")
         logger.debug("Starting config server")
-        await smip.conf_srv.prepare()
-        smip.tg.create_task(smip.conf_srv.site.start(), name="conf_srv")
+        await sm_hub.conf_srv.prepare()
+        sm_hub.tg.create_task(sm_hub.conf_srv.site.start(), name="conf_srv")
         logger.info("Config server running")
 
     # Waiting until finished
     try:
-        await asyncio.wait(smip.tg)
+        await asyncio.wait(sm_hub.tg)
     except Exception as err_msg:
         pass
     rt_serial[1].close()
-    if skip_init:
+    if sm_hub.restart:
+        return 1
+    elif skip_init:
         return -1
     else:
         return 1

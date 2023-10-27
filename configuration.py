@@ -69,6 +69,9 @@ class ModuleSettings:
             .decode("iso8859-1")
             .strip()
         )
+        self.supply_prio = conf[MirrIdx.SUPPLY_PRIO]
+        self.displ_contr = conf[MirrIdx.DISPL_CONTR]
+        self.displ_time = conf[MirrIdx.MOD_LIGHT_TIM]
         inp_state = int.from_bytes(
             conf[MirrIdx.SWMOD_1_8 : MirrIdx.SWMOD_1_8 + 3], "little"
         )
@@ -100,6 +103,48 @@ class ModuleSettings:
                 self.outputs[2 * c_idx].type = -10  # disable light output
                 self.outputs[2 * c_idx + 1].type = -10
         return True
+
+    def set_settings(self, status):
+        """Restore settings to module."""
+        status = replace_bytes(
+            status,
+            (self.name + " " * (32 - len(self.name))).encode("iso8859-1"),
+            MirrIdx.MOD_NAME,
+        )
+        status = replace_bytes(
+            status,
+            int.to_bytes(int(self.displ_contr)),
+            MirrIdx.DISPL_CONTR,
+        )
+        status = replace_bytes(
+            status,
+            int.to_bytes(int(self.displ_time)),
+            MirrIdx.MOD_LIGHT_TIM,
+        )
+        if self.supply_prio == "24V":
+            byte_supply = b"B"
+        else:
+            byte_supply = b"A"
+        status = replace_bytes(
+            status,
+            byte_supply,
+            MirrIdx.SUPPLY_PRIO,
+        )
+        inp_state = 0
+        for inp in self.inputs:
+            if abs(inp.type) > 1:  # switch
+                inp_state = inp_state | (0x01 << (inp.nmbr - 1))
+        inp_bytes = (
+            chr(inp_state & 0xFF)
+            + chr((inp_state >> 8) & 0xFF)
+            + chr((inp_state >> 16) & 0xFF)
+        ).encode("iso8859-1")
+        status = replace_bytes(
+            status,
+            inp_bytes,
+            MirrIdx.SWMOD_1_8,
+        )
+        return status
 
     def get_names(self) -> bool:
         """Get summary of Habitron module."""
@@ -334,3 +379,8 @@ class RouterSettings:
             elif content_code == 2303:  # FF 08: alarm commands
                 pass
             resp = resp[line_len:]
+
+
+def replace_bytes(in_bytes: bytes, repl_bytes: bytes, idx: int) -> bytes:
+    """Replaces bytes array from idx:idx+len(in_bytes)."""
+    return in_bytes[:idx] + repl_bytes + in_bytes[idx + len(repl_bytes) :]

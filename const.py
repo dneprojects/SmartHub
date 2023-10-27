@@ -3,7 +3,7 @@ from typing import Final
 
 OWN_IP = "192.168.178.110"
 ANY_IP = "0.0.0.0"
-SMIP_PORT = 7777
+SMHUB_PORT = 7777
 EVENT_PORT = 7778
 CONF_PORT = 7780
 QUERY_PORT = 30718
@@ -63,9 +63,9 @@ class API_DATA:
     MOD_STAT_PCREAD = 256 * 5 + 1
     MOD_CSTAT_PCREAD = 256 * 5 + 2  # compact status
 
-    SMIP_BOOTQUEST = 256 * 6 + 1
-    SMIP_GETINFO = 256 * 6 + 2
-    SMIP_GETVERSION = 256 * 6 + 3
+    SMHUB_BOOTQUEST = 256 * 6 + 1
+    SMHUB_GETINFO = 256 * 6 + 2
+    SMHUB_GETVERSION = 256 * 6 + 3
 
     DESC_PCREAD = 256 * 7 + 1
 
@@ -80,6 +80,8 @@ class API_SETTINGS:
     VERQUEST = 256 * 30 + 0
     MIRRSTART = 256 * 40 + 1
     MIRRSTOP = 256 * 40 + 2
+    EVENTSTART = 256 * 40 + 7
+    EVENTSTOP = 256 * 40 + 8
     MD_SETTINGS = 256 * 50 + 1
     CONN_TST = 256 * 100 + 0
 
@@ -145,6 +147,10 @@ class API_ACTIONS:
 class API_FILES:
     """Command descriptors for files API."""
 
+    SMM_SEND = 256 * 0 + 1
+    SMM_TO_MOD = 256 * 0 + 2
+    SMM_DISC = 256 * 0 + 3
+
     SMG_SEND = 256 * 1 + 1
     SMG_TO_MOD = 256 * 1 + 2
     SMG_DISC = 256 * 1 + 3
@@ -206,12 +212,12 @@ class API_SETUP:
 class API_ADMIN:
     """Command descriptors for admin API."""
 
-    SMIP_READY = 256 * 0 + 0
-    SMIP_INFO = 256 * 0 + 1
-    SMIP_RESTART = 256 * 0 + 2
-    SMIP_REBOOT = 256 * 0 + 3
-    SMIP_NET_INFO = 256 * 0 + 4
-    SMIP_LOG_LEVEL = 256 * 0 + 5
+    SMHUB_READY = 256 * 0 + 0
+    SMHUB_INFO = 256 * 0 + 1
+    SMHUB_RESTART = 256 * 0 + 2
+    SMHUB_REBOOT = 256 * 0 + 3
+    SMHUB_NET_INFO = 256 * 0 + 4
+    SMHUB_LOG_LEVEL = 256 * 0 + 5
 
     RT_START_FWD = 256 * 1 + 1
     RT_RD_MODERRS = 256 * 1 + 2
@@ -239,7 +245,7 @@ class API_ADMIN:
 class API_FORWARD:
     """Command forwarded from other SmartIP"""
 
-    SMIP_FWD = 256 * 1 + 1
+    SMHUB_FWD = 256 * 1 + 1
 
 
 class API_RESPONSE:
@@ -289,6 +295,7 @@ class RT_CMDS:
     GET_RT_MODENAM = "\x2a<rtr>\x07\x68\x4c<umd>\xff"
     SEND_RT_NAME = "\x2a<rtr>\xff\x67\x53"
     SEND_RT_CHANS = "\x2a<rtr>\xff\x63\x50\x53\x01"
+    CLEAR_RT_SENDBUF = "\x2a<rtr\x07\x66\x02\xc8\xff"
     SEND_RT_TIMEOUT = "\x2a<rtr>\x08\x66\x01\x54<tout>\xff"
     SEND_RT_GRPNO = "\x2a<rtr>\xff\x66\x01\x89\x02"
     SEND_RT_GRPMODE_DEP = "\x2a<rtr>\xff\x66\x01\x89\x66"

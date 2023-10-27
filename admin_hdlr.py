@@ -13,25 +13,25 @@ class AdminHdlr(HdlrBase):
         rt = self._p4
         mod = self._p5
         match self._spec:
-            case spec.SMIP_READY:
+            case spec.SMHUB_READY:
                 self.response = "OK"
-            case spec.SMIP_INFO:
-                self.response = self.api_srv.smip.get_info()
-            case spec.SMIP_RESTART:
+            case spec.SMHUB_INFO:
+                self.response = self.api_srv.sm_hub.get_info()
+            case spec.SMHUB_RESTART:
                 self.response = "Smart IP will be restarted"
                 await self.api_srv.shutdown(rt, self._p5)
-            case spec.SMIP_REBOOT:
+            case spec.SMHUB_REBOOT:
                 self.response = "Smart IP will be rebooted"
                 time.sleep(3)
-                self.api_svr.smip.reboot()
-            case spec.SMIP_NET_INFO:
+                self.api_svr.sm_hub.reboot()
+            case spec.SMHUB_NET_INFO:
                 await self.api_srv.stop_api_mode(rt)
                 ip_len = self._args[0]
                 self.api_srv._hass_ip = self._args[1 : ip_len + 1].decode("iso8859-1")
                 tok_len = self._args[ip_len + 1]
                 self.save_id(self._args[ip_len + 2 : ip_len + 2 + tok_len])
                 self.response = "OK"
-            case spec.SMIP_LOG_LEVEL:
+            case spec.SMHUB_LOG_LEVEL:
                 self.check_arg(
                     self._p4, range(2), "Parameter 4 ust be 0 (console) or 1 (file)."
                 )

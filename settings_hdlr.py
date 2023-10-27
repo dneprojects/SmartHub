@@ -117,25 +117,52 @@ class SettingsHdlr(HdlrBase):
 
             case spec.VERQUEST:  # 30 00: Get version
                 self.logger.debug("Get version")
-                self.response = self.api_srv.smip.get_version()
+                self.response = self.api_srv.sm_hub.get_version()
                 return
 
             case spec.MIRRSTART:
                 # self.check_router_no(rt)
                 rt = 1  # Smart Config doesn't set router
-                if self.args_err:
-                    return
+                # if self.args_err:
+                #     self.response = self.err_msg
+                #     return
+                self.api_srv.mirror_mode = True
                 await self.api_srv.start_api_mode(rt)
-                self.response = "OK"  # f"Mirror started on router {rt}"
+                self.response = "OK"
+                self.logger.debug(f"Mirror mode started on router {rt}")
 
             case spec.MIRRSTOP:
                 # self.check_router_no(rt)
                 rt = 1  # Smart Config doesn't set router
-                if self.args_err:
-                    self.response = self.err_msg
-                else:
-                    await self.api_srv.stop_api_mode(rt)
-                    self.response = "OK"  # f"Mirror stopped on router {rt}"
+                # if self.args_err:
+                #     self.response = self.err_msg
+                #     return
+                self.api_srv.mirror_mode = False
+                await self.api_srv.stop_api_mode(rt)
+                self.response = "OK"
+                self.logger.debug(f"Mirror mode stopped on router {rt}")
+
+            case spec.EVENTSTART:
+                # self.check_router_no(rt)
+                rt = 1  # Smart Config doesn't set router
+                # if self.args_err:
+                #     self.response = self.err_msg
+                #     return
+                self.api_srv.event_mode = True
+                await self.api_srv.start_api_mode(rt)
+                self.response = "OK"
+                self.logger.debug(f"Event mode started on router {rt}")
+
+            case spec.EVENTSTOP:
+                # self.check_router_no(rt)
+                rt = 1  # Smart Config doesn't set router
+                # if self.args_err:
+                #     self.response = self.err_msg
+                #     return
+                self.api_srv.event_mode = False
+                await self.api_srv.stop_api_mode(rt)
+                self.response = "OK"
+                self.logger.debug(f"Event mode stopped on router {rt}")
 
             case _:
                 self.response = f"Unknown API data command: {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"

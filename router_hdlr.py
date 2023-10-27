@@ -309,54 +309,95 @@ class RtHdlr(HdlrBase):
         """Upload router firmware to router, returns True for success."""
         fw_buf = self.rtr.fw_upload
         fw_len = len(fw_buf)
+        if fw_len == 0:
+            self.logger.error(f"Failed to upload / flash router")
+            return "ERROR"
+
+        pkg_len = 13
+        no_pkgs = int(fw_len / pkg_len)
+        rest_len = fw_len - no_pkgs * pkg_len
+        if rest_len > 0:
+            no_pkgs += 1
+        self.logger.info(
+            f"Updating router {self.rt_id}: length {fw_len} bytes, {no_pkgs} packages"
+        )
         stat_msg = API_RESPONSE.rtfw_flash_stat.replace("<rtr>", chr(self.rt_id))
         cmd_str = RT_CMDS.SET_ISP_MODE.replace("<lenl>", chr(fw_len & 0xFF)).replace(
             "<lenh>", chr(fw_len >> 8)
         )
-        await self.handle_router_cmd_resp(self.rt_id, cmd_str)
-        await asyncio.sleep(3)
-        self.logger.warning("Router set into update mode")
 
+        await self.handle_router_cmd_resp(self.rt_id, cmd_str)
+        resp = self.rt_msg._resp_buffer[-self.rt_msg._resp_buffer[2] + 4 : -1]
+        if (resp[0] == 0x42) & (resp[1] == 0x4C) & (resp[2] == 0) & (resp[3] == 0):
+            self.logger.warning("Router set into update mode")
+        else:
+            self.logger.error(f"Failed to enter router ISP mode")
+            await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
+            self.logger.info(f"Router restarted")
+            return "ERROR"
+
+        await asyncio.sleep(1)
+        await self.handle_router_cmd_resp(self.rt_id, cmd_str)
+        resp = self.rt_msg._resp_buffer[-self.rt_msg._resp_buffer[2] + 4 : -1]
+        if (resp[0] == 0x42) & (resp[1] == 0x4C) & (resp[2] == 0) & (resp[3] == 0):
+            self.logger.warning("Router starting to update")
+        else:
+            self.logger.error(f"Failed to enter router ISP mode")
+            await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
+            self.logger.info(f"Router restarted")
+            return "ERROR"
         cmd_org = RT_CMDS.UPDATE_RT_PKG
-        pkg_len = 13
-        if fw_len > 0:
-            no_pkgs = int(fw_len / pkg_len)
-            rest_len = fw_len - no_pkgs * pkg_len
-            stat_msg = stat_msg.replace("<pkgs>", chr(no_pkgs + 1))
-            if rest_len > 0:
-                no_pkgs += 1
-            for pi in range(no_pkgs):
-                pkg_low = (pi + 1) & 0xFF
-                pkg_high = (pi + 1) >> 8
-                if pi < no_pkgs - 1:
-                    cmd_str = (
-                        cmd_org.replace("<len>", chr(pkg_len + 8))
-                        .replace("<pno>", chr(pkg_low))
-                        .replace(
-                            "<buf>",
-                            fw_buf[pi * pkg_len : (pi + 1) * pkg_len].decode(
-                                "iso8859-1"
-                            ),
-                        )
+        stat_msg = stat_msg.replace("<pkgs>", chr(no_pkgs + 1))
+        for pi in range(no_pkgs):
+            pkg_low_target = (pi + 1) & 0xFF
+            pkg_high_target = (pi + 1) >> 8
+            if pi < (no_pkgs - 1):
+                cmd_str = (
+                    cmd_org.replace("<len>", chr(pkg_len + 8))
+                    .replace("<pno>", chr(pkg_low_target))
+                    .replace(
+                        "<buf>",
+                        fw_buf[pi * pkg_len : (pi + 1) * pkg_len].decode("iso8859-1"),
+                    )
+                )
+            else:
+                # last package with < pkg_len
+                cmd_str = (
+                    cmd_org.replace("<len>", chr(rest_len + 8))
+                    .replace("<pno>", chr(pkg_low_target))
+                    .replace("<buf>", fw_buf[pi * pkg_len :].decode("iso8859-1"))
+                )
+            await self.handle_router_cmd_resp(self.rt_id, cmd_str)
+            resp_code = self.rt_msg._resp_code
+            resp_msg = self.rt_msg._resp_buffer[-self.rt_msg._resp_buffer[2] + 4 : -1]
+            if (resp_code == 201) & (len(resp_msg) > 3):
+                if (resp_msg[0] == 0x42) & (resp_msg[1] == 0x4C):
+                    pkg_low = resp_msg[2]
+                    pkg_high = resp_msg[3]
+                    await self.api_srv.hdlr.send_api_response(
+                        stat_msg.replace("<pkgl>", chr(pkg_low)).replace(
+                            "<pkgh>", chr(pkg_high)
+                        ),
+                        RT_STAT_CODES.PKG_OK,
                     )
                 else:
-                    cmd_str = (
-                        cmd_org.replace("<len>", chr(rest_len + 8))
-                        .replace("<pno>", chr(pkg_low))
-                        .replace("<buf>", fw_buf[pi * pkg_len :].decode("iso8859-1"))
+                    self.logger.error(
+                        f"Failed to flash router, returned message 201: {resp_msg}"
                     )
-                await self.handle_router_cmd_resp(self.rt_id, cmd_str)
-                await self.api_srv.hdlr.send_api_response(
-                    stat_msg.replace("<pkgl>", chr(pkg_low)).replace(
-                        "<pkgh>", chr(pkg_high)
-                    ),
-                    RT_STAT_CODES.PKG_OK,
-                )
-            self.logger.info(f"Successfully uploaded and flashed router firmware")
-            await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
-            return "OK"
-        self.logger.error(f"Failed to upload / flash router")
-        return "ERROR"
+                    await self.handle_router_cmd_resp(
+                        self.rt_id, RT_CMDS.SYSTEM_RESTART
+                    )
+                    self.logger.info(f"Router restarted")
+                    return "ERROR"
+            else:
+                self.logger.error(f"Failed to flash router, returned empty message 201")
+                await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
+                self.logger.info(f"Router restarted")
+                return "ERROR"
+        self.logger.info(f"Successfully uploaded and flashed router firmware")
+        await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
+        self.logger.info(f"Router restarted")
+        return "OK"
 
     async def upload_module_firmware(self, mod_type: bytes) -> bool:
         """Upload firmware to router, returns True for success."""

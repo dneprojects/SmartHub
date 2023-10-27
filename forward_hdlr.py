@@ -1,4 +1,3 @@
-# from messages import Smip2ApiMessage
 from const import API_FORWARD as fspec
 from hdlr_class import HdlrBase
 
@@ -10,7 +9,7 @@ class ForwardHdlr(HdlrBase):
         """Parse message, prepare and send router command"""
 
         match self._spec:
-            case fspec.SMIP_FWD:
+            case fspec.SMHUB_FWD:
                 print("Forwarded message")
             case _:
                 self.response = "Unknown API forward command"

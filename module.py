@@ -214,14 +214,6 @@ class HbtnModule:
             )
             t_blind = self.status[MirrIdx.BLAD_T + ci]
 
-            # if self.get_module_code()[0] == 1:
-            #     if ci < 3:
-            #         cic = ci + 2
-            #     else:
-            #         cic = ci - 4
-            # else:
-            #     cic = ci
-
             pol_mask = int.from_bytes(
                 self.status[MirrIdx.COVER_POL : MirrIdx.COVER_POL + 2], "little"
             )
@@ -271,6 +263,14 @@ class HbtnModule:
         """Collect all settings and prepare for config server."""
         self.settings = ModuleSettings(self, self.rt)
         return self.settings
+
+    async def set_module_settings(self, settings: ModuleSettings):
+        """Restore changed settings into module."""
+        self.settings = settings
+        self.status = settings.set_settings(self.status)
+        self.smg_upload = self.build_smg()
+        await self.hdlr.send_module_smg(self._id)
+        await self.hdlr.get_module_status(self._id)
 
     def get_io_properties(self) -> dict:
         """Return number of inputs, outputs, etc."""

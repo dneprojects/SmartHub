@@ -25,9 +25,9 @@ from event_server import EventServer
 class ApiServer:
     """Holds shared data, base router, event handler, and serial interface"""
 
-    def __init__(self, loop, smip, rt_serial) -> None:
+    def __init__(self, loop, sm_hub, rt_serial) -> None:
         self.loop = loop
-        self.smip = smip
+        self.sm_hub = sm_hub
         self.logger = logging.getLogger(__name__)
         self._rt_serial: (StreamReader, StreamWriter) = rt_serial
         self._api_mode: bool = True  # Allows explicitly setting API mode off
@@ -40,10 +40,12 @@ class ApiServer:
         self._running = True
         self._client_ip = ""
         self._hass_ip = ""
+        self.mirror_mode = False
+        self.event_mode = True
 
     def __del__(self):
         """Clean up."""
-        del self.smip
+        del self.sm_hub
         del self.logger
         del self.hdlr
         del self.routers
@@ -117,11 +119,11 @@ class ApiServer:
             await self.respond_client(response)
 
     async def shutdown(self, rt, restart_flg):
-        """Terminating all tasks and slef."""
-        await self.smip.conf_srv.runner.cleanup()
+        """Terminating all tasks and self."""
+        await self.sm_hub.conf_srv.runner.cleanup()
         await self.stop_api_mode(rt)
         await asyncio.sleep(3)
-        self.smip.restart(restart_flg)
+        self.sm_hub.restart(restart_flg)
         self._running = False
 
     async def respond_client(self, response):
@@ -179,8 +181,10 @@ class ApiServer:
         strt_mirr_cmd = RT_CMDS.START_MIRROR.replace(
             "<cyc>", chr(min(round(MIRROR_CYC_TIME * 100), 255))
         )
-        await self.hdlr.handle_router_cmd(rt_no, strt_mirr_cmd)
-        # await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.START_EVENTS)
+        if self.event_mode:
+            await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.START_EVENTS)
+        if self.mirror_mode:
+            await self.hdlr.handle_router_cmd(rt_no, strt_mirr_cmd)
         await asyncio.sleep(0.1)
 
     async def stop_api_mode(self, rt_no):
@@ -190,7 +194,7 @@ class ApiServer:
         self._api_mode = False
 
         # Disable mirror first, then stop event handler
-        # await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.STOP_EVENTS)
+        await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.STOP_EVENTS)
         await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.STOP_MIRROR)
         self.evnt_srv.evnt_running = False
         await asyncio.sleep(0.5)
@@ -205,4 +209,5 @@ class ApiServer:
 
         # Disable mirror first, then stop event handler
         await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.STOP_MIRROR)
+        await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.STOP_EVENTS)
         self.logger.debug("API mode turned off initially")

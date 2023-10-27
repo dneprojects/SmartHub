@@ -50,9 +50,9 @@ class RouterSettings:
 class ConfigServer:
     """Web server for basic configuration tasks."""
 
-    def __init__(self, smip):
-        self.smip = smip
-        self._ip = smip._host_ip
+    def __init__(self, sm_hub):
+        self.sm_hub = sm_hub
+        self._ip = sm_hub._host_ip
         self._port = CONF_PORT
         self.logger = logging.getLogger(__name__)
         self.conf_running = False
@@ -61,7 +61,7 @@ class ConfigServer:
     async def initialize(self):
         """Initialize config server."""
         self.app = web.Application()
-        self.app["smip"] = self.smip
+        self.app["smhub"] = self.sm_hub
         self.app.add_routes(routes)
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
@@ -70,7 +70,7 @@ class ConfigServer:
 
     async def prepare(self):
         """Second initialization after api_srv is initialized."""
-        self.api_srv = self.smip.api_srv
+        self.api_srv = self.sm_hub.api_srv
         self.side_menu = adjust_side_menu(self.api_srv.routers[0].modules)
         self.app["api_srv"] = self.api_srv
         self.app["side_menu"] = self.side_menu
@@ -86,7 +86,7 @@ class ConfigServer:
     @routes.get("/hub")
     async def root(request: web.Request) -> web.Response:
         api_srv = request.app["api_srv"]
-        hub_name = api_srv.smip._host
+        hub_name = api_srv.sm_hub._host
         html_str = get_html("hub.html").replace("HubTitle", f"Smart Hub '{hub_name}'")
         html_str = html_str.replace(
             "Overview", "Smart Hub - Systemzentrale und Schnittstelle zum Netzwerk"
@@ -94,7 +94,7 @@ class ConfigServer:
         html_str = html_str.replace(
             "ContentText",
             "<h3>Eigenschaften</h3>\n<p>"
-            + api_srv.smip.info.replace(" ", "&nbsp;&nbsp;").replace("\n", "</p>\n<p>")
+            + api_srv.sm_hub.info.replace(" ", "&nbsp;&nbsp;").replace("\n", "</p>\n<p>")
             + "</p>",
         )
         return web.Response(text=html_str, content_type="text/html")
@@ -128,14 +128,9 @@ class ConfigServer:
     async def root(request: web.Request) -> web.Response:
         resp = await request.text()
         form_data = parse_qs(resp)
-        key = "name"
         settings = request.app["settings"]
-        i = 0
         for form_key in list(form_data.keys())[:-1]:
-            idx = int(form_key.replace("data[", "").replace("]", ""))
-            if i == 0:
-                settings.__setattr__(key, form_data[form_key][0])
-            i += 1
+            settings.__setattr__(form_key, form_data[form_key][0])
         request.app["settings"] = settings
         args = form_data["ModSettings"][0]
         return await show_next_prev(request, args)
@@ -256,7 +251,11 @@ async def show_next_prev(request, args):
 
     if button == "save":
         if mod_addr > 0:
-            await return_module_settings(request.app, mod_addr)
+            module = request.app["api_srv"].routers[0].get_module(mod_addr)
+            await module.set_module_settings(settings)
+            request.app["side_menu"] = adjust_side_menu(
+                request.app["api_srv"].routers[0].modules
+            )
             return show_module_overview(request.app, mod_addr)
         else:
             # Save settings in router
@@ -546,7 +545,7 @@ def prepare_basic_settings(app, mod_addr, mod_type):
         prompt = "Routername"
     tbl += (
         indent(7)
-        + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[0]" type="text" id="{id_name}" value="{settings.name}"/></td></tr>\n'
+        + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="name" type="text" id="{id_name}" value="{settings.name}"/></td></tr>\n'
     )
     if settings.type in [
         "Smart Controller XL-1",
@@ -557,25 +556,25 @@ def prepare_basic_settings(app, mod_addr, mod_type):
         prompt = "Display-Kontrast"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[1]" type="text" id="{id_name}" value="{settings.status[MirrIdx.DISPL_CONTR]}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="displ_contr" type="text" id="{id_name}" value="{settings.status[MirrIdx.DISPL_CONTR]}"/></td></tr>\n'
         )
         id_name = "displ_time"
         prompt = "Display-Leuchtzeit"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[1]" type="text" id="{id_name}" value="{settings.status[MirrIdx.MOD_LIGHT_TIM]}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="displ_time" type="text" id="{id_name}" value="{settings.status[MirrIdx.MOD_LIGHT_TIM]}"/></td></tr>\n'
         )
         id_name = "temp_ctl"
         prompt = "Temperatur-Regelverhalten"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[1]" type="text" id="{id_name}" value="{settings.status[MirrIdx.CLIM_SETTINGS]}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="temp_ctl" type="text" id="{id_name}" value="{settings.status[MirrIdx.CLIM_SETTINGS]}"/></td></tr>\n'
         )
         id_name = "temp_1_2"
         prompt = "Temperatursensor"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[1]" type="text" id="{id_name}" value="{settings.status[MirrIdx.TMP_CTL_MD]}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="temp_1_2" type="text" id="{id_name}" value="{settings.status[MirrIdx.TMP_CTL_MD]}"/></td></tr>\n'
         )
     if settings.type in ["Smart Controller XL-1", "Smart Controller XL-2"]:
         id_name = "supply"
@@ -586,7 +585,7 @@ def prepare_basic_settings(app, mod_addr, mod_type):
             sply_str = "230V"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[2]" type="text" id="{id_name}" value="{sply_str}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="supply_prio" type="text" id="{id_name}" value="{sply_str}"/></td></tr>\n'
         )
     tbl += indent(5) + "</table>\n"
     tbl += indent(4) + "</form>\n"
@@ -597,7 +596,7 @@ def prepare_table(app, mod_addr, key) -> str:
     """Prepare settings table with form of edit fields."""
     # action="settings_update-{mod_addr}-{key}"
     key_prompt = app["prompt"]
-    if hasattr(app["settings"],"covers"):
+    if hasattr(app["settings"], "covers"):
         covers = getattr(app["settings"], "covers")
     tbl_data = getattr(app["settings"], key)
     tbl = (
@@ -636,7 +635,7 @@ def prepare_table(app, mod_addr, key) -> str:
                     cvr_chkd = ""
                 tbl += f'<td><label for="{id_name}_out">Ausgang</label><input type="radio" name="data[{ci},1]" id="{id_name}_out" value="out" {out_chkd}></td>'
                 tbl += f'<td><label for="{id_name}_cvr">Rollladen</label><input type="radio" name="data[{ci},1]" id="{id_name}_cvr" value="cvr" {cvr_chkd}></td>'
-        elif (key == "covers"):
+        elif key == "covers":
             if covers[ci].type != 0:
                 cov_t = app["settings"].cover_times
                 bld_t = app["settings"].blade_times
@@ -752,96 +751,90 @@ def parse_response_form(app, form_data):
     app["settings"] = settings
 
 
-async def return_module_settings(app, mod_addr: int):
-    """Collect modified settings and return them to modules."""
-    settings = app["settings"]
-    rtr = app["api_srv"].routers[0]
-    module = rtr.get_module(mod_addr)
-    logger = app["logger"]
+# async def return_module_settings(app, mod_addr: int):
+#     """Collect modified settings and return them to modules."""
+#     settings = app["settings"]
+#     await settings.set_module_settings()
+# rtr = app["api_srv"].routers[0]
+# module = rtr.get_module(mod_addr)
+# logger = app["logger"]
 
-    settings.status[MirrIdx.MOD_NAME : MirrIdx.MOD_NAME + 32] = (
-        settings.name + " " * (32 - len(settings.name))
-    ).encode("iso8859-1")
-    # settings.status[MirrIdx.DISPL_CONTR] = int.to_bytes(settings.displ_contr)
-    if settings.supply_prio == "24V":
-        settings.status[MirrIdx.SUPPLY_PRIO] = b"B"
-    else:
-        settings.status[MirrIdx.SUPPLY_PRIO] = b"A"
-    module.status = settings.status
-    # module.smg_upload = module.build_smg()
-    # await rtr.set_config_mode(True)
-    # await module.hdlr.send_module_smg(mod_addr)
-    # await rtr.set_config_mode(False)
+# module.status = settings.status
+# module.smg_upload = module.build_smg()
+# await rtr.set_config_mode(True)
+# await module.hdlr.send_module_smg(mod_addr)
+# await module.hdlr.get_module_status(mod_addr)
+# await rtr.set_config_mode(False)
 
-    list_lines = format_smc(settings.list).split("\n")
-    new_list = []
-    new_line = ""
-    for lchr in list_lines[0].split(";")[:-1]:
-        new_line += chr(int(lchr))
-    new_list.append(new_line)
-    for line in list_lines[1:]:
-        if len(line) > 0:
-            tok = line.split(";")
-            if (tok[0] != "253") & (tok[0] != "255"):
-                new_line = ""
-                for lchr in line.split(";")[:-1]:
-                    new_line += chr(int(lchr))
-                new_list.append(new_line)
-    for dir_cmd in settings.dir_cmds:
-        desc = dir_cmd.name
-        if len(desc.strip()) > 0:
-            desc += " " * (32 - len(desc))
-            new_list.append(f"\xfd\0\xeb{dir_cmd.nmbr}\1\x23\0\xeb" + desc)
-    for btn in settings.buttons:
-        desc = btn.name
-        if len(desc.strip()) > 0:
-            desc += " " * (32 - len(desc))
-            new_list.append(f"\xff\0\xeb{9 + btn.nmbr}\1\x23\0\xeb" + desc)
-    for led in settings.leds:
-        desc = led.name
-        if len(desc.strip()) > 0:
-            desc += " " * (32 - len(desc))
-            new_list.append(f"\xff\0\xeb{17 + led.nmbr}\1\x23\0\xeb" + desc)
-    for inpt in settings.inputs:
-        desc = inpt.name
-        if len(desc.strip()) > 0:
-            desc += " " * (32 - len(desc))
-            new_list.append(f"\xff\0\xeb{39 + inpt.nmbr}\1\x23\0\xeb" + desc)
-    for outpt in settings.outputs:
-        desc = outpt.name
-        if len(desc.strip()) > 0:
-            desc += " " * (32 - len(desc))
-            new_list.append(f"\xff\0\xeb{59 + outpt.nmbr}\1\x23\0\xeb" + desc)
-    for lgc in settings.logic:
-        desc = lgc.name
-        desc += " " * (32 - len(desc))
-        new_list.append(f"\xff\0\xeb{109 + lgc.nmbr}\1\x23\0\xeb" + desc)
-    for flg in settings.flags:
-        desc = flg.name
-        desc += " " * (32 - len(desc))
-        new_list.append(f"\xff\0\xeb{119 + flg.nmbr}\1\x23\0\xeb" + desc)
-    no_lines = len(new_list) - 1
-    no_chars = 0
-    for line in new_list[1:]:
-        no_chars += len(line)
-    new_list[
-        0
-    ] = f"{chr(no_lines & 0xFF)}{chr(no_lines >> 8)}{chr(no_chars & 0xFF)}{chr(no_chars >> 8)}"
+# list_lines = format_smc(settings.list).split("\n")
+# new_list = []
+# new_line = ""
+# for lchr in list_lines[0].split(";")[:-1]:
+#     new_line += chr(int(lchr))
+# new_list.append(new_line)
+# for line in list_lines[1:]:
+#     if len(line) > 0:
+#         tok = line.split(";")
+#         if (tok[0] != "253") & (tok[0] != "255"):
+#             new_line = ""
+#             for lchr in line.split(";")[:-1]:
+#                 new_line += chr(int(lchr))
+#             new_list.append(new_line)
+# for dir_cmd in settings.dir_cmds:
+#     desc = dir_cmd.name
+#     if len(desc.strip()) > 0:
+#         desc += " " * (32 - len(desc))
+#         new_list.append(f"\xfd\0\xeb{dir_cmd.nmbr}\1\x23\0\xeb" + desc)
+# for btn in settings.buttons:
+#     desc = btn.name
+#     if len(desc.strip()) > 0:
+#         desc += " " * (32 - len(desc))
+#         new_list.append(f"\xff\0\xeb{9 + btn.nmbr}\1\x23\0\xeb" + desc)
+# for led in settings.leds:
+#     desc = led.name
+#     if len(desc.strip()) > 0:
+#         desc += " " * (32 - len(desc))
+#         new_list.append(f"\xff\0\xeb{17 + led.nmbr}\1\x23\0\xeb" + desc)
+# for inpt in settings.inputs:
+#     desc = inpt.name
+#     if len(desc.strip()) > 0:
+#         desc += " " * (32 - len(desc))
+#         new_list.append(f"\xff\0\xeb{39 + inpt.nmbr}\1\x23\0\xeb" + desc)
+# for outpt in settings.outputs:
+#     desc = outpt.name
+#     if len(desc.strip()) > 0:
+#         desc += " " * (32 - len(desc))
+#         new_list.append(f"\xff\0\xeb{59 + outpt.nmbr}\1\x23\0\xeb" + desc)
+# for lgc in settings.logic:
+#     desc = lgc.name
+#     desc += " " * (32 - len(desc))
+#     new_list.append(f"\xff\0\xeb{109 + lgc.nmbr}\1\x23\0\xeb" + desc)
+# for flg in settings.flags:
+#     desc = flg.name
+#     desc += " " * (32 - len(desc))
+#     new_list.append(f"\xff\0\xeb{119 + flg.nmbr}\1\x23\0\xeb" + desc)
+# no_lines = len(new_list) - 1
+# no_chars = 0
+# for line in new_list[1:]:
+#     no_chars += len(line)
+# new_list[
+#     0
+# ] = f"{chr(no_lines & 0xFF)}{chr(no_lines >> 8)}{chr(no_chars & 0xFF)}{chr(no_chars >> 8)}"
 
-    list_bytes = ""
-    for line in new_list:
-        list_bytes += line
-    list_bytes = list_bytes.encode("iso8859-1")
+# list_bytes = ""
+# for line in new_list:
+#     list_bytes += line
+# list_bytes = list_bytes.encode("iso8859-1")
 
-    module.list_upload = list_bytes
-    if ModbusComputeCRC(module.list_upload) != module.get_smc_crc():
-        await rtr.set_config_mode(True)
-        await module.hdlr.send_module_list(mod_addr)
-        await rtr.set_config_mode(False)
-        logger.info(f"Changed configuration list stored in module {mod_addr}")
-    else:
-        logger.debug(f"No changes in configuration list for module {mod_addr}")
-    module.list_upload = b""
+# module.list_upload = list_bytes
+# if ModbusComputeCRC(module.list_upload) != module.get_smc_crc():
+#     await rtr.set_config_mode(True)
+#     await module.hdlr.send_module_list(mod_addr)
+#     await rtr.set_config_mode(False)
+#     logger.info(f"Changed configuration list stored in module {mod_addr}")
+# else:
+#     logger.debug(f"No changes in configuration list for module {mod_addr}")
+# module.list_upload = b""
 
 
 def get_property_kind(props, io_keys, step):
@@ -932,11 +925,13 @@ def seperate_upload(upload_str: str) -> (bytes, bytes):
     lines = upload_str.split("\n")
     smg_bytes = b""
     for byt in lines[1].split(";"):
-        smg_bytes += int.to_bytes(int(byt))
+        if len(byt) > 0:
+            smg_bytes += int.to_bytes(int(byt))
     smc_bytes = b""
     for line in lines[2:]:
         for byt in line.split(";"):
-            smc_bytes += int.to_bytes(int(byt))
+            if len(byt) > 0:
+                smc_bytes += int.to_bytes(int(byt))
     return smg_bytes, smc_bytes
 
 
