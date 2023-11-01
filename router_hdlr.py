@@ -259,6 +259,14 @@ class RtHdlr(HdlrBase):
         await self.handle_router_cmd_resp(self.rt_id, cmd_str)
         return self.rt_msg._resp_msg
 
+    async def send_rt_mod_group(self, mod, grp):
+        """Send module group membership."""
+        cmd_str = RT_CMDS.SET_MOD_GROUP.replace("<mod>", chr(mod)).replace(
+            "<grp>", chr(grp)
+        )
+        await self.handle_router_cmd_resp(self.rt_id, cmd_str)
+        return self.rt_msg._resp_msg
+
     async def send_rt_group_deps(self):
         """Send router mode dependencies."""
         idx1 = self.rtr.self.status_idx[RtStatIIdx.GROUP_DEPEND]

@@ -944,6 +944,7 @@ select {
    accent-color: #C0372D;
 }
 
+
 input[type="text"],
 input[type="file"],
 input[type="password"],
@@ -962,6 +963,19 @@ select:focus {
    background: #fff;
    color: #C0372D;
    border: 1px solid #c0372d;
+}
+
+form.select,
+select {
+   background: url(design/input_shadow.gif) no-repeat left top;
+   height: 21.78px;
+   width: 184.78px;
+   padding-left: 3px;
+   margin-left: 10px;
+   border: 1px solid #C0372D;
+   padding-top: 2px;
+   margin-top: 0px;
+   margin-right: 0px;
 }
 
 /*input[type="text"] { background: url(design/formfeld_bg.gif) no-repeat left top; }*/

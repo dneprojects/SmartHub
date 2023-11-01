@@ -265,12 +265,24 @@ class HbtnModule:
         return self.settings
 
     async def set_module_settings(self, settings: ModuleSettings):
-        """Restore changed settings into module."""
+        """Restore changed settings from config server into module and re-initialize."""
         self.settings = settings
         self.status = settings.set_settings(self.status)
+        self.list_upload = settings.set_list()
         self.smg_upload = self.build_smg()
+        self.list = self.list_upload
         await self.hdlr.send_module_smg(self._id)
+        await self.hdlr.send_module_list(self._id)
         await self.hdlr.get_module_status(self._id)
+        self.comp_status = self.get_status(False)
+        self.calc_SMG_crc(self.build_smg())
+        self._name = (
+            self.status[MirrIdx.MOD_NAME : MirrIdx.MOD_NAME + 32]
+            .decode("iso8859-1")
+            .strip()
+        )
+        # self.list = await self.hdlr.get_module_list(self._id)
+        self.calc_SMC_crc(self.list)
 
     def get_io_properties(self) -> dict:
         """Return number of inputs, outputs, etc."""

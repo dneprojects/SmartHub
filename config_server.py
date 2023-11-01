@@ -3,7 +3,7 @@ from aiohttp import web
 from urllib.parse import parse_qs
 from multidict import MultiDict
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
-from module import HbtnModule
+from configuration import RouterSettings
 import logging
 import pathlib
 import re
@@ -29,22 +29,6 @@ class HubSettings:
         """Fill all properties with module's values."""
         self.name = hub._name
         self.typ = hub._typ
-
-
-class RouterSettings:
-    """Object with all module settings and changes."""
-
-    def __init__(self, router):
-        """Fill all properties with module's values."""
-        self.id = router._id
-        self.name = router._name
-        self.descriptions = router.descriptions
-        self.channels = router.channels
-        self.timeout = router.timeout
-        self.groups = router.groups
-        self.mode_dependencies = router.mode_dependencies
-        self.user_modes = router.user_modes
-        self.day_night = router.day_night
 
 
 class ConfigServer:
@@ -94,7 +78,9 @@ class ConfigServer:
         html_str = html_str.replace(
             "ContentText",
             "<h3>Eigenschaften</h3>\n<p>"
-            + api_srv.sm_hub.info.replace(" ", "&nbsp;&nbsp;").replace("\n", "</p>\n<p>")
+            + api_srv.sm_hub.info.replace(" ", "&nbsp;&nbsp;").replace(
+                "\n", "</p>\n<p>"
+            )
             + "</p>",
         )
         return web.Response(text=html_str, content_type="text/html")
@@ -256,6 +242,10 @@ async def show_next_prev(request, args):
             request.app["side_menu"] = adjust_side_menu(
                 request.app["api_srv"].routers[0].modules
             )
+            if settings.group != int(settings.group_member):
+                # group membership changed, update in router
+                rtr = request.app["api_srv"].routers[0]
+                await rtr.set_module_group(mod_addr, int(settings.group_member))
             return show_module_overview(request.app, mod_addr)
         else:
             # Save settings in router
@@ -547,6 +537,26 @@ def prepare_basic_settings(app, mod_addr, mod_type):
         indent(7)
         + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="name" type="text" id="{id_name}" value="{settings.name}"/></td></tr>\n'
     )
+    if mod_addr > 0:
+        id_name = "group_member"
+        prompt = "Gruppenzugehörigkeit"
+        tbl += (
+            indent(7)
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><select name="{id_name}" id="{id_name}">\n'
+        )
+        rtr = app["api_srv"].routers[0]
+        groups = rtr.groups
+        rt_settings = RouterSettings(rtr)
+        grps = rt_settings.groups
+        for grp in grps:
+            if grp.nmbr == settings.group:
+                tbl += (
+                    indent(8)
+                    + f'<option value="{grp.nmbr}" selected>{grp.name}</option>\n'
+                )
+            else:
+                tbl += indent(8) + f'<option value="{grp.nmbr}">{grp.name}</option>\n'
+        tbl += indent(7) + "/select></td></tr>\n"
     if settings.type in [
         "Smart Controller XL-1",
         "Smart Controller XL-2",
@@ -556,36 +566,65 @@ def prepare_basic_settings(app, mod_addr, mod_type):
         prompt = "Display-Kontrast"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="displ_contr" type="text" id="{id_name}" value="{settings.status[MirrIdx.DISPL_CONTR]}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="text" id="{id_name}" value="{settings.status[MirrIdx.DISPL_CONTR]}"/></td></tr>\n'
         )
         id_name = "displ_time"
         prompt = "Display-Leuchtzeit"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="displ_time" type="text" id="{id_name}" value="{settings.status[MirrIdx.MOD_LIGHT_TIM]}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="text" id="{id_name}" value="{settings.status[MirrIdx.MOD_LIGHT_TIM]}"/></td></tr>\n'
         )
         id_name = "temp_ctl"
         prompt = "Temperatur-Regelverhalten"
+        cl1_checked = ""
+        cl2_checked = ""
+        cl3_checked = ""
+        cl4_checked = ""
+        match settings.status[MirrIdx.CLIM_SETTINGS]:
+            case 1:
+                cl1_checked = "checked"
+            case 2:
+                cl2_checked = "checked"
+            case 3:
+                cl3_checked = "checked"
+            case 4:
+                cl4_checked = "checked"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="temp_ctl" type="text" id="{id_name}" value="{settings.status[MirrIdx.CLIM_SETTINGS]}"/></td></tr>\n'
+            + f'<td style="vertical-align: top;">{prompt}</td>'
+            + f'<td><div><label for="{id_name}_cl1">Heizen</label><input type="radio" name="{id_name}" id="{id_name}_cl1" value = "1" {cl1_checked}></div>'
+            + f'<div><label for="{id_name}_cl2">Kühlen</label><input type="radio" name="{id_name}" id="{id_name}_cl2" value = "2" {cl2_checked}></div>'
+            + f'<div><label for="{id_name}_cl3">Heizen / Kühlen</label><input type="radio" name="{id_name}" id="{id_name}_cl3" value = "3" {cl3_checked}></div>'
+            + f'<div><label for="{id_name}_cl4">Aus</label><input type="radio" name="{id_name}" id="{id_name}_cl4" value = "4" {cl4_checked}></div></td></tr>\n'
         )
         id_name = "temp_1_2"
         prompt = "Temperatursensor"
+        if settings.status[MirrIdx.TMP_CTL_MD] == 1:
+            s1_checked = "checked"
+            s2_checked = ""
+        else:
+            s1_checked = ""
+            s2_checked = "checked"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="temp_1_2" type="text" id="{id_name}" value="{settings.status[MirrIdx.TMP_CTL_MD]}"/></td></tr>\n'
+            + f'<td style="vertical-align: top;">{prompt}</td>'
+            + f'<td><div><label for="{id_name}_s1">Sensor 1</label><input type="radio" name="{id_name}" id="{id_name}_s1" value = "1" {s1_checked}></div>'
+            + f'<div><label for="{id_name}_s2">Sensor 2</label><input type="radio" name="{id_name}" id="{id_name}_s2" value = "2" {s2_checked}></div></td></tr>\n'
         )
     if settings.type in ["Smart Controller XL-1", "Smart Controller XL-2"]:
-        id_name = "supply"
-        prompt = "Versorgungspriorität 230V / 24V"
+        id_name = "supply_prio"
+        prompt = "Versorgungspriorität"
         if settings.status[MirrIdx.SUPPLY_PRIO] == 66:
-            sply_str = "24V"
+            v230_checked = ""
+            v24_checked = "checked"
         else:
-            sply_str = "230V"
+            v230_checked = "checked"
+            v24_checked = ""
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="supply_prio" type="text" id="{id_name}" value="{sply_str}"/></td></tr>\n'
+            + f'<td style="vertical-align: top;">{prompt}</td>'
+            + f'<td><div><label for="{id_name}_230">230V</label><input type="radio" name="{id_name}" id="{id_name}_230" value = "230" {v230_checked}></div>'
+            + f'<div><label for="{id_name}_24">24V</label><input type="radio" name="{id_name}" id="{id_name}_24" value = "24" {v24_checked}></div></td></tr>\n'
         )
     tbl += indent(5) + "</table>\n"
     tbl += indent(4) + "</form>\n"
@@ -653,7 +692,7 @@ def prepare_table(app, mod_addr, key) -> str:
         id_name = key[:-1] + str(ci + 1)
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},1000]" type="text" placeholder="Nummer eintragen" id="{id_name}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},1000]" type="text" placeholder="Neue Nummer eintragen" id="{id_name}"/></td></tr>\n'
         )
     tbl += indent(5) + "</table>\n"
     tbl += indent(4) + "</form>\n"
@@ -689,7 +728,6 @@ def parse_response_form(app, form_data):
                     else:
                         settings.inputs[indices[0]].type = 1
                 case "outputs":
-                    covers = getattr(app["settings"], "covers")
                     if form_data[form_key][0] == "cvr":
                         settings.outputs[indices[0]].type = -10
                         settings.outputs[indices[0] + 1].type = -10
@@ -749,92 +787,6 @@ def parse_response_form(app, form_data):
                             name += " " * (32 - len(name))
                         settings.__getattribute__(key)[indices[0]].name = name
     app["settings"] = settings
-
-
-# async def return_module_settings(app, mod_addr: int):
-#     """Collect modified settings and return them to modules."""
-#     settings = app["settings"]
-#     await settings.set_module_settings()
-# rtr = app["api_srv"].routers[0]
-# module = rtr.get_module(mod_addr)
-# logger = app["logger"]
-
-# module.status = settings.status
-# module.smg_upload = module.build_smg()
-# await rtr.set_config_mode(True)
-# await module.hdlr.send_module_smg(mod_addr)
-# await module.hdlr.get_module_status(mod_addr)
-# await rtr.set_config_mode(False)
-
-# list_lines = format_smc(settings.list).split("\n")
-# new_list = []
-# new_line = ""
-# for lchr in list_lines[0].split(";")[:-1]:
-#     new_line += chr(int(lchr))
-# new_list.append(new_line)
-# for line in list_lines[1:]:
-#     if len(line) > 0:
-#         tok = line.split(";")
-#         if (tok[0] != "253") & (tok[0] != "255"):
-#             new_line = ""
-#             for lchr in line.split(";")[:-1]:
-#                 new_line += chr(int(lchr))
-#             new_list.append(new_line)
-# for dir_cmd in settings.dir_cmds:
-#     desc = dir_cmd.name
-#     if len(desc.strip()) > 0:
-#         desc += " " * (32 - len(desc))
-#         new_list.append(f"\xfd\0\xeb{dir_cmd.nmbr}\1\x23\0\xeb" + desc)
-# for btn in settings.buttons:
-#     desc = btn.name
-#     if len(desc.strip()) > 0:
-#         desc += " " * (32 - len(desc))
-#         new_list.append(f"\xff\0\xeb{9 + btn.nmbr}\1\x23\0\xeb" + desc)
-# for led in settings.leds:
-#     desc = led.name
-#     if len(desc.strip()) > 0:
-#         desc += " " * (32 - len(desc))
-#         new_list.append(f"\xff\0\xeb{17 + led.nmbr}\1\x23\0\xeb" + desc)
-# for inpt in settings.inputs:
-#     desc = inpt.name
-#     if len(desc.strip()) > 0:
-#         desc += " " * (32 - len(desc))
-#         new_list.append(f"\xff\0\xeb{39 + inpt.nmbr}\1\x23\0\xeb" + desc)
-# for outpt in settings.outputs:
-#     desc = outpt.name
-#     if len(desc.strip()) > 0:
-#         desc += " " * (32 - len(desc))
-#         new_list.append(f"\xff\0\xeb{59 + outpt.nmbr}\1\x23\0\xeb" + desc)
-# for lgc in settings.logic:
-#     desc = lgc.name
-#     desc += " " * (32 - len(desc))
-#     new_list.append(f"\xff\0\xeb{109 + lgc.nmbr}\1\x23\0\xeb" + desc)
-# for flg in settings.flags:
-#     desc = flg.name
-#     desc += " " * (32 - len(desc))
-#     new_list.append(f"\xff\0\xeb{119 + flg.nmbr}\1\x23\0\xeb" + desc)
-# no_lines = len(new_list) - 1
-# no_chars = 0
-# for line in new_list[1:]:
-#     no_chars += len(line)
-# new_list[
-#     0
-# ] = f"{chr(no_lines & 0xFF)}{chr(no_lines >> 8)}{chr(no_chars & 0xFF)}{chr(no_chars >> 8)}"
-
-# list_bytes = ""
-# for line in new_list:
-#     list_bytes += line
-# list_bytes = list_bytes.encode("iso8859-1")
-
-# module.list_upload = list_bytes
-# if ModbusComputeCRC(module.list_upload) != module.get_smc_crc():
-#     await rtr.set_config_mode(True)
-#     await module.hdlr.send_module_list(mod_addr)
-#     await rtr.set_config_mode(False)
-#     logger.info(f"Changed configuration list stored in module {mod_addr}")
-# else:
-#     logger.debug(f"No changes in configuration list for module {mod_addr}")
-# module.list_upload = b""
 
 
 def get_property_kind(props, io_keys, step):

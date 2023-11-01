@@ -72,6 +72,7 @@ class HdlrBase:
         """Sends router command via serial interface and get response"""
         self.rt_msg = RtMessage(self, rt_no, cmd)
         await self.rt_msg.rt_send()
+        await asyncio.sleep(0.1)
         await self.rt_msg.rt_recv()
         return self.rt_msg._resp_msg
 

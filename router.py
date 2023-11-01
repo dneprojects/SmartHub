@@ -142,6 +142,7 @@ class HbtnRouter:
             current_mode = await self.hdlr.get_mode(0)
             if current_mode[0] != SYS_MODES.Config:
                 self.recent_mode = current_mode[0]
+            await self.api_srv.stop_api_mode(self._id)
             await self.hdlr.set_mode(0, SYS_MODES.Config)
             self._in_config_mode = True
             self.logger.debug("Set system to Config mode")
@@ -151,6 +152,13 @@ class HbtnRouter:
             self.logger.debug(
                 f"Set system back to mode {ord(new_mode.decode('iso8859-1')):#x}"
             )
+
+    async def set_module_group(self, mod: int, grp: int):
+        """Store new module group setting into router."""
+        self.groups = self.groups[:mod] + int.to_bytes(grp) + self.groups[mod + 1 :]
+        await self.set_config_mode(True)
+        await self.hdlr.send_rt_mod_group(mod, grp)
+        await self.set_config_mode(False)
 
     def save_descriptions(self):
         """Save descriptions to file."""

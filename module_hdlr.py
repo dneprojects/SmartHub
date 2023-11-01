@@ -40,6 +40,7 @@ class ModHdlr(HdlrBase):
 
     async def send_module_smg(self, mod_addr: int):
         """Send SMG data from Smart Hub to router/module."""
+        await self.set_config_mode(True)
         await self.set_module_name()
         await self.set_buttons_times()
         if int(self.mod._typ[0]) in [1, 0x32, 0x0B]:
@@ -81,6 +82,7 @@ class ModHdlr(HdlrBase):
             # GSM specific settings
             await self.set_pin()
             await self.set_logic_units()
+        await self.set_config_mode(False)
 
     async def get_module_list(self, mod_addr: int) -> bytes:
         """Get the module description and command list."""

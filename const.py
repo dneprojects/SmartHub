@@ -280,6 +280,7 @@ class RT_CMDS:
     SET_GRP_MODE = "\x2a<rtr>\x09\x89\x4f\x53<grp><md>\xff"
     GET_GRPS_MODE = "\x2a<rtr>\x07\x89\x4f\x01\xff"
     SET_GRPS_MODE = "\x2a<rtr>\x47\x89\x4f\x02<mds>\xff"  # len: 0x47 = 7 + 64
+    SET_MOD_GROUP = "\x2a<rtr>\x09\x89\x53<mod><grp>\xff"
 
     GET_RT_NAME = "\x2a<rtr>\x06\x67\x4c\xff"
     GET_RT_STATUS = "\x2a<rtr>\x06\x64L\xff"

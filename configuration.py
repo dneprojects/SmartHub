@@ -26,6 +26,7 @@ class ModuleSettings:
         self.get_names()
         self.get_settings()
         self.get_descriptions()
+        self.group = rtr.groups[self.id]
 
     def get_io_interfaces(self):
         """Parse config files to extract names, etc."""
@@ -58,7 +59,6 @@ class ModuleSettings:
         conf = self.status
         if conf == "":
             return False
-
         self.hw_version = (
             conf[MirrIdx.MOD_SERIAL : MirrIdx.MOD_SERIAL + 16]
             .decode("iso8859-1")
@@ -76,10 +76,14 @@ class ModuleSettings:
             conf[MirrIdx.SWMOD_1_8 : MirrIdx.SWMOD_1_8 + 3], "little"
         )
         for inp in self.inputs:
-            if inp_state & (0x01 << (inp.nmbr - 1)) > 0:
+            nmbr = inp.nmbr - 1 + len(self.buttons)
+            if inp_state & (0x01 << (nmbr)) > 0:
                 inp.type *= 2  # switch
 
         # pylint: disable-next=consider-using-enumerate
+        covr_pol = int.from_bytes(
+            conf[MirrIdx.COVER_POL : MirrIdx.COVER_POL + 2], "little"
+        )
         for c_idx in range(len(self.covers)):
             cm_idx = c_idx
             if self.type[:16] == "Smart Controller":
@@ -91,7 +95,8 @@ class ModuleSettings:
             ):  # binary flag for shutters
                 self.cover_times[c_idx] = int(conf[MirrIdx.COVER_T + cm_idx]) / 10
                 self.blade_times[c_idx] = int(conf[MirrIdx.BLAD_T + cm_idx]) / 10
-                polarity = (conf[MirrIdx.COVER_POL] & (0x01 << cm_idx) == 0) * 2 - 1
+                # polarity defined per output, 2 per cover
+                polarity = (covr_pol & (0x01 << (2 * cm_idx)) == 0) * 2 - 1
                 tilt = 1 + (self.blade_times[c_idx] > 0)
                 pol = polarity * tilt  # +-1 for shutters, +-2 for blinds
                 cname = self.outputs[2 * c_idx].name.strip()
@@ -121,19 +126,25 @@ class ModuleSettings:
             int.to_bytes(int(self.displ_time)),
             MirrIdx.MOD_LIGHT_TIM,
         )
-        if self.supply_prio == "24V":
-            byte_supply = b"B"
-        else:
-            byte_supply = b"A"
         status = replace_bytes(
             status,
-            byte_supply,
+            int.to_bytes(int(self.temp_ctl)),
+            MirrIdx.CLIM_SETTINGS,
+        )
+        if self.supply_prio == "230":
+            byte_supply_prio = b"N"
+        else:
+            byte_supply_prio = b"B"
+        status = replace_bytes(
+            status,
+            byte_supply_prio,
             MirrIdx.SUPPLY_PRIO,
         )
         inp_state = 0
+        no_btns = len(self.buttons)
         for inp in self.inputs:
             if abs(inp.type) > 1:  # switch
-                inp_state = inp_state | (0x01 << (inp.nmbr - 1))
+                inp_state = inp_state | (0x01 << (inp.nmbr + no_btns - 1))
         inp_bytes = (
             chr(inp_state & 0xFF)
             + chr((inp_state >> 8) & 0xFF)
@@ -143,6 +154,43 @@ class ModuleSettings:
             status,
             inp_bytes,
             MirrIdx.SWMOD_1_8,
+        )
+        outp_state = 0
+        covr_pol = 0
+        for c_idx in range(len(self.covers)):
+            cm_idx = c_idx
+            if self.type[:16] == "Smart Controller":
+                cm_idx -= 2
+                if cm_idx < 0:
+                    cm_idx += 5
+            if self.outputs[2 * c_idx].type == -10:
+                outp_state = outp_state | (0x01 << cm_idx)
+            status = replace_bytes(
+                status,
+                int.to_bytes(int(self.cover_times[c_idx] * 10)),
+                MirrIdx.COVER_T + cm_idx,
+            )
+            status = replace_bytes(
+                status,
+                int.to_bytes(int(self.blade_times[c_idx] * 10)),
+                MirrIdx.BLAD_T + cm_idx,
+            )
+            # Todo: Polaritiy bei RC, Cover 0 kommt nicht an, Cover 2-4 OK
+            if self.covers[c_idx].type < 0:
+                covr_pol = covr_pol | (0x01 << (2 * cm_idx))
+            else:
+                covr_pol = covr_pol | (0x01 << (2 + cm_idx + 1))
+
+        outp_bytes = (chr(outp_state & 0xFF)).encode("iso8859-1")
+        status = replace_bytes(
+            status,
+            outp_bytes,
+            MirrIdx.COVER_SETTINGS,
+        )
+        status = replace_bytes(
+            status,
+            f"{chr(covr_pol & 0xFF)}{chr(covr_pol >> 8)}".encode("iso8859-1"),
+            MirrIdx.COVER_POL,
         )
         return status
 
@@ -160,7 +208,7 @@ class ModuleSettings:
             line = conf[0:line_len]
             event_code = int(line[2])
             if event_code == 235:  # Beschriftung
-                text = line[8:-1]
+                text = line[8:]
                 text = text.decode("iso8859-1")
                 text = text.strip()
                 arg_code = int(line[3])
@@ -262,8 +310,12 @@ class ModuleSettings:
                     entry_no = int.from_bytes(resp[3:5], "little")
                     self.vis_cmds.append(IfDescriptor(entry_name, entry_no, 0))
                 elif int(line[2]) == 5:
-                    # logic element, if needed to fix unexpected error
-                    self.logic.append(IfDescriptor(entry_name, entry_no, 0))
+                    # logic element, needed if not stored in smc
+                    lgc_nbmrs = []
+                    for lgc in self.logic:
+                        lgc_nbmrs.append(lgc.nmbr)
+                    if not (entry_no in lgc_nbmrs):
+                        self.logic.append(IfDescriptor(entry_name, entry_no, 0))
                 # 6: Logik input: line[3] logic unit, line[4] input no
                 # elif int(line[2]) == 7:
                 # Group name
@@ -284,6 +336,86 @@ class ModuleSettings:
             self.properties["vis_cmds"] = len(self.vis_cmds)
             self.properties["no_keys"] += 1
             self.prop_keys.append("vis_cmds")
+
+    def format_smc(self, buf: bytes) -> str:
+        """Parse line structure and add ';' and linefeeds."""
+        no_lines = int.from_bytes(buf[:2], "little")
+        str_data = ""
+        for byt in buf[:4]:
+            str_data += f"{byt};"
+        str_data += "\n"
+        ptr = 4  # behind header with no of lines/chars
+        for l_idx in range(no_lines):
+            l_len = buf[ptr + 5] + 5
+            for byt in buf[ptr : ptr + l_len]:
+                str_data += f"{byt};"  # dezimal values, seperated with ';'
+            str_data += "\n"
+            ptr += l_len
+        return str_data
+
+    def set_list(self):
+        """Store config entries to list and send to module."""
+        list_lines = self.format_smc(self.list).split("\n")
+
+        new_list = []
+        new_line = ""
+        for lchr in list_lines[0].split(";")[:-1]:
+            new_line += chr(int(lchr))
+        new_list.append(new_line)
+        for line in list_lines[1:]:
+            if len(line) > 0:
+                tok = line.split(";")
+                if (tok[0] != "253") & (tok[0] != "255"):
+                    new_line = ""
+                    for lchr in line.split(";")[:-1]:
+                        new_line += chr(int(lchr))
+                    new_list.append(new_line)
+        for dir_cmd in self.dir_cmds:
+            desc = dir_cmd.name
+            if len(desc.strip()) > 0:
+                desc += " " * (32 - len(desc))
+                new_list.append(f"\xfd\0\xeb{chr(dir_cmd.nmbr)}\1\x23\0\xeb" + desc)
+        for btn in self.buttons:
+            desc = btn.name
+            if len(desc.strip()) > 0:
+                desc += " " * (32 - len(desc))
+                new_list.append(f"\xff\0\xeb{chr(9 + btn.nmbr)}\1\x23\0\xeb" + desc)
+        for led in self.leds:
+            desc = led.name
+            if len(desc.strip()) > 0:
+                desc += " " * (32 - len(desc))
+                new_list.append(f"\xff\0\xeb{chr(17 + led.nmbr)}\1\x23\0\xeb" + desc)
+        for inpt in self.inputs:
+            desc = inpt.name
+            if len(desc.strip()) > 0:
+                desc += " " * (32 - len(desc))
+                new_list.append(f"\xff\0\xeb{chr(39 + inpt.nmbr)}\1\x23\0\xeb" + desc)
+        for outpt in self.outputs:
+            desc = outpt.name
+            if len(desc.strip()) > 0:
+                desc += " " * (32 - len(desc))
+                new_list.append(f"\xff\0\xeb{chr(59 + outpt.nmbr)}\1\x23\0\xeb" + desc)
+        for lgc in self.logic:
+            desc = lgc.name
+            desc += " " * (32 - len(desc))
+            new_list.append(f"\xff\0\xeb{chr(109 + lgc.nmbr)}\1\x23\0\xeb" + desc)
+        for flg in self.flags:
+            desc = flg.name
+            desc += " " * (32 - len(desc))
+            new_list.append(f"\xff\0\xeb{chr(119 + flg.nmbr)}\1\x23\0\xeb" + desc)
+        no_lines = len(new_list) - 1
+        no_chars = 0
+        for line in new_list:
+            no_chars += len(line)
+        new_list[
+            0
+        ] = f"{chr(no_lines & 0xFF)}{chr(no_lines >> 8)}{chr(no_chars & 0xFF)}{chr(no_chars >> 8)}"
+
+        list_bytes = ""
+        for line in new_list:
+            list_bytes += line
+        list_bytes = list_bytes.encode("iso8859-1")
+        return list_bytes
 
 
 class RouterSettings:
