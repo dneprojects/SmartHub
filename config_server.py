@@ -509,7 +509,7 @@ def fill_settings_template(app, title, subtitle, step, settings, key: str) -> st
     else:
         if step == app["props"]["no_keys"]:
             page = disable_button("weiter", page)
-        settings_form = prepare_table(app, settings.id, key)
+        settings_form = prepare_table(app, settings.id, step, key)
     page = page.replace("<p>ContentText</p>", settings_form)
     return page
 
@@ -538,6 +538,7 @@ def prepare_basic_settings(app, mod_addr, mod_type):
         + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="name" type="text" id="{id_name}" value="{settings.name}"/></td></tr>\n'
     )
     if mod_addr > 0:
+        # Module
         id_name = "group_member"
         prompt = "Gruppenzugehörigkeit"
         tbl += (
@@ -557,6 +558,20 @@ def prepare_basic_settings(app, mod_addr, mod_type):
             else:
                 tbl += indent(8) + f'<option value="{grp.nmbr}">{grp.name}</option>\n'
         tbl += indent(7) + "/select></td></tr>\n"
+    else:
+        # Router
+        id_name = "user1_name"
+        prompt = "Benutzer Modus 1"
+        tbl += (
+            indent(7)
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="text" id="{id_name}" value="{settings.user1_name}"/>\n'
+        )
+        id_name = "user2_name"
+        prompt = "Benutzer Modus 2"
+        tbl += (
+            indent(7)
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="text" id="{id_name}" value="{settings.user2_name}"/>\n'
+        )
     if settings.type in [
         "Smart Controller XL-1",
         "Smart Controller XL-2",
@@ -566,13 +581,13 @@ def prepare_basic_settings(app, mod_addr, mod_type):
         prompt = "Display-Kontrast"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="text" id="{id_name}" value="{settings.status[MirrIdx.DISPL_CONTR]}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="0" max="50" id="{id_name}" value="{settings.status[MirrIdx.DISPL_CONTR]}"/></td></tr>\n'
         )
         id_name = "displ_time"
         prompt = "Display-Leuchtzeit"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="text" id="{id_name}" value="{settings.status[MirrIdx.MOD_LIGHT_TIM]}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="1" max="240" id="{id_name}" value="{settings.status[MirrIdx.MOD_LIGHT_TIM]}"/></td></tr>\n'
         )
         id_name = "temp_ctl"
         prompt = "Temperatur-Regelverhalten"
@@ -631,7 +646,7 @@ def prepare_basic_settings(app, mod_addr, mod_type):
     return tbl
 
 
-def prepare_table(app, mod_addr, key) -> str:
+def prepare_table(app, mod_addr, step, key) -> str:
     """Prepare settings table with form of edit fields."""
     # action="settings_update-{mod_addr}-{key}"
     key_prompt = app["prompt"]
@@ -642,9 +657,15 @@ def prepare_table(app, mod_addr, key) -> str:
         indent(4) + f'<form id="settings_table" action="settings_step" method="post">\n'
     )
     tbl += "\n" + indent(5) + "<table>\n"
+
+    tbl_enries = dict()
     for ci in range(len(tbl_data)):
+        tbl_enries.update({tbl_data[ci].nmbr: ci})
+    tbl_enries = sorted(tbl_enries.items())
+    for entry in tbl_enries:
+        ci = entry[1]
         id_name = key[:-1] + str(ci)
-        prompt = key_prompt + f" {tbl_data[ci].nmbr}"
+        prompt = key_prompt + f"&nbsp;{tbl_data[ci].nmbr}"
         if key in ["leds", "buttons", "dir_cmds"]:
             maxl = 18
         else:
@@ -654,7 +675,7 @@ def prepare_table(app, mod_addr, key) -> str:
             + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" type="text" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci].name[:maxl].strip()}"></td>'
         )
         if key in ["leds", "buttons", "dir_cmds"]:
-            tbl += f'<td></td><td><input name="data[{ci},1]" type="text" id="{id_name}" maxlength="14" value="{tbl_data[ci].name[18:].strip()}"></td>'
+            tbl += f'<td><input name="data[{ci},1]" type="text" id="{id_name}" maxlength="14" value="{tbl_data[ci].name[18:].strip()}"></td>'
         elif key == "inputs":
             if tbl_data[ci].type == 1:
                 btn_checked = "checked"
@@ -685,14 +706,75 @@ def prepare_table(app, mod_addr, key) -> str:
                 tbl += f'<td></td><td><input name="data[{ci},1]" type="text" id="{id_name}_tc" maxlength="4" placeholder="Verfahrzeit in s" value = {cov_t[ci]} style="width: 40px;"></td>'
                 tbl += f'<td></td><td><input name="data[{ci},2]" type="text" id="{id_name}_tb" maxlength="4" placeholder="Jalousiezeit in s (0 falls Rollladen)" value = {bld_t[ci]} style="width: 40px;"></td>'
                 tbl += f'<td><input type="checkbox" name="data[{ci},3]" value="pol_nrm" id="{id_name}_pinv" {ipol_chkd}><label for="{id_name}_pinv">Polarität, Ausg. A: auf</label></td>'
+        elif key == "groups":
+            if tbl_data[ci].nmbr != 0:
+                id_name = "group_dep"
+                prompt = "Abhängig von Gruppe 0"
+                tbl += (
+                    indent(7)
+                    + f'<td><label for="{id_name}" style="margin-left: 10px;">{prompt}</label></td><td><select name="data[{ci},1]" id="{id_name}">\n'
+                )
+                dep_names = ["Keine", "Tag/Nacht", "Alarm", "Tag/Nacht, Alarm"]
+                for dep in range(4):
+                    if dep == app["settings"].mode_dependencies[tbl_data[ci].nmbr]:
+                        tbl += (
+                            indent(8)
+                            + f'<option value="{dep}" selected>{dep_names[dep]}</option>\n'
+                        )
+                    else:
+                        tbl += (
+                            indent(8)
+                            + f'<option value="{dep}">{dep_names[dep]}</option>\n'
+                        )
+                tbl += indent(7) + "/select></td>\n"
         tbl += "</tr>\n"
-    if key in ["glob_flags", "flags", "groups", "dir_cmds", "coll_cmds"]:
-        # Add additional line to append
-        prompt = "Zusatz" + key_prompt[:1].lower() + key_prompt[1:]
+    if key in ["glob_flags", "flags", "groups", "dir_cmds", "coll_cmds", "logic"]:
+        # Add additional line to append or delete element
+        prompt = key_prompt
         id_name = key[:-1] + str(ci + 1)
+        elem_nmbrs = []
+        for elem in tbl_data:
+            elem_nmbrs.append(elem.nmbr)
+        elem_nmbrs = sorted(elem_nmbrs)
+        min_new = max(elem_nmbrs) + 1
+        for n_idx in range(len(elem_nmbrs) - 1):
+            if (elem_nmbrs[n_idx] + 1) != elem_nmbrs[n_idx + 1]:
+                min_new = elem_nmbrs[n_idx] + 1
+                break
+        min_del = min(elem_nmbrs)
+        max_del = max(elem_nmbrs)
+        if key in ["glob_flags", "flags"]:
+            max_new = 16
+        elif key in ["dir_cmds"]:
+            max_new = 25
+        elif key in ["groups"]:
+            max_new = 64
+            min_del = max(1, min_del)
+        elif key in ["coll_cmds"]:
+            max_new = 255
+        elif key in ["logic"]:
+            max_new = 10
+        tbl += indent(7) + "<tr><td>&nbsp;</td></tr>"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},1000]" type="text" placeholder="Neue Nummer eintragen" id="{id_name}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},1000]" type="number" min="{min_new}" max="{max_new}" placeholder="Neue Nummer eintragen" id="{id_name}"/></td>\n'
+        )
+        tbl += (
+            indent(7)
+            + f'<td><button name="ModSettings" class="new_button" id="config_button" type="submit" form="settings_table" value="new-{mod_addr}-{step}">anlegen</button></td>\n'
+            + indent(7)
+            + "</tr>\n"
+        )
+
+        tbl += (
+            indent(7)
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},1001]" type="number" min="{min_del}" max="{max_del}" placeholder="Existierende Nummer eintragen" id="{id_name}"/></td>\n'
+        )
+        tbl += (
+            indent(7)
+            + f'<td><button name="ModSettings" class="new_button" id="config_button" type="submit" form="settings_table" value="del-{mod_addr}-{step}">entfernen</button></td>\n'
+            + indent(7)
+            + "</tr>\n"
         )
     tbl += indent(5) + "</table>\n"
     tbl += indent(4) + "</form>\n"
@@ -720,7 +802,15 @@ def parse_response_form(app, form_data):
             settings.__getattribute__(key).append(
                 IfDescriptor("New", int(form_data[form_key][0]), 0)
             )
-        if (len(indices) > 1) & (indices[1] != 1000):
+        elif indices[1] == 1001:
+            # remove element
+            idx = 0
+            for elem in settings.__getattribute__(key):
+                if elem.nmbr == int(form_data[form_key][0]):
+                    del settings.__getattribute__(key)[idx]
+                    break
+                idx += 1
+        if (len(indices) > 1) & (indices[1] != 1000) & (indices[1] != 1001):
             match app["key"]:
                 case "inputs":
                     if form_data[form_key][0] == "sw":
@@ -732,7 +822,7 @@ def parse_response_form(app, form_data):
                         settings.outputs[indices[0]].type = -10
                         settings.outputs[indices[0] + 1].type = -10
                         if settings.covers[int(indices[0] / 2)].type == 0:
-                            # needs new setting (polaritiy, blades)
+                            # needs new setting (polarity, blades)
                             settings.covers[int(indices[0] / 2)].type = 1
                             cvr_name = (
                                 settings.outputs[indices[0]]
@@ -757,6 +847,28 @@ def parse_response_form(app, form_data):
                             settings.covers[indices[0]].type = abs(
                                 settings.covers[indices[0]].type
                             ) * (-1)
+                        # names
+                        settings.covers[indices[0]].name = form_data[form_key][0]
+                        if (
+                            settings.outputs[2 * indices[0]].name[
+                                : len(form_data[form_key][0])
+                            ]
+                            != form_data[form_key][0]
+                        ):
+                            if settings.covers[indices[0]].type > 0:
+                                settings.outputs[2 * indices[0]].name = (
+                                    form_data[form_key][0] + " auf"
+                                )
+                                settings.outputs[2 * indices[0] + 1].name = (
+                                    form_data[form_key][0] + " ab"
+                                )
+                            else:
+                                settings.outputs[2 * indices[0]].name = (
+                                    form_data[form_key][0] + " ab"
+                                )
+                                settings.outputs[2 * indices[0] + 1].name = (
+                                    form_data[form_key][0] + " auf"
+                                )
                     elif indices[1] == 1:
                         settings.cover_times[indices[0]] = float(form_data[form_key][0])
                     elif indices[1] == 2:
@@ -786,6 +898,13 @@ def parse_response_form(app, form_data):
                             name = form_data[form_key][0]
                             name += " " * (32 - len(name))
                         settings.__getattribute__(key)[indices[0]].name = name
+                case "groups":
+                    if (indices[0] > 0) & (indices[1] == 1):
+                        settings.mode_dependencies = (
+                            settings.mode_dependencies[: indices[0]]
+                            + int.to_bytes(int(form_data[form_key][0]))
+                            + settings.mode_dependencies[indices[0] + 1 :]
+                        )
     app["settings"] = settings
 
 

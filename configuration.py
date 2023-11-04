@@ -72,6 +72,11 @@ class ModuleSettings:
         self.supply_prio = conf[MirrIdx.SUPPLY_PRIO]
         self.displ_contr = conf[MirrIdx.DISPL_CONTR]
         self.displ_time = conf[MirrIdx.MOD_LIGHT_TIM]
+        self.temp_ctl = conf[MirrIdx.CLIM_SETTINGS]
+        self.temp_1_2 = conf[MirrIdx.TMP_CTL_MD]
+        self.t_short = self.status[MirrIdx.T_SHORT] / 100
+        self.t_long = self.status[MirrIdx.T_LONG] / 10
+        self.t_dimm = self.status[MirrIdx.T_DIM]
         inp_state = int.from_bytes(
             conf[MirrIdx.SWMOD_1_8 : MirrIdx.SWMOD_1_8 + 3], "little"
         )
@@ -130,6 +135,26 @@ class ModuleSettings:
             status,
             int.to_bytes(int(self.temp_ctl)),
             MirrIdx.CLIM_SETTINGS,
+        )
+        status = replace_bytes(
+            status,
+            int.to_bytes(int(self.temp_1_2)),
+            MirrIdx.TMP_CTL_MD,
+        )
+        status = replace_bytes(
+            status,
+            int.to_bytes(int(float(self.t_short * 100))),
+            MirrIdx.T_SHORT,
+        )
+        status = replace_bytes(
+            status,
+            int.to_bytes(int(float(self.t_long) * 10)),
+            MirrIdx.T_LONG,
+        )
+        status = replace_bytes(
+            status,
+            int.to_bytes(int(self.t_dimm)),
+            MirrIdx.T_DIM,
         )
         if self.supply_prio == "230":
             byte_supply_prio = b"N"
@@ -192,6 +217,20 @@ class ModuleSettings:
             f"{chr(covr_pol & 0xFF)}{chr(covr_pol >> 8)}".encode("iso8859-1"),
             MirrIdx.COVER_POL,
         )
+
+        # Clear all logic entries mode
+        for l_idx in range(10):
+            status = replace_bytes(
+                status,
+                b"\0",
+                MirrIdx.LOGIC + 3 * l_idx,
+            )
+        for lgk in self.logic:
+            status = replace_bytes(
+                status,
+                int.to_bytes(lgk.type),
+                MirrIdx.LOGIC + 3 * (lgk.nmbr - 1),
+            )
         return status
 
     def get_names(self) -> bool:
@@ -225,7 +264,7 @@ class ModuleSettings:
                     try:
                         if arg_code in range(10, 18):
                             if self.type == "Smart Controller Mini":
-                                if arg_code in range(11, 12):
+                                if arg_code in range(10, 12):
                                     self.buttons[arg_code - 10] = IfDescriptor(
                                         text, arg_code - 9, 1
                                     )
@@ -245,7 +284,7 @@ class ModuleSettings:
                         elif arg_code in range(40, 50):
                             # Description of Inputs
                             if self.type == "Smart Controller Mini":
-                                if arg_code >= 44:
+                                if arg_code in range(44, 48):
                                     self.inputs[arg_code - 44].name = text
                                     self.inputs[arg_code - 44].nmbr = arg_code - 43
                             else:
@@ -410,7 +449,6 @@ class ModuleSettings:
         new_list[
             0
         ] = f"{chr(no_lines & 0xFF)}{chr(no_lines >> 8)}{chr(no_chars & 0xFF)}{chr(no_chars >> 8)}"
-
         list_bytes = ""
         for line in new_list:
             list_bytes += line
@@ -432,7 +470,7 @@ class RouterSettings:
         self.logger = logging.getLogger(__name__)
         self.channels = rtr.channels
         self.timeout = rtr.timeout
-        self.groups = rtr.groups
+        # self.groups = rtr.groups
         self.mode_dependencies = rtr.mode_dependencies
         self.user_modes = rtr.user_modes
         self.serial = rtr.serial

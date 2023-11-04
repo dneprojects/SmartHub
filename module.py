@@ -268,9 +268,9 @@ class HbtnModule:
         """Restore changed settings from config server into module and re-initialize."""
         self.settings = settings
         self.status = settings.set_settings(self.status)
-        self.list_upload = settings.set_list()
+        self.list = settings.set_list()
+        self.list_upload = self.list
         self.smg_upload = self.build_smg()
-        self.list = self.list_upload
         await self.hdlr.send_module_smg(self._id)
         await self.hdlr.send_module_list(self._id)
         await self.hdlr.get_module_status(self._id)

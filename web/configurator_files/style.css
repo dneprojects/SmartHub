@@ -692,6 +692,17 @@ body.produkte.sub #right .ce_text a {
    margin-right: 40px;
    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
    font: 11px arial, helvetica, clean, sans-serif;
+
+}
+
+#config_button.new_button {
+   height: 21.78px;
+   width: 70px;
+   margin-left: 10px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+   border: 1px solid #C0372D;
 }
 
 #file_button {
@@ -924,6 +935,7 @@ body.kontakt table td.explanation {
 }
 
 input[type="text"],
+input[type="number"],
 input[type="file"],
 input[type="password"],
 textarea,
@@ -946,6 +958,7 @@ select {
 
 
 input[type="text"],
+input[type="number"],
 input[type="file"],
 input[type="password"],
 select {
@@ -955,6 +968,7 @@ select {
 }
 
 input[type="text"]:focus,
+input[type="number"]:focus,
 input[type="file"]:focus,
 input[type="password"]:focus,
 textarea:focus,
@@ -963,6 +977,12 @@ select:focus {
    background: #fff;
    color: #C0372D;
    border: 1px solid #c0372d;
+}
+
+#group_dep,
+select {
+   background: url(design/input_shadow.gif) no-repeat left top;
+   width: 110px;
 }
 
 form.select,

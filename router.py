@@ -1,5 +1,6 @@
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from os.path import isfile
+import asyncio
 from const import SYS_MODES, RT_STAT_CODES, DATA_FILES_DIR
 from router_hdlr import RtHdlr
 from module import HbtnModule
@@ -143,6 +144,7 @@ class HbtnRouter:
             if current_mode[0] != SYS_MODES.Config:
                 self.recent_mode = current_mode[0]
             await self.api_srv.stop_api_mode(self._id)
+            await asyncio.sleep(0.1)
             await self.hdlr.set_mode(0, SYS_MODES.Config)
             self._in_config_mode = True
             self.logger.debug("Set system to Config mode")
@@ -240,11 +242,11 @@ class HbtnRouter:
         """Return number of flags, commands, etc."""
 
         props: dict = {}
+        props["groups"] = 16
         props["glob_flags"] = 16
         props["coll_cmds"] = 16
-        props["groups"] = 16
 
-        keys = ["glob_flags", "coll_cmds", "groups"]
+        keys = ["groups", "glob_flags", "coll_cmds"]
         no_keys = 0
         for key in keys:
             if props[key] > 0:

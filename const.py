@@ -544,10 +544,10 @@ class MirrIdx:
     COVER_INTERP = 178  # 178 .. 185 1..8
     LOGIC = 186  # type, max_cnt, val;    logic 1..10
     COUNTER_TYP = 186  # type, 5 for counter
-    COUNTER_MAX = 187  # max_cnt
-    COUNTER_VAL = 188  # cnt val
-    LOGIC_OUT = 216  # 1..8, 217 9..16
-    FLAG_LOC = 218  # 1..8, 219 9..16
+    COUNTER_MAX = 187  # max_cnt; max_inputs
+    COUNTER_VAL = 188  # cnt val; input state for gates
+    LOGIC_OUT = 216  # 1..8, 217 9..10 for logic gates
+    FLAG_LOC = 218  # 1..8, 219 9..10
     STAT_AD24_ACTIVE = 220  # in24 used as AD input
     PWR_ID = 221  # power unit id
     DIMM_MODE = 222  # dimm mode
