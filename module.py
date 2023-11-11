@@ -207,22 +207,27 @@ class HbtnModule:
         cv_times = ""
         bl_times = ""
         for ci in range(8):
-            t_cover = round(
-                self.status[MirrIdx.COVER_T + ci]
-                * self.status[MirrIdx.COVER_INTERP + ci]
-                / 10
-            )
-            t_blind = self.status[MirrIdx.BLAD_T + ci]
+            try:
+                t_cover = round(
+                    self.status[MirrIdx.COVER_T + ci]
+                    * self.status[MirrIdx.COVER_INTERP + ci]
+                    / 10
+                )
+                t_blind = self.status[MirrIdx.BLAD_T + ci]
 
-            pol_mask = int.from_bytes(
-                self.status[MirrIdx.COVER_POL : MirrIdx.COVER_POL + 2], "little"
-            )
-            if pol_mask & (1 << (2 * ci)) > 0:
-                cv_times += chr(t_cover) + chr(0)
-                bl_times += chr(t_blind) + chr(0)
-            else:
-                cv_times += chr(0) + chr(t_cover)
-                bl_times += chr(0) + chr(t_blind)
+                pol_mask = int.from_bytes(
+                    self.status[MirrIdx.COVER_POL : MirrIdx.COVER_POL + 2], "little"
+                )
+                if pol_mask & (1 << (2 * ci)) > 0:
+                    cv_times += chr(t_cover) + chr(0)
+                    bl_times += chr(t_blind) + chr(0)
+                else:
+                    cv_times += chr(0) + chr(t_cover)
+                    bl_times += chr(0) + chr(t_blind)
+            except Exception as err_msg:
+                self.logger.error(f"Error calculating cover times of module {self._id} no {ci}: {err_msg}")
+                cv_times += chr(0) + chr(0)
+                bl_times += chr(0) + chr(0)
 
         return cv_times.encode("iso8859-1") + bl_times.encode("iso8859-1")
 
@@ -264,10 +269,10 @@ class HbtnModule:
         self.settings = ModuleSettings(self, self.rt)
         return self.settings
 
-    async def set_module_settings(self, settings: ModuleSettings):
+    async def set_settings(self, settings: ModuleSettings):
         """Restore changed settings from config server into module and re-initialize."""
         self.settings = settings
-        self.status = settings.set_settings(self.status)
+        self.status = settings.set_module_settings(self.status)
         self.list = settings.set_list()
         self.list_upload = self.list
         self.smg_upload = self.build_smg()
@@ -302,6 +307,10 @@ class HbtnModule:
                 props["outputs_relais"] = 1
                 props["leds"] = 8
                 props["covers"] = 5
+                props["logic"] = 10
+                props["flags"] = 16
+                props["dir_cmds"] = 25
+                props["vis_cmds"] = 16
             case 10:
                 match type_code[1]:
                     case 1 | 50 | 51:
@@ -316,6 +325,10 @@ class HbtnModule:
                         props["outputs_24V"] = 0
                         props["outputs_relais"] = 8
                         props["covers"] = 4
+                        props["logic"] = 10
+                        props["flags"] = 16
+                        props["dir_cmds"] = 0
+                        props["vis_cmds"] = 16
                     case 2:
                         props["buttons"] = 0
                         props["leds"] = 0
@@ -328,6 +341,10 @@ class HbtnModule:
                         props["outputs_24V"] = 0
                         props["outputs_relais"] = 0
                         props["covers"] = 4
+                        props["logic"] = 10
+                        props["flags"] = 16
+                        props["dir_cmds"] = 0
+                        props["vis_cmds"] = 16
                     case 20 | 21 | 22:
                         props["buttons"] = 0
                         props["leds"] = 0
@@ -340,6 +357,10 @@ class HbtnModule:
                         props["outputs_24V"] = 0
                         props["outputs_relais"] = 0
                         props["covers"] = 0
+                        props["logic"] = 10
+                        props["flags"] = 16
+                        props["dir_cmds"] = 0
+                        props["vis_cmds"] = 16
             case 11:
                 match type_code[1]:
                     case 1:
@@ -354,6 +375,10 @@ class HbtnModule:
                         props["outputs_24V"] = 0
                         props["outputs_relais"] = 0
                         props["covers"] = 0
+                        props["logic"] = 0
+                        props["flags"] = 0
+                        props["dir_cmds"] = 0
+                        props["vis_cmds"] = 0
                     case 30 | 31:
                         props["buttons"] = 0
                         props["leds"] = 0
@@ -366,6 +391,10 @@ class HbtnModule:
                         props["outputs_24V"] = 0
                         props["outputs_relais"] = 0
                         props["covers"] = 0
+                        props["logic"] = 0
+                        props["flags"] = 0
+                        props["dir_cmds"] = 0
+                        props["vis_cmds"] = 0
             case 20:
                 props["buttons"] = 0
                 props["leds"] = 0
@@ -378,6 +407,10 @@ class HbtnModule:
                 props["outputs_24V"] = 0
                 props["outputs_relais"] = 0
                 props["covers"] = 0
+                props["logic"] = 0
+                props["flags"] = 0
+                props["dir_cmds"] = 0
+                props["vis_cmds"] = 0
             case 30:
                 props["buttons"] = 0
                 props["leds"] = 0
@@ -390,6 +423,10 @@ class HbtnModule:
                 props["outputs_24V"] = 0
                 props["outputs_relais"] = 0
                 props["covers"] = 0
+                props["logic"] = 0
+                props["flags"] = 0
+                props["dir_cmds"] = 0
+                props["vis_cmds"] = 0
             case 50:
                 props["buttons"] = 2
                 props["leds"] = 4
@@ -402,6 +439,10 @@ class HbtnModule:
                 props["outputs_24V"] = 2
                 props["outputs_relais"] = 0
                 props["covers"] = 0
+                props["logic"] = 10
+                props["flags"] = 16
+                props["dir_cmds"] = 0
+                props["vis_cmds"] = 16
             case 80:
                 props["buttons"] = 0
                 props["leds"] = 0
@@ -414,10 +455,14 @@ class HbtnModule:
                 props["outputs_24V"] = 0
                 props["outputs_relais"] = 0
                 props["covers"] = 0
-        props["logic"] = 0
-        props["flags"] = 0
-        props["dir_cmds"] = 0
-        props["vis_cmds"] = 0
+                props["logic"] = 0
+                props["flags"] = 0
+                props["dir_cmds"] = 0
+                props["vis_cmds"] = 0
+                props["logic"] = 0
+                props["flags"] = 0
+                props["dir_cmds"] = 0
+                props["vis_cmds"] = 0
 
         keys = [
             "buttons",
@@ -425,6 +470,9 @@ class HbtnModule:
             "inputs",
             "outputs",
             "covers",
+            "logic",
+            "flags",
+            "dir_cmds",
         ]
         no_keys = 0
         for key in keys:

@@ -238,17 +238,23 @@ async def show_next_prev(request, args):
     if button == "save":
         if mod_addr > 0:
             module = request.app["api_srv"].routers[0].get_module(mod_addr)
-            await module.set_module_settings(settings)
+            await module.set_settings(settings)
             request.app["side_menu"] = adjust_side_menu(
                 request.app["api_srv"].routers[0].modules
             )
             if settings.group != int(settings.group_member):
                 # group membership changed, update in router
-                rtr = request.app["api_srv"].routers[0]
-                await rtr.set_module_group(mod_addr, int(settings.group_member))
+                router = request.app["api_srv"].routers[0]
+                await router.set_module_group(mod_addr, int(settings.group_member))
             return show_module_overview(request.app, mod_addr)
         else:
             # Save settings in router
+            router = request.app["api_srv"].routers[0]
+            await router.set_settings(settings)
+            router.set_descriptions(settings)
+            request.app["side_menu"] = adjust_side_menu(
+                request.app["api_srv"].routers[0].modules
+            )
             return show_router_overview(request.app)
     props = settings.properties
     request.app["props"] = props
@@ -535,7 +541,7 @@ def prepare_basic_settings(app, mod_addr, mod_type):
         prompt = "Routername"
     tbl += (
         indent(7)
-        + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="name" type="text" id="{id_name}" value="{settings.name}"/></td></tr>\n'
+        + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="name" type="text" maxlength="32" id="{id_name}" value="{settings.name}"/></td></tr>\n'
     )
     if mod_addr > 0:
         # Module
@@ -564,13 +570,13 @@ def prepare_basic_settings(app, mod_addr, mod_type):
         prompt = "Benutzer Modus 1"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="text" id="{id_name}" value="{settings.user1_name}"/>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="text" maxlength="10" id="{id_name}" value="{settings.user1_name}"/>\n'
         )
         id_name = "user2_name"
         prompt = "Benutzer Modus 2"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="text" id="{id_name}" value="{settings.user2_name}"/>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="text" maxlength="10" id="{id_name}" value="{settings.user2_name}"/>\n'
         )
     if settings.type in [
         "Smart Controller XL-1",
@@ -581,13 +587,13 @@ def prepare_basic_settings(app, mod_addr, mod_type):
         prompt = "Display-Kontrast"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="0" max="50" id="{id_name}" value="{settings.status[MirrIdx.DISPL_CONTR]}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="0" max="50" id="{id_name}" value="{settings.displ_contr}"/></td></tr>\n'
         )
         id_name = "displ_time"
         prompt = "Display-Leuchtzeit"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="1" max="240" id="{id_name}" value="{settings.status[MirrIdx.MOD_LIGHT_TIM]}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="1" max="240" id="{id_name}" value="{settings.displ_time}"/></td></tr>\n'
         )
         id_name = "temp_ctl"
         prompt = "Temperatur-Regelverhalten"
@@ -662,6 +668,7 @@ def prepare_table(app, mod_addr, step, key) -> str:
     for ci in range(len(tbl_data)):
         tbl_enries.update({tbl_data[ci].nmbr: ci})
     tbl_enries = sorted(tbl_enries.items())
+    ci = 0
     for entry in tbl_enries:
         ci = entry[1]
         id_name = key[:-1] + str(ci)
@@ -736,19 +743,24 @@ def prepare_table(app, mod_addr, step, key) -> str:
         for elem in tbl_data:
             elem_nmbrs.append(elem.nmbr)
         elem_nmbrs = sorted(elem_nmbrs)
-        min_new = max(elem_nmbrs) + 1
-        for n_idx in range(len(elem_nmbrs) - 1):
-            if (elem_nmbrs[n_idx] + 1) != elem_nmbrs[n_idx + 1]:
-                min_new = elem_nmbrs[n_idx] + 1
-                break
-        min_del = min(elem_nmbrs)
-        max_del = max(elem_nmbrs)
+        if len(elem_nmbrs) > 0:
+            min_new = max(elem_nmbrs) + 1
+            for n_idx in range(len(elem_nmbrs) - 1):
+                if (elem_nmbrs[n_idx] + 1) != elem_nmbrs[n_idx + 1]:
+                    min_new = elem_nmbrs[n_idx] + 1
+                    break
+            min_del = min(elem_nmbrs)
+            max_del = max(elem_nmbrs)
+        else:
+            min_new = 1
+            min_del = 1
+            max_del = 0
         if key in ["glob_flags", "flags"]:
             max_new = 16
         elif key in ["dir_cmds"]:
             max_new = 25
         elif key in ["groups"]:
-            max_new = 64
+            max_new = 80
             min_del = max(1, min_del)
         elif key in ["coll_cmds"]:
             max_new = 255
@@ -799,9 +811,19 @@ def parse_response_form(app, form_data):
             ]
         elif indices[1] == 1000:
             # add element
-            settings.__getattribute__(key).append(
-                IfDescriptor("New", int(form_data[form_key][0]), 0)
-            )
+            entry_found = False
+            for elem in settings.__getattribute__(key):
+                if elem.nmbr == int(form_data[form_key][0]):
+                    entry_found = True
+                    break
+            if not entry_found:
+                settings.__getattribute__(key).append(
+                    IfDescriptor(
+                        f"{key}_{int(form_data[form_key][0])}",
+                        int(form_data[form_key][0]),
+                        0,
+                    )
+                )
         elif indices[1] == 1001:
             # remove element
             idx = 0
@@ -900,10 +922,14 @@ def parse_response_form(app, form_data):
                         settings.__getattribute__(key)[indices[0]].name = name
                 case "groups":
                     if (indices[0] > 0) & (indices[1] == 1):
+                        if indices[0] == 1:
+                            # Empty dependencies
+                            settings.mode_dependencies = b"P" + b"\0" * 80
+                        grp_nmbr = settings.__getattribute__(key)[int(indices[0])].nmbr
                         settings.mode_dependencies = (
-                            settings.mode_dependencies[: indices[0]]
+                            settings.mode_dependencies[:grp_nmbr]
                             + int.to_bytes(int(form_data[form_key][0]))
-                            + settings.mode_dependencies[indices[0] + 1 :]
+                            + settings.mode_dependencies[grp_nmbr + 1 :]
                         )
     app["settings"] = settings
 
@@ -995,11 +1021,11 @@ def seperate_upload(upload_str: str) -> (bytes, bytes):
     """Seperate smg and list from data, remove ';' and lf, and convert to bytes"""
     lines = upload_str.split("\n")
     smg_bytes = b""
-    for byt in lines[1].split(";"):
+    for byt in lines[0].split(";"):
         if len(byt) > 0:
             smg_bytes += int.to_bytes(int(byt))
     smc_bytes = b""
-    for line in lines[2:]:
+    for line in lines[1:]:
         for byt in line.split(";"):
             if len(byt) > 0:
                 smc_bytes += int.to_bytes(int(byt))
@@ -1026,10 +1052,20 @@ async def send_to_module(app, content: str, mod_addr: int):
         await rtr.set_config_mode(True)
         await module.hdlr.send_module_list(mod_addr)
         await rtr.set_config_mode(False)
+        module.list = module.list_upload
+        module.calc_SMC_crc(module.list)
+        app["logger"].debug("Module list upload from configuration server finished")
+    else:
+        app["logger"].debug(
+            "Module list upload from configuration server finished: Same CRC"
+        )
     if module.different_smg_crcs():
-        await rtr.set_config_mode(True)
         await module.hdlr.send_module_smg(module._id)
         await module.hdlr.get_module_status(module._id)
-        await rtr.set_config_mode(False)
+        app["logger"].debug("Module status upload from configuration server finished")
+    else:
+        app["logger"].debug(
+            "Module status upload from configuration server finished: Same CRC"
+        )
     module.smg_upload = b""
     module.list_upload = b""

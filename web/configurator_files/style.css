@@ -549,6 +549,7 @@ body,
    background: url(design/dehn.png) repeat-y center top;
 }
 
+
 a {
    color: #c0372d;
    text-decoration: none;
@@ -636,7 +637,12 @@ a:hover {
    position: relative;
    padding-top: 58px;
    padding-bottom: 0px;
-   left: 0px;
+   padding-left: 10px;
+}
+
+#bild-rechts {
+   padding-left: 10px;
+   size: 80%;
 }
 
 body.start #right img {

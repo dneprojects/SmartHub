@@ -144,6 +144,8 @@ class ModHdlr(HdlrBase):
         while l_cnt < l_len:
             l_pckg = mod_list[l_cnt : l_cnt + min(12, l_len - l_cnt)]
             l_p = len(l_pckg)
+            if l_p < 12:
+                pass
             cmd = (
                 RT_CMDS.SEND_MOD_SMC.replace("<rtr>", chr(self.rt_id))
                 .replace("<mod>", chr(mod_addr))
@@ -183,6 +185,7 @@ class ModHdlr(HdlrBase):
                 .replace("<name8>", md_name[cnt * 8 : cnt * 8 + 8].decode("iso8859-1"))
             )
             await self.handle_router_cmd_resp(self.rt_id, cmd)
+            await asyncio.sleep(0.1)
         return "OK"
 
     async def set_display_constrast(self):

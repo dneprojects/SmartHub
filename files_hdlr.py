@@ -1,3 +1,4 @@
+import struct
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 import math
 import os
@@ -125,12 +126,12 @@ class FilesHdlr(HdlrBase):
                 # API return 40/3/4 Wert 1
                 stat_msg = API_RESPONSE.smr_upload_stat.replace("<rtr>", chr(rt))
                 await self.send_api_response(stat_msg, 1)  # file transfer started
-                rtr.set_config_mode(True)
+                await rtr.set_config_mode(True)
                 await rtr.hdlr.send_rt_full_status()
                 # Routerstatus neu lesen
                 # Weiterleitung neu starten
                 rtr.smr_upload = b""
-                rtr.set_config_mode(False)
+                await rtr.set_config_mode(False)
                 self.response = "OK"
                 return
             case spec.SMR_DISC:
@@ -229,7 +230,8 @@ class FilesHdlr(HdlrBase):
                 log_file.close()
                 return
             case _:
-                self.response = "Unknown API files command"
+                self.response = f"Unknown API files command: {self.msg._cmd_grp} {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"
+                self.logger.warning(self.response)
                 return
 
     async def send_smgs(self, rt):
@@ -281,6 +283,7 @@ class FilesHdlr(HdlrBase):
                     summary += chr(module._id) + chr(0) + chr(0) + chr(1)
                 module.list = module.list_upload  # take current list
                 module.list_upload = b""  # clear list buffer after transfer
+                module.set_smc_crc(ModbusComputeCRC(module.list))
         await rtr.set_config_mode(False)
         return chr(no_uploads) + summary
 

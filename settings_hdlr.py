@@ -165,6 +165,6 @@ class SettingsHdlr(HdlrBase):
                 self.logger.debug(f"Event mode stopped on router {rt}")
 
             case _:
-                self.response = f"Unknown API data command: {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"
+                self.response = f"Unknown API settings command: {self.msg._cmd_grp} {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"
                 self.logger.warning(self.response)
                 return

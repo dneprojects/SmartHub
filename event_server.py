@@ -5,6 +5,7 @@ import json
 import websockets
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from const import DATA_FILES_DIR, EVENT_PORT, API_RESPONSE, MirrIdx
+from forward_hdlr import ForwardHdlr
 
 
 class EVENT_IDS:
@@ -195,6 +196,15 @@ class EventServer:
                         self.logger.info(
                             f"Direct command: Module {rt_event[5]} - Command {rt_event[6:-1]}"
                         )
+                    elif rt_event[4] == 87:
+                        # Forward command response
+                        self.logger.debug(f"Forward response: {rt_event[4:-1]}")
+                        if self.fwd_hdlr is None:
+                            # Instantiate once if needed
+                            self.fwd_hdlr = ForwardHdlr(self.api_srv)
+                            self.logger.debug("Forward handler instantiated")
+                        await self.fwd_hdlr.send_forward_response(rt_event[4:-1])
+                        self.msg_appended = False
                     elif rt_event[4] == 134:  # 0x86: System event
                         if rt_event[5] == 254:
                             self.logger.info("Event mode started")

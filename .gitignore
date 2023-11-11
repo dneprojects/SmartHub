@@ -7,6 +7,7 @@ requirements.txt
 *.smc
 *.smg
 *.smr
+*.fwd
 *.1
 *.2
 *.3

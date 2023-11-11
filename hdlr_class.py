@@ -68,11 +68,11 @@ class HdlrBase:
         self.check_router_no(rt_no)
         self.check_arg(mod_no, range(1, 251), "Error: module no out of range 1..250")
 
-    async def handle_router_cmd_resp(self, rt_no: int, cmd: RT_CMDS) -> None:
+    async def handle_router_cmd_resp(self, rt_no: int, cmd: RT_CMDS) -> bytes:
         """Sends router command via serial interface and get response"""
         self.rt_msg = RtMessage(self, rt_no, cmd)
         await self.rt_msg.rt_send()
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.05)
         await self.rt_msg.rt_recv()
         return self.rt_msg._resp_msg
 

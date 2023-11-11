@@ -162,6 +162,6 @@ class DataHdlr(HdlrBase):
                 self.response = self.api_srv.routers[rt - 1].descriptions
 
             case _:
-                self.response = f"Unknown API data command: {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"
+                self.response = f"Unknown API data command: {self.msg._cmd_grp} {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"
                 self.logger.warning(self.response)
                 return

@@ -43,22 +43,12 @@ class ApiServer:
         self.mirror_mode = False
         self.event_mode = True
 
-    def __del__(self):
-        """Clean up."""
-        del self.sm_hub
-        del self.logger
-        del self.hdlr
-        del self.routers
-        del self.evnt_srv
-        del self._ev_srv_task
-        del self.api_msg
-
     async def get_initial_status(self):
         """Starts router object and reads complete system status"""
         self.hdlr = DataHdlr(self)
         self.evnt_srv = EventServer(self)
         await self.set_initial_non_api_mode(1)
-        await self.routers[0].get_full_status()
+        await self.routers[0].get_full_system_status()
         self.logger.info("API server, router, and modules initialized")
 
     async def handle_api_command(self, ip_reader, ip_writer):
@@ -183,6 +173,7 @@ class ApiServer:
         )
         if self.event_mode:
             await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.START_EVENTS)
+            pass
         if self.mirror_mode:
             await self.hdlr.handle_router_cmd(rt_no, strt_mirr_cmd)
         await asyncio.sleep(0.1)
@@ -208,6 +199,6 @@ class ApiServer:
         self._ev_srv_task = []
 
         # Disable mirror first, then stop event handler
-        await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.STOP_MIRROR)
         await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.STOP_EVENTS)
+        await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.STOP_MIRROR)
         self.logger.debug("API mode turned off initially")

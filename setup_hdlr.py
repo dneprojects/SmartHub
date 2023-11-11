@@ -135,7 +135,7 @@ class SetupHdlr(HdlrBase):
                 await self.send_api_response(stat_msg, 2)  # file transfer finished
                 await self.api_srv.routers[rt - 1].set_config_mode(False)
             case _:
-                self.response = f"Unknown API setup command: {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"
+                self.response = f"Unknown API setup command: {self.msg._cmd_grp} {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"
                 self.logger.warning(self.response)
                 return
 

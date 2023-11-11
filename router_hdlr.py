@@ -25,24 +25,18 @@ class RtHdlr(HdlrBase):
         self.rt_id = rtr._id
         self.logger = logging.getLogger(__name__)
 
-    def __del__(self):
-        """Clean up."""
-        del self.logger
-        del self.api_srv
-        del self.rtr
-
     async def rt_reboot(self):
         """Initiates a router reboot"""
         self.logger.info(f"Router {self.rt_id} will be rebooted, please wait...")
         await self.handle_router_cmd(self.rt_id, RT_CMDS.RT_REBOOT)
         router_running = False
-        print("Reboot")
+        await asyncio.sleep(2)
         # while not (router_running):
         #     # Ask for mode 0, if returned, router is up
         #     # await self.rt_msg.get_router_response()
         #     ret_msg = await self.get_mode(0)
         #     router_running = len(ret_msg) > 0
-        print("")
+        self.logger.info(f"Router {self.rt_id} rebooted")
 
     async def set_mode(self, group: int, new_mode):
         """Changes system or group mode to new_mode"""
@@ -80,7 +74,11 @@ class RtHdlr(HdlrBase):
             rt_cmd = RT_CMDS.GET_GRP_MODE.replace("<grp>", chr(group))
         await self.handle_router_cmd_resp(self.rt_id, rt_cmd)
         if group == 0:
-            self.rtr.mode0 = ord(self.rt_msg._resp_msg)
+            if len(self.rt_msg._resp_msg) > 1:
+                self.logger.warning(
+                    f"Response to get mode 0 command too long: {self.rt_msg._resp_buffer}"
+                )
+            self.rtr.mode0 = self.rt_msg._resp_msg[0]
         return self.rt_msg._resp_msg
 
     async def get_rt_channels(self) -> bytes:
@@ -232,86 +230,143 @@ class RtHdlr(HdlrBase):
         await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.GET_RT_MODULES)
         return self.rt_msg._resp_msg
 
-    async def send_rt_channels(self):
+    async def send_rt_channels(self, rt_channels):
         """Send router channels."""
-        idx1 = self.rtr.self.status_idx[RtStatIIdx.CHANNELS]
-        idx2 = self.rtr.self.status_idx[RtStatIIdx.CHANNELS + 1]
-        rt_channels = self.rtr.smr_upload[idx1:idx2]
         cmd_str = RT_CMDS.SEND_RT_CHANS + rt_channels.decode("iso8859-1") + "\xff"
+        await self.rtr.set_config_mode(True)
         await self.handle_router_cmd_resp(self.rt_id, cmd_str)
-        return self.rt_msg._resp_msg
+        resp = self.rt_msg._resp_msg
+        await self.rtr.set_config_mode(False)
+        return resp
 
-    async def send_rt_timeout(self):
+    async def send_rt_timeout(self, rt_timeout):
         """Send router timeout."""
-        idx1 = self.rtr.self.status_idx[RtStatIIdx.TIMEOUT]
-        idx2 = self.rtr.self.status_idx[RtStatIIdx.TIMEOUT + 1]
-        tout = self.rtr.smr_upload[idx1].decode("iso8859-1")
+        tout = chr(rt_timeout)
         cmd_str = RT_CMDS.SEND_RT_TIMEOUT.replace("<tout>", tout)
+        await self.rtr.set_config_mode(True)
         await self.handle_router_cmd_resp(self.rt_id, cmd_str)
-        return self.rt_msg._resp_msg
+        resp = self.rt_msg._resp_msg
+        await self.rtr.set_config_mode(False)
+        return resp
 
-    async def send_rt_group_no(self):
+    async def send_rt_group_no(self, rt_groups):
         """Send router group no."""
-        idx1 = self.rtr.self.status_idx[RtStatIIdx.GROUPS]
-        idx2 = self.rtr.self.status_idx[RtStatIIdx.GROUPS + 1]
-        rt_groups = self.rtr.smr_upload[idx1:idx2]
         cmd_str = RT_CMDS.SEND_RT_GRPNO + rt_groups.decode("iso8859-1") + "\xff"
+        await self.rtr.set_config_mode(True)
         await self.handle_router_cmd_resp(self.rt_id, cmd_str)
-        return self.rt_msg._resp_msg
+        resp = self.rt_msg._resp_msg
+        await self.rtr.set_config_mode(False)
+        return resp
 
     async def send_rt_mod_group(self, mod, grp):
         """Send module group membership."""
         cmd_str = RT_CMDS.SET_MOD_GROUP.replace("<mod>", chr(mod)).replace(
             "<grp>", chr(grp)
         )
+        await self.rtr.set_config_mode(True)
         await self.handle_router_cmd_resp(self.rt_id, cmd_str)
-        return self.rt_msg._resp_msg
+        resp = self.rt_msg._resp_msg
+        await self.rtr.set_config_mode(False)
+        return resp
 
-    async def send_rt_group_deps(self):
+    async def send_rt_group_deps(self, rt_groupdep):
         """Send router mode dependencies."""
-        idx1 = self.rtr.self.status_idx[RtStatIIdx.GROUP_DEPEND]
-        idx2 = self.rtr.self.status_idx[RtStatIIdx.GROUP_DEPEND + 1]
-        rt_groupdep = self.rtr.smr_upload[idx1:idx2]
         cmd_str = RT_CMDS.SEND_RT_GRPMODE_DEP + rt_groupdep.decode("iso8859-1") + "\xff"
+        await self.rtr.set_config_mode(True)
         await self.handle_router_cmd_resp(self.rt_id, cmd_str)
-        return self.rt_msg._resp_msg
+        resp = self.rt_msg._resp_msg
+        await self.rtr.set_config_mode(False)
+        return resp
 
-    async def send_rt_name(self):
+    async def send_rt_name(self, rt_name):
         """Send router name."""
-        idx1 = self.rtr.self.status_idx[RtStatIIdx.NAME]
-        idx2 = self.rtr.self.status_idx[RtStatIIdx.NAME + 1]
-        rt_name = self.rtr.smr_upload[idx1:idx2]
-        cmd_str = RT_CMDS.SEND_RT_NAME + rt_name.decode("iso8859-1") + "\xff"
-        await self.handle_router_cmd_resp(self.rt_id, cmd_str)
-        return self.rt_msg._resp_msg
+        if type(rt_name) == bytes:
+            rt_name = rt_name.decode("iso8859-1")
+        rt_name = rt_name + (" " * (32 - len(rt_name)))
+        await self.rtr.set_config_mode(True)
+        for part in range(4):
+            cmd_str = (
+                RT_CMDS.SEND_RT_NAME
+                + chr(part * 8)
+                + rt_name[part * 8 : (part + 1) * 8]
+                + "\xff"
+            )
+            await self.handle_router_cmd_resp(self.rt_id, cmd_str)
+            await asyncio.sleep(0.2)
+        resp = self.rt_msg._resp_msg
+        await self.rtr.set_config_mode(False)
+        return resp
 
-    async def send_mode_names(self):
+    async def send_mode_names(self, umd_name1, umd_name2):
         """Send user mode names."""
-        idx1 = self.rtr.self.status_idx[RtStatIIdx.UMODE_NAMES]
-        idx2 = self.rtr.self.status_idx[RtStatIIdx.UMODE_NAMES + 1]
-        umd_names = self.rtr.smr_upload[idx1:idx2]
-        cmd_str = RT_CMDS.SEND_RT_MODENAM + umd_names.decode("iso8859-1") + "\xff"
+        if type(umd_name1) == bytes:
+            umd_name1 = umd_name1.decode("iso8859-1")
+        if type(umd_name2) == bytes:
+            umd_name2 = umd_name2.decode("iso8859-1")
+        umd_name1 = umd_name1 + (" " * (10 - len(umd_name1)))
+        umd_name2 = umd_name2 + (" " * (10 - len(umd_name2)))
+        cmd_str = RT_CMDS.SEND_RT_MODENAM.replace("<umd>", "\x01") + umd_name1 + "\xff"
+        await self.handle_router_cmd_resp(self.rt_id, cmd_str)
+        cmd_str = RT_CMDS.SEND_RT_MODENAM.replace("<umd>", "\x02") + umd_name2 + "\xff"
         await self.handle_router_cmd_resp(self.rt_id, cmd_str)
         return self.rt_msg._resp_msg
 
-    async def send_rt_day_night_changes(self):
+    async def send_rt_day_night_changes(self, day_night):
         """Send day night settings."""
-        idx1 = self.rtr.self.status_idx[RtStatIIdx.DAY_NIGHT]
-        idx2 = self.rtr.self.status_idx[RtStatIIdx.DAY_NIGHT + 1]
-        day_night = self.rtr.smr_upload[idx1:idx2]
         cmd_str = RT_CMDS.SEND_RT_DAYNIGHT + day_night.decode("iso8859-1") + "\xff"
+        await self.rtr.set_config_mode(True)
         await self.handle_router_cmd_resp(self.rt_id, cmd_str)
-        return self.rt_msg._resp_msg
+        resp = self.rt_msg._resp_msg
+        await self.rtr.set_config_mode(False)
+        return resp
 
     async def send_rt_full_status(self):
-        """Get full router status."""
-        await self.send_rt_channels()
-        await self.send_rt_timeout()
-        await self.send_rt_group_no()
-        await self.send_rt_group_deps()
-        await self.send_rt_name()
-        await self.send_mode_names()
-        await self.send_rt_day_night_changes()
+        """Send full router status from uploaded smr."""
+        self.logger.debug("Starting SMR data transfer into router")
+        smr_ptr = 1
+        mod_cnt = []
+        mod_cnt.append(self.rtr.smr_upload[1])
+        mod_cnt.append(self.rtr.smr_upload[1])
+        rt_channels = b""
+        for ch in range(4):
+            ch_count = self.rtr.smr_upload[smr_ptr]
+            rt_channels += (
+                int.to_bytes(ch + 1)
+                + int.to_bytes(ch_count)
+                + self.rtr.smr_upload[smr_ptr + 1 : smr_ptr + 1 + ch_count]
+            )
+            smr_ptr += 1 + ch_count
+        await self.send_rt_channels(rt_channels)
+        rt_tout = self.rtr.smr_upload[smr_ptr]
+        smr_ptr += 1
+        await self.send_rt_timeout(rt_tout)
+        rt_groups, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        await self.send_rt_group_no(rt_groups)
+        rt_groupdep, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        await self.send_rt_group_deps(rt_groupdep)
+        rt_name, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        await self.send_rt_name(rt_name)
+        umd_name1, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        umd_name2, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        await self.send_mode_names(umd_name1, umd_name2)
+        rt_serial, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        rt_daynight, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        await self.send_rt_day_night_changes(rt_daynight)
+        # rt_fw_version, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        self.logger.debug("SMR data transferred into router")
+        await self.rt_reboot()
+
+    def get_smr_item(self, smr_bytes: bytes, smr_ptr: int) -> (bytes, int):
+        """Get one item from smr bytes."""
+        item_len = smr_bytes[smr_ptr]
+        item = smr_bytes[smr_ptr + 1 : smr_ptr + item_len + 1]
+        smr_ptr += item_len + 1
+        return item, smr_ptr
+
+    async def restart_system(self):
+        """Restart router after firmware update."""
+        await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
+        self.logger.info(f"Router {self.rt_id} system restarted")
 
     async def upload_router_firmware(self, rt_type) -> bool:
         """Upload router firmware to router, returns True for success."""
@@ -497,10 +552,20 @@ class RtHdlr(HdlrBase):
         )
         await self.api_srv.hdlr.send_api_response(stat_msg, 1)
 
-    async def in_program_mode(self) -> bool:
-        """Return True while in program mode."""
-        await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.GET_GLOB_MODE)
-        return self.rt_msg._resp_msg[0] == SYS_MODES.Update
+    async def forward_message(self, src_rt: int, fwd_cmd: bytes) -> bytes:
+        """Forward message from other router."""
+        # insert src_rt into command
+        fwd_cmd = fwd_cmd.decode("iso8859-1")
+        fwd_cmd = (
+            f"\x2a<rtr>\xff"
+            + fwd_cmd[:4]
+            + chr(self.rt_id)
+            + fwd_cmd[5:7]
+            + chr(src_rt)
+            + fwd_cmd[8:]
+        )
+        await self.handle_router_cmd_resp(self.rt_id, fwd_cmd)
+        return self.rt_msg._resp_msg
 
     def parse_event(self, rt_resp: bytes):
         """Handle router responses in API mode to seperate events"""

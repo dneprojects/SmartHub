@@ -13,6 +13,7 @@ RT_TIMEOUT = 5
 MIRROR_CYC_TIME = 1
 RD_DELAY = 0.1
 DATA_FILES_DIR = "./"
+FWD_TABLE_FILE = "ip_table.fwd"
 WEB_FILES_DIR = "./web/"
 SIDE_MENU_FILE = "side-menu.html"
 CONFIG_TEMPLATE_FILE = "config_template.html"
@@ -243,9 +244,13 @@ class API_ADMIN:
 
 
 class API_FORWARD:
-    """Command forwarded from other SmartIP"""
+    """Command forwarded from other Smart Hub or Smart IP"""
 
-    SMHUB_FWD = 256 * 1 + 1
+    FWD_TABLE_DEL = 256 * 0 + 0
+    FWD_TABLE_RD = 256 * 0 + 1
+    FWD_TABLE_ADD = 256 * 0 + 2
+    FWD_TABLE_SET = 256 * 0 + 3
+    FWD_TO_SMHUB = 256 * 1 + 1
 
 
 class API_RESPONSE:
@@ -295,7 +300,7 @@ class RT_CMDS:
     GET_RT_DAYNIGHT = "\x2a<rtr>\x06\x8c\x4c\xff"
     GET_RT_MODENAM = "\x2a<rtr>\x07\x68\x4c<umd>\xff"
     SEND_RT_NAME = "\x2a<rtr>\xff\x67\x53"
-    SEND_RT_CHANS = "\x2a<rtr>\xff\x63\x50\x53\x01"
+    SEND_RT_CHANS = "\x2a<rtr>\xff\x63\x50\x53"
     CLEAR_RT_SENDBUF = "\x2a<rtr\x07\x66\x02\xc8\xff"
     SEND_RT_TIMEOUT = "\x2a<rtr>\x08\x66\x01\x54<tout>\xff"
     SEND_RT_GRPNO = "\x2a<rtr>\xff\x66\x01\x89\x02"

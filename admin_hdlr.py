@@ -1,4 +1,5 @@
 import time
+import struct
 from const import API_ADMIN as spec
 from const import RT_CMDS, DATA_FILES_DIR
 from hdlr_class import HdlrBase
@@ -18,10 +19,10 @@ class AdminHdlr(HdlrBase):
             case spec.SMHUB_INFO:
                 self.response = self.api_srv.sm_hub.get_info()
             case spec.SMHUB_RESTART:
-                self.response = "Smart IP will be restarted"
+                self.response = "Smart Hub will be restarted"
                 await self.api_srv.shutdown(rt, self._p5)
             case spec.SMHUB_REBOOT:
-                self.response = "Smart IP will be rebooted"
+                self.response = "Smart Hub will be rebooted"
                 time.sleep(3)
                 self.api_svr.sm_hub.reboot()
             case spec.SMHUB_NET_INFO:
@@ -65,7 +66,7 @@ class AdminHdlr(HdlrBase):
                 await self.handle_router_cmd_resp(rt, RT_CMDS.SYSTEM_RESTART)
                 self.response = self.rt_msg._resp_buffer
             case spec.RT_START_FWD:
-                self.check_router_no(rt)
+                self.check_router_no(rt, mod)
                 if self.args_err:
                     return
                 mod_list = self.api_srv.routers[rt - 1].mod_addrs
@@ -74,6 +75,63 @@ class AdminHdlr(HdlrBase):
                     await self.handle_router_cmd_resp(rt, rt_command)
                 self.response = self.rt_msg._resp_buffer
                 return
+            case spec.RT_FWD_SET:
+                mod = self.args[1]
+                cmd = self.args[2]
+                t_rt = self.args[3]
+                t_mod = self.args[4]
+                self.check_router_module_no(rt, mod)
+                self.check_arg(
+                    t_rt, range(1, 65), "Error: target router no out of range 1..64"
+                )
+                self.check_arg(
+                    t_mod, range(1, 251), "Error: target module no out of range 1..250"
+                )
+                if self.args_err:
+                    return
+                rt_command = (
+                    RT_CMDS.RT_FORW_SET.replace("<mod_src>", mod)
+                    .replace("<cmd_src>", cmd)
+                    .replace("<rt_trg>", t_rt)
+                    .replace("<mod_trg>", t_mod)
+                )
+                await self.handle_router_cmd_resp(rt, rt_command)
+                self.response = self.rt_msg._resp_buffer
+                return
+            case spec.RT_FWD_DEL:
+                if self.args[1] == 255:
+                    self.check_router_no(rt)
+                    if self.args_err:
+                        return
+                    rt_command = RT_CMDS.RT_FORW_DEL_ALL
+                    await self.handle_router_cmd_resp(rt, rt_command)
+                    self.response = self.rt_msg._resp_buffer
+                    return
+                else:
+                    mod = self.args[1]
+                    cmd = self.args[2]
+                    t_rt = self.args[3]
+                    t_mod = self.args[4]
+                    self.check_router_module_no(rt, mod)
+                    self.check_arg(
+                        t_rt, range(1, 65), "Error: target router no out of range 1..64"
+                    )
+                    self.check_arg(
+                        t_mod,
+                        range(1, 251),
+                        "Error: target module no out of range 1..250",
+                    )
+                    if self.args_err:
+                        return
+                    rt_command = (
+                        RT_CMDS.RT_FORW_DEL_1.replace("<mod_src>", mod)
+                        .replace("<cmd_src>", cmd)
+                        .replace("<rt_trg>", t_rt)
+                        .replace("<mod_trg>", t_mod)
+                    )
+                    await self.handle_router_cmd_resp(rt, rt_command)
+                    self.response = self.rt_msg._resp_buffer
+                    return
             case spec.RT_RD_MODERRS:
                 self.check_router_no(rt)
                 if self.args_err:
@@ -88,6 +146,12 @@ class AdminHdlr(HdlrBase):
                 await self.handle_router_cmd_resp(rt, RT_CMDS.GET_MD_LASTERR)
                 self.response = self.rt_msg._resp_msg
                 return
+            case spec.MD_RESTART:
+                self.check_router_module_no(rt, mod)
+                if self.args_err:
+                    return
+                module = self.api_srv.routers[rt - 1].get_module(mod)
+                return await module.hdlr.mod_reboot()
             case spec.RT_WRAPPER_SEND:
                 self.check_router_no(rt)
                 if self.args_err:
@@ -104,8 +168,8 @@ class AdminHdlr(HdlrBase):
                 self.response = self.rt_msg._resp_buffer
                 return
             case _:
-                self.response = "Unknown API admin command"
-                print(self.response)
+                self.response = f"Unknown API admin command: {self.msg._cmd_grp} {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"
+                self.logger.warning(self.response)
                 return
 
     def save_id(self, id: bytes):

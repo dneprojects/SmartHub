@@ -42,11 +42,6 @@ class QueryServer:
         self.logger = logging.getLogger(__name__)
         self._q_running = False
 
-    def __del__(self):
-        """Clean up."""
-        del self.logger
-        del self.sm_hub
-
     async def initialize(self):
         """Starting the server"""
         resp_header = "\x00\x00\x00\xf7"
@@ -122,12 +117,6 @@ class SmartHub:
         self.logger.info("Smart Hub starting...")
         self.skip_init = False
         self.restart = False
-
-    def __del__(self):
-        """Clean up."""
-        del self.logger
-        del self.api_srv
-        del self.q_srv
 
     def reboot(self):
         """Reboot hardware."""
@@ -290,7 +279,7 @@ def setup_logging():
     return logging.getLogger(__name__)
 
 
-async def open_serial_connection() -> (any, any):
+async def open_serial_interface() -> (any, any):
     """Opens serial connection to router."""
     ser_rd, ser_wr = await serial_asyncio.open_serial_connection(
         url="/dev/ttyAMA0",
@@ -316,37 +305,37 @@ async def init_serial(logger):
         buf += chr(chksum)
         return buf
 
-    rt_serial = await open_serial_connection()
+    rt_serial = await open_serial_interface()
     if len(rt_serial[0]._buffer) > 0:
         await rt_serial[0].readexactly(len(rt_serial[0]._buffer))
         logger.debug("Emptied serial read buffer")
-    try:
-        # resp_buf = b""
-        # rt_cmd = calc_CRC(RT_CMDS.CLEAR_RT_SENDBUF.replace("<rtr>", chr(RT_DEF_ADDR)))
-        # rt_serial[1].write(rt_cmd.encode("iso8859-1"))
-        # reading = asyncio.ensure_future(rt_serial[0].read(1024))
-        # await asyncio.sleep(0.2)
-        # if reading._state == "FINISHED":
-        #     resp_buf = reading.result()
-        rt_cmd = calc_CRC(RT_CMDS.GET_GLOB_MODE.replace("<rtr>", chr(RT_DEF_ADDR)))
-        rt_serial[1].write(rt_cmd.encode("iso8859-1"))
-        reading = asyncio.ensure_future(rt_serial[0].read(1024))
-        await asyncio.sleep(0.2)
-        if reading._state == "FINISHED":
-            resp_buf = reading.result()
-            if resp_buf[4] == 0x88:
-                logger.debug(f"Test response received correctly")
-            else:
-                logger.warning(f"")
-        else:
-            raise Exception(f"No test response received")
-    except Exception as err_msg:
-        logger.error(f"Error during fetch of mode 0: {err_msg}")
-        rt_serial = None
+        # try:
+        #     # resp_buf = b""
+        #     # rt_cmd = calc_CRC(RT_CMDS.CLEAR_RT_SENDBUF.replace("<rtr>", chr(RT_DEF_ADDR)))
+        #     # rt_serial[1].write(rt_cmd.encode("iso8859-1"))
+        #     # reading = asyncio.ensure_future(rt_serial[0].read(1024))
+        #     # await asyncio.sleep(0.2)
+        #     # if reading._state == "FINISHED":
+        #     #     resp_buf = reading.result()
+        #     rt_cmd = calc_CRC(RT_CMDS.GET_GLOB_MODE.replace("<rtr>", chr(RT_DEF_ADDR)))
+        #     rt_serial[1].write(rt_cmd.encode("iso8859-1"))
+        #     reading = asyncio.ensure_future(rt_serial[0].read(1024))
+        #     await asyncio.sleep(0.2)
+        #     if reading._state == "FINISHED":
+        #         resp_buf = reading.result()
+        #         if resp_buf[4] == 0x88:
+        #             logger.debug(f"Test response received correctly")
+        #         else:
+        #             logger.warning(f"Unexpected test response: {resp_buf}")
+        #     else:
+        #         raise Exception(f"No test response received")
+        # except Exception as err_msg:
+        #     logger.error(f"Error during fetch of mode 0: {err_msg}")
+        #     rt_serial = None
     return rt_serial
 
 
-async def close_serial_connection(rt_serial):
+async def close_serial_interface(rt_serial):
     """Closes connection, uses writer"""
     rt_serial[1].close()
     await rt_serial[1].wait_closed()

@@ -56,22 +56,26 @@ class HbtnRouter:
         return self.chan_status[-1] == RT_STAT_CODES.MIRROR_ACTIVE
 
     async def get_full_status(self):
-        """Startup procedure: wait for router #1, get router info, start modules."""
-
-        # await self.hdlr.rt_reboot()
-        # self.logger.info("Router reboot finished")
-
+        """Load full router status."""
         await self.set_config_mode(True)
         self.status = await self.hdlr.get_rt_full_status()
         self.chan_status = await self.hdlr.get_rt_status()
         await self.set_config_mode(False)
         self.build_smr()
         self.logger.info("Router status initialized")
-        resp = await self.hdlr.get_rt_modules()
         self.load_descriptions()
+        modules = await self.hdlr.get_rt_modules()
+        return modules
 
-        for m_idx in range(resp[0]):
-            self.mod_addrs.append(resp[m_idx + 1])
+    async def get_full_system_status(self):
+        """Startup procedure: wait for router #1, get router info, start modules."""
+
+        # await self.hdlr.rt_reboot()
+        # self.logger.info("Router reboot finished")
+        modules = await self.get_full_status()
+
+        for m_idx in range(modules[0]):
+            self.mod_addrs.append(modules[m_idx + 1])
         self.mod_addrs.sort()
         for mod_addr in self.mod_addrs:
             try:
@@ -164,7 +168,7 @@ class HbtnRouter:
 
     def save_descriptions(self):
         """Save descriptions to file."""
-        file_name = f"Rtr_{self._name}_descriptions.smb"
+        file_name = f"Rtr_{self._id}_descriptions.smb"
         file_path = DATA_FILES_DIR
         fid = open(file_path + file_name, "w")
         desc_buf = self.descriptions.encode("iso8859-1")
@@ -186,7 +190,7 @@ class HbtnRouter:
     def load_descriptions(self):
         """Load descriptions from file."""
         self.descriptions = ""
-        file_name = f"Rtr_{self._name}_descriptions.smb"
+        file_name = f"Rtr_{self._id}_descriptions.smb"
         file_path = DATA_FILES_DIR
         if isfile(file_path + file_name):
             fid = open(file_path + file_name, "r")
@@ -237,6 +241,22 @@ class HbtnRouter:
         self.settings.id = 0  # to distinguish from modules
         self.settings.typ = b"\0\0"  # to distinguish from modules
         return self.settings
+
+    async def set_settings(self, settings: RouterSettings):
+        """Store settings into router."""
+        self.settings = settings
+        await self.hdlr.send_rt_name(settings.name)
+        await self.hdlr.send_mode_names(settings.user1_name, settings.user2_name)
+        await self.hdlr.send_rt_group_deps(settings.mode_dependencies[1:])
+        # await self.hdlr.rt_reboot()
+        # await asyncio.sleep(6)
+        await self.get_full_status()
+
+    def set_descriptions(self, settings: RouterSettings):
+        """Store names into router descriptions."""
+        # groups, group names, mode dependencies
+        self.descriptions = settings.set_glob_descriptions()
+        self.save_descriptions()
 
     def get_properties(self):
         """Return number of flags, commands, etc."""

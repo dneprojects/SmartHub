@@ -1,7 +1,15 @@
 import logging
 from pymodbus.utilities import checkCRC as ModbusCheckCRC
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
-from const import IfDescriptor, MirrIdx, MirrIdx, SMGIdx, MODULE_CODES, CStatBlkIdx
+from const import (
+    IfDescriptor,
+    MirrIdx,
+    MirrIdx,
+    SMGIdx,
+    MODULE_CODES,
+    CStatBlkIdx,
+    RtStatIIdx,
+)
 
 
 class ModuleSettings:
@@ -72,6 +80,9 @@ class ModuleSettings:
         self.supply_prio = conf[MirrIdx.SUPPLY_PRIO]
         self.displ_contr = conf[MirrIdx.DISPL_CONTR]
         self.displ_time = conf[MirrIdx.MOD_LIGHT_TIM]
+        if self.displ_time == 0:
+            if self.type == "Smart Controller Mini":
+                self.displ_time = 100
         self.temp_ctl = conf[MirrIdx.CLIM_SETTINGS]
         self.temp_1_2 = conf[MirrIdx.TMP_CTL_MD]
         self.t_short = self.status[MirrIdx.T_SHORT] / 100
@@ -112,9 +123,14 @@ class ModuleSettings:
                 self.covers[c_idx] = IfDescriptor(cname.strip(), c_idx + 1, pol)
                 self.outputs[2 * c_idx].type = -10  # disable light output
                 self.outputs[2 * c_idx + 1].type = -10
+        for l_idx in range(10):
+            if conf[MirrIdx.LOGIC + 3 * l_idx] == 5:
+                # counter found
+                self.logic.append(IfDescriptor(f"Counter_{l_idx + 1}", l_idx + 1, 5))
+
         return True
 
-    def set_settings(self, status):
+    def set_module_settings(self, status: bytes) -> bytes:
         """Restore settings to module."""
         status = replace_bytes(
             status,
@@ -278,9 +294,10 @@ class ModuleSettings:
                                 self.inputs[arg_code - 10].nmbr = arg_code - 9
                         elif arg_code in range(18, 26):
                             # Description of module LEDs
-                            self.leds[arg_code - 18] = IfDescriptor(
-                                text, arg_code - 17, 0
-                            )
+                            if self.type[0:9] != "Smart Out":
+                                self.leds[arg_code - 18] = IfDescriptor(
+                                    text, arg_code - 17, 0
+                                )
                         elif arg_code in range(40, 50):
                             # Description of Inputs
                             if self.type == "Smart Controller Mini":
@@ -292,7 +309,10 @@ class ModuleSettings:
                                 self.inputs[arg_code - 40].nmbr = arg_code - 39
                         elif arg_code in range(110, 120):
                             # Description of logic units
-                            self.logic.append(IfDescriptor(text, arg_code - 109, 5))
+                            for lgc in self.logic:
+                                if lgc.nmbr == arg_code - 109:
+                                    lgc.name = text
+                                    break
                         elif arg_code in range(120, 136):
                             # Description of flags
                             self.flags.append(IfDescriptor(text, arg_code - 119, 0))
@@ -350,11 +370,10 @@ class ModuleSettings:
                     self.vis_cmds.append(IfDescriptor(entry_name, entry_no, 0))
                 elif int(line[2]) == 5:
                     # logic element, needed if not stored in smc
-                    lgc_nbmrs = []
                     for lgc in self.logic:
-                        lgc_nbmrs.append(lgc.nmbr)
-                    if not (entry_no in lgc_nbmrs):
-                        self.logic.append(IfDescriptor(entry_name, entry_no, 0))
+                        if lgc.nmbr == entry_no:
+                            lgc.name = entry_name
+                            break
                 # 6: Logik input: line[3] logic unit, line[4] input no
                 # elif int(line[2]) == 7:
                 # Group name
@@ -549,6 +568,36 @@ class RouterSettings:
             elif content_code == 2303:  # FF 08: alarm commands
                 pass
             resp = resp[line_len:]
+
+    def set_glob_descriptions(self) -> str | None:
+        """Add new descriptions into description string."""
+        resp = self.desc.encode("iso8859-1")
+        desc = resp[:4].decode("iso8859-1")
+        no_lines = int.from_bytes(resp[:2], "little")
+        line_no = 0
+        resp = resp[4:]
+        # Remove all global flags, coll commands, and group names
+        # Leave rest unchanged
+        for _ in range(no_lines):
+            if resp == b"":
+                break
+            line_len = int(resp[8]) + 9
+            line = resp[:line_len]
+            content_code = int.from_bytes(line[1:3], "little")
+            if not (content_code in [767, 1023, 2047]):
+                desc += line.decode("iso8859-1")
+                line_no += 1
+            resp = resp[line_len:]
+        for flg in self.glob_flags:
+            desc += f"\x01\xff\x02{chr(flg.nmbr)}\x00\x00\x00\x00{chr(len(flg.name))}{flg.name}"
+            line_no += 1
+        for cmd in self.coll_cmds:
+            desc += f"\x01\xff\x03{chr(cmd.nmbr)}\x00\x00\x00\x00{chr(len(cmd.name))}{cmd.name}"
+            line_no += 1
+        for grp in self.groups:
+            desc += f"\x01\xff\x07{chr(grp.nmbr)}\x00\x00\x00\x00{chr(len(grp.name))}{grp.name}"
+            line_no += 1
+        return chr(line_no & 0xFF) + chr(line_no >> 8) + desc[2:]
 
 
 def replace_bytes(in_bytes: bytes, repl_bytes: bytes, idx: int) -> bytes:
