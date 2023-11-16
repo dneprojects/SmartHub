@@ -225,7 +225,9 @@ class HbtnModule:
                     cv_times += chr(0) + chr(t_cover)
                     bl_times += chr(0) + chr(t_blind)
             except Exception as err_msg:
-                self.logger.error(f"Error calculating cover times of module {self._id} no {ci}: {err_msg}")
+                self.logger.error(
+                    f"Error calculating cover times of module {self._id} no {ci}: {err_msg}"
+                )
                 cv_times += chr(0) + chr(0)
                 bl_times += chr(0) + chr(0)
 
@@ -293,6 +295,8 @@ class HbtnModule:
         """Return number of inputs, outputs, etc."""
         type_code = self._typ
         props: dict = {}
+        props["users"] = 0
+        props["fingers"] = 0
         match type_code[0]:
             case 1:
                 props["buttons"] = 8
@@ -424,6 +428,8 @@ class HbtnModule:
                 props["outputs_relais"] = 0
                 props["covers"] = 0
                 props["logic"] = 0
+                props["users"] = 256
+                props["fingers"] = props["users"] * 10
                 props["flags"] = 0
                 props["dir_cmds"] = 0
                 props["vis_cmds"] = 0
@@ -471,6 +477,8 @@ class HbtnModule:
             "outputs",
             "covers",
             "logic",
+            "users",
+            "fingers",
             "flags",
             "dir_cmds",
         ]

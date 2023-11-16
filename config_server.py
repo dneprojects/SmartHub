@@ -13,6 +13,7 @@ from const import (
     CONFIG_TEMPLATE_FILE,
     SETTINGS_TEMPLATE_FILE,
     CONF_PORT,
+    FingerNames,
     MirrIdx,
     IfDescriptor,
 )
@@ -393,7 +394,7 @@ def show_setting_step(app, mod_addr, step) -> web.Response:
     else:
         title_str = f"Router '{mod_settings.name}'"
     if step > 0:
-        key, header, prompt = get_property_kind(app["props"], app["io_keys"], step)
+        key, header, prompt = get_property_kind(app, step)
         app["prompt"] = prompt
         app["key"] = key
         page = fill_settings_template(app, title_str, header, step, mod_settings, key)
@@ -595,6 +596,37 @@ def prepare_basic_settings(app, mod_addr, mod_type):
             indent(7)
             + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="1" max="240" id="{id_name}" value="{settings.displ_time}"/></td></tr>\n'
         )
+    if len(settings.inputs) > 0:
+        id_name = "t_short"
+        prompt = "Tastendruck kurz [ms]"
+        tbl += (
+            indent(7)
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="10" max="250" id="{id_name}" value="{settings.t_short}"/></td></tr>\n'
+        )
+        id_name = "t_long"
+        prompt = "Tastendruck lang [ms]"
+        tbl += (
+            indent(7)
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="100" max="2500" id="{id_name}" value="{settings.t_long}"/></td></tr>\n'
+        )
+    if settings.type in [
+        "Smart Controller XL-1",
+        "Smart Controller XL-2",
+        "Smart Dimm",
+        "Smart Dimm-1",
+        "Smart Dimm-2",
+    ]:
+        id_name = "t_dimm"
+        prompt = "Dimmgeschwindigkeit"
+        tbl += (
+            indent(7)
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="1" max="10" id="{id_name}" value="{settings.t_dimm}"/></td></tr>\n'
+        )
+    if settings.type in [
+        "Smart Controller XL-1",
+        "Smart Controller XL-2",
+        "Smart Controller Mini",
+    ]:
         id_name = "temp_ctl"
         prompt = "Temperatur-Regelverhalten"
         cl1_checked = ""
@@ -666,7 +698,13 @@ def prepare_table(app, mod_addr, step, key) -> str:
 
     tbl_enries = dict()
     for ci in range(len(tbl_data)):
-        tbl_enries.update({tbl_data[ci].nmbr: ci})
+        if key == "fingers":
+            users_sel = app["settings"].users_sel
+            if tbl_data[ci].type == users_sel + 1:
+                f_nmbr = tbl_data[ci].nmbr
+                tbl_enries.update({f_nmbr: ci})
+        else:
+            tbl_enries.update({tbl_data[ci].nmbr: ci})
     tbl_enries = sorted(tbl_enries.items())
     ci = 0
     for entry in tbl_enries:
@@ -734,8 +772,25 @@ def prepare_table(app, mod_addr, step, key) -> str:
                             + f'<option value="{dep}">{dep_names[dep]}</option>\n'
                         )
                 tbl += indent(7) + "/select></td>\n"
+        elif key == "users":
+            # add radio buttons to select user
+            id_name = "users_sel"
+            if ci == app["settings"].users_sel:
+                sel_chkd = "checked"
+            else:
+                sel_chkd = ""
+            tbl += f'<td><label for="{id_name}">Auswahl</label><input type="radio" name="{id_name}" id="{id_name}" value="{ci}" {sel_chkd}></td>'
         tbl += "</tr>\n"
-    if key in ["glob_flags", "flags", "groups", "dir_cmds", "coll_cmds", "logic"]:
+    if key in [
+        "glob_flags",
+        "flags",
+        "groups",
+        "dir_cmds",
+        "coll_cmds",
+        "logic",
+        "users",
+        "fingers",
+    ]:
         # Add additional line to append or delete element
         prompt = key_prompt
         id_name = key[:-1] + str(ci + 1)
@@ -744,10 +799,11 @@ def prepare_table(app, mod_addr, step, key) -> str:
             elem_nmbrs.append(elem.nmbr)
         elem_nmbrs = sorted(elem_nmbrs)
         if len(elem_nmbrs) > 0:
-            min_new = max(elem_nmbrs) + 1
-            for n_idx in range(len(elem_nmbrs) - 1):
-                if (elem_nmbrs[n_idx] + 1) != elem_nmbrs[n_idx + 1]:
+            min_new = 1
+            for n_idx in range(len(elem_nmbrs)):
+                if (elem_nmbrs[n_idx]) == min_new:
                     min_new = elem_nmbrs[n_idx] + 1
+                else:
                     break
             min_del = min(elem_nmbrs)
             max_del = max(elem_nmbrs)
@@ -762,8 +818,10 @@ def prepare_table(app, mod_addr, step, key) -> str:
         elif key in ["groups"]:
             max_new = 80
             min_del = max(1, min_del)
-        elif key in ["coll_cmds"]:
+        elif key in ["coll_cmds", "users"]:
             max_new = 255
+        elif key in ["fingers"]:
+            max_new = 10
         elif key in ["logic"]:
             max_new = 10
         tbl += indent(7) + "<tr><td>&nbsp;</td></tr>"
@@ -798,147 +856,171 @@ def parse_response_form(app, form_data):
     key = app["key"]
     settings = app["settings"]
     for form_key in list(form_data.keys())[:-1]:
-        indices = form_key.replace("data[", "").replace("]", "").split(",")
-        indices[0] = int(indices[0])
-        indices[1] = int(indices[1])
-        if len(indices) == 1:
-            settings.__getattribute__(key)[int(indices[0])].name = form_data[form_key][
-                0
-            ]
-        elif indices[1] == 0:
-            settings.__getattribute__(key)[int(indices[0])].name = form_data[form_key][
-                0
-            ]
-        elif indices[1] == 1000:
-            # add element
-            entry_found = False
-            for elem in settings.__getattribute__(key):
-                if elem.nmbr == int(form_data[form_key][0]):
-                    entry_found = True
-                    break
-            if not entry_found:
-                settings.__getattribute__(key).append(
-                    IfDescriptor(
-                        f"{key}_{int(form_data[form_key][0])}",
-                        int(form_data[form_key][0]),
-                        0,
-                    )
-                )
-        elif indices[1] == 1001:
-            # remove element
-            idx = 0
-            for elem in settings.__getattribute__(key):
-                if elem.nmbr == int(form_data[form_key][0]):
-                    del settings.__getattribute__(key)[idx]
-                    break
-                idx += 1
-        if (len(indices) > 1) & (indices[1] != 1000) & (indices[1] != 1001):
-            match app["key"]:
-                case "inputs":
-                    if form_data[form_key][0] == "sw":
-                        settings.inputs[indices[0]].type = 2
-                    else:
-                        settings.inputs[indices[0]].type = 1
-                case "outputs":
-                    if form_data[form_key][0] == "cvr":
-                        settings.outputs[indices[0]].type = -10
-                        settings.outputs[indices[0] + 1].type = -10
-                        if settings.covers[int(indices[0] / 2)].type == 0:
-                            # needs new setting (polarity, blades)
-                            settings.covers[int(indices[0] / 2)].type = 1
-                            cvr_name = (
-                                settings.outputs[indices[0]]
-                                .name.replace("auf", "")
-                                .replace("ab", "")
-                                .replace("hoch", "")
-                                .replace("runter", "")
-                                .replace("zu", "")
-                                .replace("up", "")
-                                .replace("down", "")
+        if form_key == "users_sel":
+            settings.users_sel = int(form_data[form_key][0])
+        else:
+            indices = form_key.replace("data[", "").replace("]", "").split(",")
+            indices[0] = int(indices[0])
+            indices[1] = int(indices[1])
+            if len(indices) == 1:
+                settings.__getattribute__(key)[int(indices[0])].name = form_data[
+                    form_key
+                ][0]
+            elif indices[1] == 0:
+                settings.__getattribute__(key)[int(indices[0])].name = form_data[
+                    form_key
+                ][0]
+            elif indices[1] == 1000:
+                # add element
+                entry_found = False
+                for elem in settings.__getattribute__(key):
+                    if elem.nmbr == int(form_data[form_key][0]):
+                        entry_found = True
+                        break
+                if not entry_found:
+                    if key == "fingers":
+                        settings.__getattribute__(key).append(
+                            IfDescriptor(
+                                FingerNames[int(form_data[form_key][0]) - 1],
+                                int(form_data[form_key][0]),
+                                settings.users[settings.users_sel].nmbr,
                             )
-                            settings.covers[int(indices[0] / 2)].name = cvr_name
-                    elif form_data[form_key][0] == "out":
-                        settings.outputs[indices[0]].type = 1
-                        settings.outputs[indices[0] + 1].type = 1
-                        settings.covers[int(indices[0] / 2)].type = 0
-                        settings.covers[int(indices[0] / 2)].name = ""
-                case "covers":
-                    if indices[1] == 0:
-                        # look for 'missing' checkbox entry
-                        if not f"data[{indices[0]},3]" in form_data.keys():
-                            settings.covers[indices[0]].type = abs(
-                                settings.covers[indices[0]].type
-                            ) * (-1)
-                        # names
-                        settings.covers[indices[0]].name = form_data[form_key][0]
-                        if (
-                            settings.outputs[2 * indices[0]].name[
-                                : len(form_data[form_key][0])
-                            ]
-                            != form_data[form_key][0]
-                        ):
-                            if settings.covers[indices[0]].type > 0:
-                                settings.outputs[2 * indices[0]].name = (
-                                    form_data[form_key][0] + " auf"
+                        )
+                    else:
+                        settings.__getattribute__(key).append(
+                            IfDescriptor(
+                                f"{key}_{int(form_data[form_key][0])}",
+                                int(form_data[form_key][0]),
+                                0,
+                            )
+                        )
+            elif indices[1] == 1001:
+                # remove element
+                idx = 0
+                for elem in settings.__getattribute__(key):
+                    if elem.nmbr == int(form_data[form_key][0]):
+                        del settings.__getattribute__(key)[idx]
+                        break
+                    idx += 1
+            if (len(indices) > 1) & (indices[1] != 1000) & (indices[1] != 1001):
+                match app["key"]:
+                    case "inputs":
+                        if form_data[form_key][0] == "sw":
+                            settings.inputs[indices[0]].type = 2
+                        else:
+                            settings.inputs[indices[0]].type = 1
+                    case "outputs":
+                        if form_data[form_key][0] == "cvr":
+                            settings.outputs[indices[0]].type = -10
+                            settings.outputs[indices[0] + 1].type = -10
+                            if settings.covers[int(indices[0] / 2)].type == 0:
+                                # needs new setting (polarity, blades)
+                                settings.covers[int(indices[0] / 2)].type = 1
+                                cvr_name = (
+                                    settings.outputs[indices[0]]
+                                    .name.replace("auf", "")
+                                    .replace("ab", "")
+                                    .replace("hoch", "")
+                                    .replace("runter", "")
+                                    .replace("zu", "")
+                                    .replace("up", "")
+                                    .replace("down", "")
                                 )
-                                settings.outputs[2 * indices[0] + 1].name = (
-                                    form_data[form_key][0] + " ab"
+                                settings.covers[int(indices[0] / 2)].name = cvr_name
+                        elif form_data[form_key][0] == "out":
+                            settings.outputs[indices[0]].type = 1
+                            settings.outputs[indices[0] + 1].type = 1
+                            settings.covers[int(indices[0] / 2)].type = 0
+                            settings.covers[int(indices[0] / 2)].name = ""
+                    case "covers":
+                        if indices[1] == 0:
+                            # look for 'missing' checkbox entry
+                            if not f"data[{indices[0]},3]" in form_data.keys():
+                                settings.covers[indices[0]].type = abs(
+                                    settings.covers[indices[0]].type
+                                ) * (-1)
+                            # names
+                            settings.covers[indices[0]].name = form_data[form_key][0]
+                            if (
+                                settings.outputs[2 * indices[0]].name[
+                                    : len(form_data[form_key][0])
+                                ]
+                                != form_data[form_key][0]
+                            ):
+                                if settings.covers[indices[0]].type > 0:
+                                    settings.outputs[2 * indices[0]].name = (
+                                        form_data[form_key][0] + " auf"
+                                    )
+                                    settings.outputs[2 * indices[0] + 1].name = (
+                                        form_data[form_key][0] + " ab"
+                                    )
+                                else:
+                                    settings.outputs[2 * indices[0]].name = (
+                                        form_data[form_key][0] + " ab"
+                                    )
+                                    settings.outputs[2 * indices[0] + 1].name = (
+                                        form_data[form_key][0] + " auf"
+                                    )
+                        elif indices[1] == 1:
+                            settings.cover_times[indices[0]] = float(
+                                form_data[form_key][0]
+                            )
+                        elif indices[1] == 2:
+                            settings.blade_times[indices[0]] = float(
+                                form_data[form_key][0]
+                            )
+                            if float(form_data[form_key][0]) > 0:
+                                settings.covers[indices[0]].type = int(
+                                    copysign(2, settings.covers[indices[0]].type)
+                                )
+                        elif indices[1] == 3:
+                            if form_data[form_key][0] == "pol_nrm":
+                                settings.covers[indices[0]].type = abs(
+                                    settings.covers[indices[0]].type
                                 )
                             else:
-                                settings.outputs[2 * indices[0]].name = (
-                                    form_data[form_key][0] + " ab"
-                                )
-                                settings.outputs[2 * indices[0] + 1].name = (
-                                    form_data[form_key][0] + " auf"
-                                )
-                    elif indices[1] == 1:
-                        settings.cover_times[indices[0]] = float(form_data[form_key][0])
-                    elif indices[1] == 2:
-                        settings.blade_times[indices[0]] = float(form_data[form_key][0])
-                        if float(form_data[form_key][0]) > 0:
-                            settings.covers[indices[0]].type = int(
-                                copysign(2, settings.covers[indices[0]].type)
+                                settings.covers[indices[0]].type = abs(
+                                    settings.covers[indices[0]].type
+                                ) * (-1)
+                    case "leds" | "buttons" | "dir_cmds":
+                        if indices[1] == 0:
+                            # use only first part for parsing and look for second
+                            if f"data[{indices[0]},1]" in form_data.keys():
+                                name = form_data[form_key][0]
+                                name += " " * (18 - len(name))
+                                name += form_data[f"data[{indices[0]},1]"][0]
+                                name += " " * (32 - len(name))
+                            else:
+                                name = form_data[form_key][0]
+                                name += " " * (32 - len(name))
+                            settings.__getattribute__(key)[indices[0]].name = name
+                    case "groups":
+                        if (indices[0] > 0) & (indices[1] == 1):
+                            if indices[0] == 1:
+                                # Empty dependencies
+                                settings.mode_dependencies = b"P" + b"\0" * 80
+                            grp_nmbr = settings.__getattribute__(key)[
+                                int(indices[0])
+                            ].nmbr
+                            settings.mode_dependencies = (
+                                settings.mode_dependencies[:grp_nmbr]
+                                + int.to_bytes(int(form_data[form_key][0]))
+                                + settings.mode_dependencies[grp_nmbr + 1 :]
                             )
-                    elif indices[1] == 3:
-                        if form_data[form_key][0] == "pol_nrm":
-                            settings.covers[indices[0]].type = abs(
-                                settings.covers[indices[0]].type
-                            )
-                        else:
-                            settings.covers[indices[0]].type = abs(
-                                settings.covers[indices[0]].type
-                            ) * (-1)
-                case "leds" | "buttons" | "dir_cmds":
-                    if indices[1] == 0:
-                        # use only first part for parsing and look for second
-                        if f"data[{indices[0]},1]" in form_data.keys():
-                            name = form_data[form_key][0]
-                            name += " " * (18 - len(name))
-                            name += form_data[f"data[{indices[0]},1]"][0]
-                            name += " " * (32 - len(name))
-                        else:
-                            name = form_data[form_key][0]
-                            name += " " * (32 - len(name))
-                        settings.__getattribute__(key)[indices[0]].name = name
-                case "groups":
-                    if (indices[0] > 0) & (indices[1] == 1):
-                        if indices[0] == 1:
-                            # Empty dependencies
-                            settings.mode_dependencies = b"P" + b"\0" * 80
-                        grp_nmbr = settings.__getattribute__(key)[int(indices[0])].nmbr
-                        settings.mode_dependencies = (
-                            settings.mode_dependencies[:grp_nmbr]
-                            + int.to_bytes(int(form_data[form_key][0]))
-                            + settings.mode_dependencies[grp_nmbr + 1 :]
-                        )
+
+    if key == "fingers":
+        settings.all_fingers[settings.users[settings.users_sel].nmbr] = settings.fingers
     app["settings"] = settings
 
 
-def get_property_kind(props, io_keys, step):
+def get_property_kind(app, step):
     """Return header of property kind."""
     if step == 0:
         return "", "Grundeinstellungen"
     cnt = 0
+    props = app["props"]
+    io_keys = app["io_keys"]
+    settings = app["settings"]
     for key in io_keys:
         if props[key] > 0:
             cnt += 1
@@ -963,6 +1045,23 @@ def get_property_kind(props, io_keys, step):
         case "logic":
             header = "Logik-Bausteine"
             prompt = "Logik-Baustein"
+        case "users":
+            header = "Benutzerverwaltung"
+            prompt = "Benutzer"
+            if len(settings.users) == 0:
+                # disable fingers
+                props["no_keys"] = 1
+            else:
+                # enable fingers
+                props["no_keys"] = 2
+        case "fingers":
+            user_id = settings.users[settings.users_sel].name
+            header = f"Fingerabdrücke von '{user_id}'"
+            prompt = "Finger"
+            settings.fingers = settings.all_fingers[
+                settings.users[settings.users_sel].nmbr
+            ]
+            app["settings"] = settings
         case "flags":
             header = "Lokale Merker"
             prompt = "Merker"

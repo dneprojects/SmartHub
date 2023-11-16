@@ -9,6 +9,7 @@ from const import (
     MODULE_CODES,
     CStatBlkIdx,
     RtStatIIdx,
+    FingerNames,
 )
 
 
@@ -18,6 +19,7 @@ class ModuleSettings:
     def __init__(self, module, rtr):
         """Fill all properties with module's values."""
         self.id = module._id
+        self.module = module
         self.name = module._name
         self.typ = module._typ
         self.type = module._type
@@ -60,7 +62,8 @@ class ModuleSettings:
         self.dir_cmds: list[IfDescriptor] = []
         self.vis_cmds: list[IfDescriptor] = []
         self.setvalues: list[IfDescriptor] = []
-        self.ids: list[IfDescriptor] = []
+        self.users: list[IfDescriptor] = []
+        self.fingers: list[IfDescriptor] = []
 
     def get_settings(self) -> bool:
         """Get settings of Habitron module."""
@@ -85,8 +88,8 @@ class ModuleSettings:
                 self.displ_time = 100
         self.temp_ctl = conf[MirrIdx.CLIM_SETTINGS]
         self.temp_1_2 = conf[MirrIdx.TMP_CTL_MD]
-        self.t_short = self.status[MirrIdx.T_SHORT] / 100
-        self.t_long = self.status[MirrIdx.T_LONG] / 10
+        self.t_short = self.status[MirrIdx.T_SHORT] * 10
+        self.t_long = self.status[MirrIdx.T_LONG] * 10
         self.t_dimm = self.status[MirrIdx.T_DIM]
         inp_state = int.from_bytes(
             conf[MirrIdx.SWMOD_1_8 : MirrIdx.SWMOD_1_8 + 3], "little"
@@ -127,7 +130,6 @@ class ModuleSettings:
             if conf[MirrIdx.LOGIC + 3 * l_idx] == 5:
                 # counter found
                 self.logic.append(IfDescriptor(f"Counter_{l_idx + 1}", l_idx + 1, 5))
-
         return True
 
     def set_module_settings(self, status: bytes) -> bytes:
@@ -159,12 +161,12 @@ class ModuleSettings:
         )
         status = replace_bytes(
             status,
-            int.to_bytes(int(float(self.t_short * 100))),
+            int.to_bytes(int(float(self.t_short) / 10)),
             MirrIdx.T_SHORT,
         )
         status = replace_bytes(
             status,
-            int.to_bytes(int(float(self.t_long) * 10)),
+            int.to_bytes(int(float(self.t_long) / 10)),
             MirrIdx.T_LONG,
         )
         status = replace_bytes(
@@ -251,6 +253,8 @@ class ModuleSettings:
 
     def get_names(self) -> bool:
         """Get summary of Habitron module."""
+
+        self.all_fingers = {}
         conf = self.list
         no_lines = int.from_bytes(conf[:2], "little")
         conf = conf[4 : len(conf)]  # Strip 4 header bytes
@@ -268,8 +272,16 @@ class ModuleSettings:
                 text = text.strip()
                 arg_code = int(line[3])
                 if int(line[0]) == 252:
-                    # Finger ids
-                    self.ids.append(IfDescriptor(text, arg_code, 0))
+                    # Finger users: user, bitmap of fingers as type
+                    user_id = int(line[1])
+                    f_map = int(line[4]) * 256 + int(line[3])
+                    self.users.append(IfDescriptor(text, user_id, f_map))
+                    self.all_fingers[user_id]: list[IfDescriptor] = []
+                    for fi in range(10):
+                        if f_map & (1 << fi):
+                            self.all_fingers[user_id].append(
+                                IfDescriptor(FingerNames[fi], fi + 1, user_id)
+                            )
                 elif int(line[0]) == 253:
                     # Description of commands
                     self.dir_cmds.append(IfDescriptor(text, arg_code, 0))
@@ -330,6 +342,7 @@ class ModuleSettings:
                         )
 
             conf = conf[line_len : len(conf)]  # Strip processed line
+
         if self.type == "Smart Controller Mini":
             return True
         if self.type[:16] == "Smart Controller":
@@ -337,7 +350,12 @@ class ModuleSettings:
             self.dimmers[1].name = self.outputs[11].name
             self.outputs[10].type = 2
             self.outputs[11].type = 2
-        return True
+            return True
+        if self.type == "Fanekey":
+            self.users_sel = 0
+            if len(self.users) > 0:
+                self.fingers = self.all_fingers[self.users[self.users_sel].nmbr]
+            return True
 
     def get_descriptions(self) -> str | None:
         """Get descriptions of commands, etc."""
@@ -394,6 +412,10 @@ class ModuleSettings:
             self.properties["vis_cmds"] = len(self.vis_cmds)
             self.properties["no_keys"] += 1
             self.prop_keys.append("vis_cmds")
+        if (len(self.users) > 0) & (not ("users" in self.prop_keys)):
+            self.properties["users"] = len(self.users)
+            self.properties["no_keys"] += 1
+            self.prop_keys.append("users")
 
     def format_smc(self, buf: bytes) -> str:
         """Parse line structure and add ';' and linefeeds."""
@@ -461,6 +483,14 @@ class ModuleSettings:
             desc = flg.name
             desc += " " * (32 - len(desc))
             new_list.append(f"\xff\0\xeb{chr(119 + flg.nmbr)}\1\x23\0\xeb" + desc)
+        for uid in self.users:
+            desc = uid.name
+            fgr_low = abs(uid.type) & 0xFF
+            fgr_high = abs(uid.type) >> 8
+            desc += " " * (32 - len(desc))
+            new_list.append(
+                f"\xfc{uid.nmbr}\xeb{chr(fgr_low)}{chr(fgr_high)}\x23\0\xeb" + desc
+            )
         no_lines = len(new_list) - 1
         no_chars = 0
         for line in new_list:

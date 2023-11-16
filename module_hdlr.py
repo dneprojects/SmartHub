@@ -492,6 +492,33 @@ class ModHdlr(HdlrBase):
         await self.handle_router_cmd_resp(self.rt_id, cmd)
         return "OK"
 
+    async def ekey_db_read(self):
+        """Transfer ekey database to fanser and hub."""
+        # Transfer to fanser
+        cmd = RT_CMDS.GET_EKEY_TO_FANS.replace("<rtr>", chr(self.rt_id)).replace(
+            "<mod>", chr(self.mod_id)
+        )
+        await self.handle_router_cmd_resp(self.rt_id, cmd)
+        # Transfer to hub in packages of 24 bytes
+        pkg_cnt = 0
+        db_buffer = b""
+        db_upload_ready = False
+        cmd = RT_CMDS.GET_EKEY_TO_HUB.replace("<rtr>", chr(self.rt_id)).replace(
+            "<mod>", chr(self.mod_id)
+        )
+        while not db_upload_ready:
+            await asyncio.sleep(0.2)
+            await self.handle_router_cmd_resp(
+                self.rt_id, cmd.replace("<pkg>", chr(pkg_cnt))
+            )
+            pkg_resp = self.rt_msg._resp_buffer[10]
+            db_size = self.rt_msg._resp_buffer[12] * 256 + self.rt_msg._resp_buffer[11]
+            buf_len = self.rt_msg._resp_buffer[7] - 7
+            db_buffer += self.rt_msg._resp_buffer[13:-1]
+            db_upload_ready = len(db_buffer) >= db_size - 24
+            pkg_cnt += 1
+        return db_buffer
+
     async def del_ekey_entry(self, user, finger):
         """Send Ekey delete command for a single entry to module."""
         if finger == 255:
@@ -581,11 +608,39 @@ class ModHdlr(HdlrBase):
 
     async def get_ekey_status(self):
         """Upload Ekey status from module."""
-        cmd = RT_CMDS.GET_EKEY_STAT.replace("<rtr>", chr(self.rt_id)).replace(
-            "<mod>", chr(self.mod_id)
-        )
+        cmd = RT_CMDS.GET_EKEY_STAT.replace("<mod>", chr(self.mod_id))
         await self.handle_router_cmd_resp(self.rt_id, cmd)
         return self.rt_msg._resp_msg
+
+    async def get_air_quality(self):
+        """Read module air quality values."""
+        await self.set_config_mode(True)
+        cmd = RT_CMDS.GET_AIR_QUAL.replace("<mod>", chr(self.mod_id))
+        await self.handle_router_cmd_resp(self.rt_id, cmd)
+        resp = self.rt_msg._resp_buffer[-10:-1]
+        await self.set_config_mode(False)
+        if resp[-5:] == f"\x44{chr(self.mod_id)}\x05\xfa\x02".encode("iso8859-1"):
+            resp = "ERROR_250_2"
+        return resp
+
+    async def calibrate_air_quality(
+        self, perc_good: int, val_good: int, perc_bad: int, val_bad: int
+    ):
+        """Read module air quality values."""
+        await self.set_config_mode(True)
+        cmd = (
+            RT_CMDS.CAL_AIR_QUAL.replace("<mod>", chr(self.mod_id))
+            .replace("<prc_good>", chr(perc_good))
+            .replace("<good_long>", chr(val_good & 0xFF) + chr(val_good >> 8))
+            .replace("<prc_bad>", chr(perc_bad))
+            .replace("<bad_long>", chr(val_bad & 0xFF) + chr(val_bad >> 8))
+        )
+        await self.handle_router_cmd_resp(self.rt_id, cmd)
+        resp = self.rt_msg._resp_buffer[-10:-1]
+        await self.set_config_mode(False)
+        if resp[-5:] == f"\x44{chr(self.mod_id)}\x05\xfa\x02".encode("iso8859-1"):
+            resp = "ERROR_250_2"
+        return resp
 
     async def set_config_mode(self, flg: bool):
         """Forward to own router."""

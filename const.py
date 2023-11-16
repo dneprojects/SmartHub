@@ -198,11 +198,13 @@ class API_SETUP:
     KEY_LOG_RDSTAT = 256 * 1 + 9
     KEY_VERS = 256 * 1 + 10
     KEY_RD_EF = 256 * 1 + 11
-    KEY_RD_FS = 256 * 1 + 12
+    KEY_RD_HUB = 256 * 1 + 12
     KEY_RDT_EF = 256 * 1 + 13
     KEY_RDT_FS = 256 * 1 + 14
     KEY_WRT_SF = 256 * 1 + 15
     KEY_WRT_FE = 256 * 1 + 16
+
+    GET_IRDA = 256 * 2 + 1
 
     AIR_RD = 256 * 2 + 2
     AIR_FILE_RD = 256 * 2 + 3
@@ -323,6 +325,9 @@ class RT_CMDS:
     GET_MD_LASTERR = "\x2a<rtr>\x06\x65\xfe\xff"
     GET_MD_ERRORS = "\x2a<rtr>\x06\x64\xff\xff"
 
+    GET_AIR_QUAL = "\x2a<rtr>\x0a\x44<mod>\x06\xd2\x03\x14\xff"
+    CAL_AIR_QUAL = "\x2a<rtr>\x11\x44<mod>\x0d\xd2\x03\x14\x01<prc_good><good_long><prc_bad><bad_long>\xff"
+
     RT_REBOOT = "\x2a<rtr>\x0a\xf0\x52\x45\x53\x45\x54\xff"
     MD_REBOOT = "\x2a<rtr>\x0d\x44<mod>\x09\xf0RESET\xff"
 
@@ -374,6 +379,8 @@ class RT_CMDS:
     RES_EKEY_LOG = "\x2a<rtr>\x0a\x44<mod>\x06\xa9\x05\x52\xff"
     GET_EKEY_LOG_STRT = "\x2a<rtr>\x0a\x44<mod>\x06\xa9\x05\x01\xff"
     GET_EKEY_LOG_REST = "\x2a<rtr>\x0a\x44<mod>\x06\xa9\x05\x02\xff"
+    GET_EKEY_TO_FANS = "\x2a<rtr>\x0c\x44<mod>\x08\xa9\x01\x93\x00\x00\xff"
+    GET_EKEY_TO_HUB = "\x2a<rtr>\x0b\x44<mod>\x07\xa9\x01\x53<pkg>\xff"
     SET_PIN = "\x2a<rtr>\x0e\x44<mod>\x0a\xa8\x01\x32<p1><p2><p3><p4>\xff"
 
     UPDATE_STAT = "\x2a<rtr>\x06\xc7\x00\xff"
@@ -710,3 +717,17 @@ class IfDescriptor:
         self.name: str = iname
         self.nmbr: int = inmbr
         self.type: int = itype
+
+
+FingerNames = [
+    "Kleiner Finger links",
+    "Ringfinger links",
+    "Mittelfinger links",
+    "Zeigefinger links",
+    "Daumen links",
+    "Daumen rechts",
+    "Zeigefinger rechts",
+    "Mittelfinger rechts",
+    "Ringfinger rechts",
+    "Kleiner Finger rechts",
+]

@@ -152,6 +152,7 @@ class HbtnRouter:
             await self.hdlr.set_mode(0, SYS_MODES.Config)
             self._in_config_mode = True
             self.logger.debug("Set system to Config mode")
+            await asyncio.sleep(0.5)
         elif self._in_config_mode:
             new_mode = await self.hdlr.set_mode(0, self.recent_mode)
             self._in_config_mode = False
