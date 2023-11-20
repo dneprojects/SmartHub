@@ -995,7 +995,7 @@ input[type="password"],
 select {
    height: 18px;
    padding-left: 3px;
-   margin-left: 10px;
+   margin-left: 5px;
 }
 
 input[type="text"]:focus,
@@ -1022,7 +1022,7 @@ select {
    height: 21.78px;
    width: 184.78px;
    padding-left: 0px;
-   margin-left: 10px;
+   margin-left: 5px;
    border: 1px solid #C0372D;
    padding-top: 2px;
    margin-top: 0px;
