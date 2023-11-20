@@ -638,6 +638,9 @@ a:hover {
    padding-top: 58px;
    padding-bottom: 0px;
    padding-left: 10px;
+   max-width: 80%;
+   max-height: 80%;
+   height: auto;
 }
 
 #bild-rechts {
@@ -693,6 +696,16 @@ body.produkte.sub #right .ce_text a {
 
 #config_button {
    height: 22px;
+   width: 140px;
+   margin-left: 0px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+
+}
+
+#config_button.config_button {
+   height: 22px;
    width: 100px;
    margin-left: 0px;
    margin-right: 40px;
@@ -716,6 +729,15 @@ body.produkte.sub #right .ce_text a {
    width: 100px;
    top: 0;
    margin-right: 0px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
+
+#automtns_button {
+   height: 22px;
+   width: 140px;
+   margin-left: 0px;
+   margin-right: 40px;
    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
    font: 11px arial, helvetica, clean, sans-serif;
 }

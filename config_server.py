@@ -12,10 +12,13 @@ from const import (
     SIDE_MENU_FILE,
     CONFIG_TEMPLATE_FILE,
     SETTINGS_TEMPLATE_FILE,
+    AUTOMATIONS_TEMPLATE_FILE,
     CONF_PORT,
     FingerNames,
     MirrIdx,
     IfDescriptor,
+    EventCodes,
+    ActionCodes,
 )
 
 routes = web.RouteTableDef()
@@ -101,6 +104,9 @@ class ConfigServer:
         if args[0] == "ModSettings":
             mod_addr = int(args[1])
             return show_settings(request.app, mod_addr)
+        if args[0] == "EditAutomtns":
+            mod_addr = int(args[1])
+            return show_automations(request.app, mod_addr)
         elif args[0] == "RtrSettings":
             return show_settings(request.app, 0)
         elif args[0] == "ConfigFiles":
@@ -352,6 +358,8 @@ def show_module_overview(app, mod_addr) -> web.Response:
         def_filename,
     )
     page = adjust_settings_button(page, "mod", f"{mod_addr}")
+    if module.has_automations():
+        page = adjust_automations_button(page)
     return web.Response(text=page, content_type="text/html")
 
 
@@ -383,6 +391,17 @@ def show_settings(app, mod_addr) -> web.Response:
     app["settings"] = settings
     app["key"] = ""
     page = fill_settings_template(app, title_str, "Grundeinstellungen", 0, settings, "")
+    return web.Response(text=page, content_type="text/html")
+
+
+def show_automations(app, mod_addr) -> web.Response:
+    """Prepare automations page of module."""
+    settings = app["api_srv"].routers[0].get_module(mod_addr).get_module_settings()
+    title_str = f"Modul '{settings.name}'"
+    automations = settings.automations
+    app["automations"] = automations
+    app["settings"] = settings
+    page = fill_automations_template(app, title_str, "Lokale Automatisierungen", 0)
     return web.Response(text=page, content_type="text/html")
 
 
@@ -436,6 +455,12 @@ def adjust_settings_button(page, type, addr: str) -> str:
     return page
 
 
+def adjust_automations_button(page: str) -> str:
+    """Enable edit automations button."""
+    page = page.replace("<!--<button", "<button").replace("</button>-->", "</button>")
+    return page
+
+
 def get_module_image(type_code: bytes) -> (str, str):
     """Return module image based on type code bytes."""
     match type_code[0]:
@@ -472,6 +497,9 @@ def get_module_image(type_code: bytes) -> (str, str):
         case 30:
             mod_image = "mod_smartkey.jpg"
             type_desc = "Smart Key - Zugangskontroller über Fingerprint"
+        case 31:
+            mod_image = "finger_numbers.jpg"
+            type_desc = "Smart Key - Zugangskontroller über Fingerprint"
         case 50:
             mod_image = "scc.jpg"
             type_desc = "Smart Controller compakt - Controller mit Sensorik und 24 V Anschlüssen"
@@ -501,7 +529,10 @@ def fill_settings_template(app, title, subtitle, step, settings, key: str) -> st
     """Return settings page."""
     with open(WEB_FILES_DIR + SETTINGS_TEMPLATE_FILE, mode="r") as tplf_id:
         page = tplf_id.read()
-    mod_image, mod_type = get_module_image(settings.typ)
+    if key == "fingers":
+        mod_image, mod_type = get_module_image(b"\x1f")
+    else:
+        mod_image, mod_type = get_module_image(settings.typ)
     page = (
         page.replace("ContentTitle", title)
         .replace("ContentSubtitle", subtitle)
@@ -521,6 +552,30 @@ def fill_settings_template(app, title, subtitle, step, settings, key: str) -> st
     return page
 
 
+def fill_automations_template(app, title, subtitle, step) -> str:
+    """Return automations page."""
+    with open(WEB_FILES_DIR + AUTOMATIONS_TEMPLATE_FILE, mode="r") as tplf_id:
+        page = tplf_id.read()
+    mod_image, mod_type = get_module_image(app["settings"].typ)
+    page = (
+        page.replace("ContentTitle", title)
+        .replace("ContentSubtitle", subtitle)
+        .replace("controller.jpg", mod_image)
+        .replace("ModAddress", f'{app["settings"].id}-{step}')
+    )
+    if step == 0:
+        page = disable_button("zurück", page)
+        # page = page.replace('form="settings_table"', "")
+        settings_form = prepare_automations_list(app)
+
+    # else:
+    #     if step == app["props"]["no_keys"]:
+    #         page = disable_button("weiter", page)
+    #     settings_form = prepare_table(app, settings.id, step, key)
+    page = page.replace("<p>ContentText</p>", settings_form)
+    return page
+
+
 def indent(level):
     """Return sequence of tabs according to level."""
     return "\t" * level
@@ -528,6 +583,38 @@ def indent(level):
 
 def disable_button(key: str, page) -> str:
     return page.replace(f">{key}<", f" disabled>{key}<")
+
+
+def prepare_automations_list(app):
+    """Prepare automations list page."""
+    automations = app["automations"]
+    tbl = indent(4) + f'<form id="automations_table" action="automtns" method="post">\n'
+    tbl += indent(5) + "<table>\n"
+    for at_i in range(len(automations)):
+        tbl += indent(6) + "<tr>\n"
+        id_name = f"atm{at_i}"
+        prompt = f"#{at_i}"
+        ec = automations[at_i]["event_code"]
+        ac = automations[at_i]["action_code"]
+        if automations[at_i]["event_arg2"] == 0:
+            ec_1 = ""
+        else:
+            ec_1 = f'{automations[at_i]["event_arg2"]}'
+        ac_args = ""
+        for ac_arg in automations[at_i]["action_args"][1:]:
+            ac_args += f"&nbsp;&nbsp;&nbsp;{int(ac_arg)}"
+        tbl += (
+            indent(7)
+            + f'<td>{EventCodes[ec]}</td><td align=right>&nbsp;{automations[at_i]["event_arg1"]}</td><td align=right>&nbsp;{ec_1}</td><td align=center>&nbsp;&nbsp;:&nbsp;&nbsp;</td>\n'
+        )
+        tbl += (
+            indent(7)
+            + f'<td>{ActionCodes[ac]}</td><td align=right>&nbsp;{automations[at_i]["action_arg"]}</td><td align=left>&nbsp;{ac_args}</td>\n'
+        )
+        tbl += indent(6) + "</tr>\n"
+    tbl += indent(5) + "</table>\n"
+    tbl += indent(4) + "</form>\n"
+    return tbl
 
 
 def prepare_basic_settings(app, mod_addr, mod_type):
@@ -596,19 +683,20 @@ def prepare_basic_settings(app, mod_addr, mod_type):
             indent(7)
             + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="1" max="240" id="{id_name}" value="{settings.displ_time}"/></td></tr>\n'
         )
-    if len(settings.inputs) > 0:
-        id_name = "t_short"
-        prompt = "Tastendruck kurz [ms]"
-        tbl += (
-            indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="10" max="250" id="{id_name}" value="{settings.t_short}"/></td></tr>\n'
-        )
-        id_name = "t_long"
-        prompt = "Tastendruck lang [ms]"
-        tbl += (
-            indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="100" max="2500" id="{id_name}" value="{settings.t_long}"/></td></tr>\n'
-        )
+    if mod_addr > 0:
+        if len(settings.inputs) > 0:
+            id_name = "t_short"
+            prompt = "Tastendruck kurz [ms]"
+            tbl += (
+                indent(7)
+                + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="10" max="250" id="{id_name}" value="{settings.t_short}"/></td></tr>\n'
+            )
+            id_name = "t_long"
+            prompt = "Tastendruck lang [ms]"
+            tbl += (
+                indent(7)
+                + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="100" max="2500" id="{id_name}" value="{settings.t_long}"/></td></tr>\n'
+            )
     if settings.type in [
         "Smart Controller XL-1",
         "Smart Controller XL-2",

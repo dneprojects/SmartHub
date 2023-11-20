@@ -85,7 +85,7 @@ class HbtnModule:
         )
 
     def get_status(self, direct: bool) -> bytes:
-        """Return status, if direct == False: compacted"""
+        """Return status, if direct == False: compacted."""
         if direct:
             return self.status
         compact_status = b""
@@ -94,15 +94,21 @@ class HbtnModule:
         return compact_status
 
     def get_module_code(self) -> bytes:
-        """Return Habitron module code"""
+        """Return Habitron module code."""
         return self._typ
 
     def get_settings(self):
         """Return settings part of mirror"""
         return self.status[MirrIdx.T_SHORT : MirrIdx.T_SHORT + 17]
 
+    def has_automations(self) -> bool:
+        """Return True if local automations available."""
+        if len(self.list) > 5:
+            return (self.list[4] == 0) & (self.list[5] == 0)
+        return False
+
     def compare_status(self, stat1: str, stat2: str) -> list:
-        """Find updates fields"""
+        """Find updates fields."""
         diff_idx = []
         idx = 0
         for x, y in zip(stat1, stat2):
@@ -112,7 +118,7 @@ class HbtnModule:
         return diff_idx
 
     def update_status(self, new_status: bytes):
-        """Saves new mirror status and returns differences"""
+        """Saves new mirror status and returns differences."""
         block_list = []
         update_info = ""
 

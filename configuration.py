@@ -33,6 +33,7 @@ class ModuleSettings:
         self.cover_times = [0, 0, 0, 0, 0]
         self.blade_times = [0, 0, 0, 0, 0]
         self.get_io_interfaces()
+        self.get_automations()
         self.get_names()
         self.get_settings()
         self.get_descriptions()
@@ -251,20 +252,53 @@ class ModuleSettings:
             )
         return status
 
+    def get_automations(self) -> bool:
+        """Get automations of Habitron module."""
+
+        self.automations = []
+        list = self.list
+        no_lines = int.from_bytes(list[:2], "little")
+        list = list[4 : len(list)]  # Strip 4 header bytes
+        if len(list) == 0:
+            return False
+        atm_nmbr = 0
+        for _ in range(no_lines):
+            if list == b"":
+                break
+            line_len = int(list[5]) + 5
+            line = list[0:line_len]
+            src_rt = int(line[0])
+            src_mod = int(line[1])
+            if ((src_rt == 0) | (src_rt == 250)) & (src_mod == 0):  # local automation
+                automtn = {}
+                automtn["nmbr"] = atm_nmbr
+                automtn["event_code"] = int(line[2])
+                automtn["event_arg1"] = int(line[3])
+                automtn["event_arg2"] = int(line[4])
+                automtn["condition"] = int(line[6])
+                automtn["action_code"] = int(line[7])
+                automtn["action_arg"] = int(line[8])
+                automtn["action_args"] = line[8:]
+                self.automations.append(automtn)
+                atm_nmbr += 1
+            list = list[line_len : len(list)]  # Strip processed line
+
+        return True
+
     def get_names(self) -> bool:
         """Get summary of Habitron module."""
 
         self.all_fingers = {}
-        conf = self.list
-        no_lines = int.from_bytes(conf[:2], "little")
-        conf = conf[4 : len(conf)]  # Strip 4 header bytes
-        if len(conf) == 0:
+        list = self.list
+        no_lines = int.from_bytes(list[:2], "little")
+        list = list[4 : len(list)]  # Strip 4 header bytes
+        if len(list) == 0:
             return False
         for _ in range(no_lines):
-            if conf == b"":
+            if list == b"":
                 break
-            line_len = int(conf[5]) + 5
-            line = conf[0:line_len]
+            line_len = int(list[5]) + 5
+            line = list[0:line_len]
             event_code = int(line[2])
             if event_code == 235:  # Beschriftung
                 text = line[8:]
@@ -341,7 +375,7 @@ class ModuleSettings:
                             f"Parsing of names for module {self.name} failed: {err_msg}: Code {arg_code}, Text {text}"
                         )
 
-            conf = conf[line_len : len(conf)]  # Strip processed line
+            list = list[line_len : len(list)]  # Strip processed line
 
         if self.type == "Smart Controller Mini":
             return True
@@ -353,6 +387,7 @@ class ModuleSettings:
             return True
         if self.type == "Fanekey":
             self.users_sel = 0
+            self.module.all_fingers = self.all_fingers  # stores the ative settings
             if len(self.users) > 0:
                 self.fingers = self.all_fingers[self.users[self.users_sel].nmbr]
             return True
