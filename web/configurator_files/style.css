@@ -288,7 +288,9 @@ form td.col_0 {
 }
 
 form table td {
-   padding-bottom: 4px;
+   padding-bottom: 2px;
+   padding-left: 2px;
+   padding-right: 2px;
 }
 
 form table td.col_first {
@@ -971,6 +973,7 @@ select {
    background: url(design/input_shadow.gif) no-repeat left top;
    width: 180px;
    padding-top: 2px;
+   padding-bottom: 2px;
    color: #333;
    border: 1px solid #C0372D;
 }
@@ -1018,12 +1021,20 @@ select {
    background: url(design/input_shadow.gif) no-repeat left top;
    height: 21.78px;
    width: 184.78px;
-   padding-left: 3px;
+   padding-left: 0px;
    margin-left: 10px;
    border: 1px solid #C0372D;
    padding-top: 2px;
    margin-top: 0px;
    margin-right: 0px;
+}
+
+input#file_updwnload {
+   width: 360px;
+   margin-left: 0px;
+   padding-left: 2px;
+   padding-right: 2px;
+   text-align: left;
 }
 
 /*input[type="text"] { background: url(design/formfeld_bg.gif) no-repeat left top; }*/
