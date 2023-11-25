@@ -11,6 +11,7 @@ from const import (
     RtStatIIdx,
     FingerNames,
 )
+from automation import AutomationDefinition
 
 
 class ModuleSettings:
@@ -261,7 +262,6 @@ class ModuleSettings:
         list = list[4 : len(list)]  # Strip 4 header bytes
         if len(list) == 0:
             return False
-        atm_nmbr = 0
         for _ in range(no_lines):
             if list == b"":
                 break
@@ -270,19 +270,8 @@ class ModuleSettings:
             src_rt = int(line[0])
             src_mod = int(line[1])
             if ((src_rt == 0) | (src_rt == 250)) & (src_mod == 0):  # local automation
-                automtn = {}
-                automtn["nmbr"] = atm_nmbr
-                automtn["event_code"] = int(line[2])
-                automtn["event_arg1"] = int(line[3])
-                automtn["event_arg2"] = int(line[4])
-                automtn["condition"] = int(line[6])
-                automtn["action_code"] = int(line[7])
-                automtn["action_arg"] = int(line[8])
-                automtn["action_args"] = line[8:]
-                self.automations.append(automtn)
-                atm_nmbr += 1
+                self.automations.append(AutomationDefinition(line))
             list = list[line_len : len(list)]  # Strip processed line
-
         return True
 
     def get_names(self) -> bool:

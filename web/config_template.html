@@ -163,6 +163,17 @@
         </div>
       </div>
     </div>
+
+    <div id="msg_popup" class="popup">
+      <div class="popup-content">
+        <h1 id="msg_popup_txt">ContentTitle</h1>
+        <h3 id="msg_popup_txt">Upload</h3>
+        <div id="image_container_wait">
+          <img src="./configurator_files/wait_red.gif" alt="Please wait" id="msg_popup_img">
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -175,16 +186,20 @@
       file_popup.classList.remove("show");
     });
     form_upload.addEventListener("submit", function () {
-      file_popup.classList.remove("show");
+      openMsgPopup();
     });
     form_download.addEventListener("submit", function () {
-      file_popup.classList.remove("show");
+      openMsgPopup();
     });
     window.addEventListener("click", function (event) {
       if (event.target == myPopup) {
-        file_popup.classList.remove("show");
-      }
+        openMsgPopup();
+      };
     });
+    function openMsgPopup() {
+      file_popup.classList.remove("show");
+      msg_popup.classList.add("show");
+    };
   </script>
 </body>
 

@@ -196,6 +196,7 @@ class EventServer:
                         self.logger.info(
                             f"Direct command: Module {rt_event[5]} - Command {rt_event[6:-1]}"
                         )
+                        tail = self.extract_rest_msg(rt_event, rt_event[8] + 8)
                     elif rt_event[4] == 87:
                         # Forward command response
                         self.logger.debug(f"Forward response: {rt_event[4:-1]}")
@@ -206,6 +207,7 @@ class EventServer:
                         await self.fwd_hdlr.send_forward_response(rt_event[4:-1])
                         self.msg_appended = False
                     elif rt_event[4] == 134:  # 0x86: System event
+                        ev_list = None
                         if rt_event[5] == 254:
                             self.logger.info("Event mode started")
                             m_len = 8
@@ -263,6 +265,7 @@ class EventServer:
                                     m_len += 1
                                     ev_list = [0, 10, args[0], args[1]]
                                 case 68:
+                                    m_len = rt_event[8] + 7
                                     self.logger.warning(f"Event 68: {rt_event}")
                                 case other:
                                     self.logger.warning(f"Unknown event id: {event_id}")
@@ -340,7 +343,8 @@ class EventServer:
 
         if (self.websck == []) | (self.websck == None):
             await self.open_websocket()
-
+        if event == None:
+            return
         try:
             evnt_data = {
                 "rtr_nmbr": rtr,

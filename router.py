@@ -51,7 +51,7 @@ class HbtnRouter:
         del self.api_srv
         del self.hdlr
 
-    def mirror_running(self) -> bool:
+    async def mirror_running(self) -> bool:
         """Return mirror status based on chan_status."""
         return self.chan_status[-1] == RT_STAT_CODES.MIRROR_ACTIVE
 

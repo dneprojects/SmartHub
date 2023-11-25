@@ -4,6 +4,7 @@ from urllib.parse import parse_qs
 from multidict import MultiDict
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from configuration import RouterSettings
+import asyncio
 import logging
 import pathlib
 import re
@@ -180,6 +181,7 @@ class ConfigServer:
             # router upload
             request.app["logger"].info(f"Router configuration file uploaded")
             await send_to_router(request.app, content_str)
+            return show_router_overview(request.app)
         else:
             mod_addr = int(data["ModUpload"])
             if data["ModUpload"] == content_str.split(";")[0]:
@@ -191,8 +193,7 @@ class ConfigServer:
                 request.app["logger"].warning(
                     f"Module configuration file does not fit to module number {mod_addr}, upload aborted"
                 )
-                web.AppendChild
-        return web.HTTPNoContent()
+            return show_module_overview(request.app, mod_addr)  # web.HTTPNoContent()
 
 
 def get_html(html_file) -> str:
@@ -594,22 +595,18 @@ def prepare_automations_list(app):
         tbl += indent(6) + "<tr>\n"
         id_name = f"atm{at_i}"
         prompt = f"#{at_i}"
-        ec = automations[at_i]["event_code"]
-        ac = automations[at_i]["action_code"]
-        if automations[at_i]["event_arg2"] == 0:
-            ec_1 = ""
-        else:
-            ec_1 = f'{automations[at_i]["event_arg2"]}'
+        evnt_name, ec_1, ec_2 = automations[at_i].event_description()
+        actn_name = automations[at_i].action_name()
         ac_args = ""
-        for ac_arg in automations[at_i]["action_args"][1:]:
-            ac_args += f"&nbsp;&nbsp;&nbsp;{int(ac_arg)}"
+        for ac_arg in automations[at_i].action_args[1:]:
+            ac_args += f"&nbsp;&nbsp;&nbsp;{ac_arg}"
         tbl += (
             indent(7)
-            + f'<td>{EventCodes[ec]}</td><td align=right>&nbsp;{automations[at_i]["event_arg1"]}</td><td align=right>&nbsp;{ec_1}</td><td align=center>&nbsp;&nbsp;:&nbsp;&nbsp;</td>\n'
+            + f"<td>{evnt_name}</td><td align=right>&nbsp;{ec_1}</td><td align=right>&nbsp;{ec_2}</td><td align=center>&nbsp;&nbsp;&rArr;&nbsp;&nbsp;</td>\n"
         )
         tbl += (
             indent(7)
-            + f'<td>{ActionCodes[ac]}</td><td align=right>&nbsp;{automations[at_i]["action_arg"]}</td><td align=left>&nbsp;{ac_args}</td>\n'
+            + f"<td>{actn_name}</td><td align=right>&nbsp;{automations[at_i].action_args[0]}</td><td align=left>&nbsp;{ac_args}</td>\n"
         )
         tbl += indent(6) + "</tr>\n"
     tbl += indent(5) + "</table>\n"

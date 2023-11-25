@@ -212,24 +212,32 @@ class HbtnModule:
         """Calculate interpolation of times for 8 covers and 8 blinds"""
         cv_times = ""
         bl_times = ""
+        try:
+            prop_range = self.io_properties["covers"]
+        except:
+            prop_range = 8
         for ci in range(8):
             try:
-                t_cover = round(
-                    self.status[MirrIdx.COVER_T + ci]
-                    * self.status[MirrIdx.COVER_INTERP + ci]
-                    / 10
-                )
-                t_blind = self.status[MirrIdx.BLAD_T + ci]
+                if ci in range(prop_range):
+                    t_cover = round(
+                        self.status[MirrIdx.COVER_T + ci]
+                        * self.status[MirrIdx.COVER_INTERP + ci]
+                        / 10
+                    )
+                    t_blind = self.status[MirrIdx.BLAD_T + ci]
 
-                pol_mask = int.from_bytes(
-                    self.status[MirrIdx.COVER_POL : MirrIdx.COVER_POL + 2], "little"
-                )
-                if pol_mask & (1 << (2 * ci)) > 0:
-                    cv_times += chr(t_cover) + chr(0)
-                    bl_times += chr(t_blind) + chr(0)
+                    pol_mask = int.from_bytes(
+                        self.status[MirrIdx.COVER_POL : MirrIdx.COVER_POL + 2], "little"
+                    )
+                    if pol_mask & (1 << (2 * ci)) > 0:
+                        cv_times += chr(t_cover) + chr(0)
+                        bl_times += chr(t_blind) + chr(0)
+                    else:
+                        cv_times += chr(0) + chr(t_cover)
+                        bl_times += chr(0) + chr(t_blind)
                 else:
-                    cv_times += chr(0) + chr(t_cover)
-                    bl_times += chr(0) + chr(t_blind)
+                    cv_times += chr(0) + chr(0)
+                    bl_times += chr(0) + chr(0)
             except Exception as err_msg:
                 self.logger.error(
                     f"Error calculating cover times of module {self._id} no {ci}: {err_msg}"
@@ -283,11 +291,13 @@ class HbtnModule:
         self.status = settings.set_module_settings(self.status)
         self.list = settings.set_list()
         self.list_upload = self.list
+        await self.api_srv.pause_api_mode(self.rt._id, True)
         self.smg_upload = self.build_smg()
         await self.hdlr.send_module_smg(self._id)
         await self.hdlr.send_module_list(self._id)
         await self.hdlr.get_module_status(self._id)
         self.comp_status = self.get_status(False)
+        await self.api_srv.pause_api_mode(self.rt._id, False)
         self.calc_SMG_crc(self.build_smg())
         self._name = (
             self.status[MirrIdx.MOD_NAME : MirrIdx.MOD_NAME + 32]

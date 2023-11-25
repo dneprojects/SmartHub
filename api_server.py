@@ -42,6 +42,7 @@ class ApiServer:
         self._hass_ip = ""
         self.mirror_mode = False
         self.event_mode = True
+        self._api_pause = False
 
     async def get_initial_status(self):
         """Starts router object and reads complete system status"""
@@ -129,9 +130,28 @@ class ApiServer:
         self.logger.debug(f"API network response: {self.api_msg._rbuffer}")
         self.ip_writer.write(self.api_msg._rbuffer)
 
+    async def pause_api_mode(self, rt_no, set_pause):
+        """Set or reset API mode pause."""
+        if self._api_mode & set_pause:
+            self._api_pause = True
+            await self.stop_api_mode(rt_no)
+            self.logger.info("Setting API mode pause")
+        if not set_pause:
+            self._api_pause = False
+            await self.start_api_mode(rt_no)
+            self.logger.info("Resuming API mode from pause")
+
     async def start_api_mode(self, rt_no):
         """Turn on API mode: enable router events"""
-        if self._api_mode & self.routers[rt_no - 1].mirror_running():
+        pause_time = 0
+        while self._api_pause:
+            # wait for end of pause
+            await asyncio.sleep(1)
+            pause_time += 1
+        if pause_time > 0:
+            self.logger.info(f"Waited for {pause_time} seconds in API pause mode")
+        mirror_running = await self.routers[rt_no - 1].mirror_running()
+        if self._api_mode & mirror_running:
             if self._ev_srv_task != []:
                 if self._ev_srv_task._state != "FINISHED":
                     return
@@ -171,12 +191,12 @@ class ApiServer:
         strt_mirr_cmd = RT_CMDS.START_MIRROR.replace(
             "<cyc>", chr(min(round(MIRROR_CYC_TIME * 100), 255))
         )
-        if self.event_mode:
-            await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.START_EVENTS)
-            pass
         if self.mirror_mode:
             await self.hdlr.handle_router_cmd(rt_no, strt_mirr_cmd)
-        await asyncio.sleep(0.1)
+            await asyncio.sleep(0.2)
+        if self.event_mode:
+            await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.START_EVENTS)
+            await asyncio.sleep(0.2)
 
     async def stop_api_mode(self, rt_no):
         """Turn on config mode: disable router events"""

@@ -716,6 +716,16 @@ body.produkte.sub #right .ce_text a {
 
 }
 
+#config_button_sv.config_button {
+   height: 22px;
+   width: 100px;
+   margin-left: 0px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+
+}
+
 #config_button.new_button {
    height: 21.78px;
    width: 70px;
