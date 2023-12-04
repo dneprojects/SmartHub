@@ -350,8 +350,10 @@ class RT_CMDS:
     CALL_COLL_CMD = "\x2a<rtr>\x06\x32<cmd>\xff"
 
     SET_LOGIC_UNIT = "\x2a<rtr>\x0d\x44<mod>\x09\x06\x01\x53<lno><md><act>\xff"
-    SET_LOGIC_INP = "\x2a<rtr>\x0c\x44<mod>\x08\x09\x45\x00<sr><inp>\xff"
-    SET_COUNTER_VAL = "\x2a<rtr>\x0e\x44<mod>\x0a\x09\x45\x00<lno>\x05<val>\x00\xff"
+    SET_LOGIC_INP = "\x2a<rtr>\x0b\x44<mod>\x07\x06\x00<sr><inp>\xff"
+    SET_COUNTER_VAL = "\x2a<rtr>\x0d\x44<mod>\x09\x06\x00<lno>\x05<val>\x00\xff"
+    # SET_LOGIC_INP = "\x2a<rtr>\x0c\x44<mod>\x08\x09\x45\x00<sr><inp>\xff"
+    # SET_COUNTER_VAL = "\x2a<rtr>\x0e\x44<mod>\x0a\x09\x45\x00<lno>\x05<val>\x00\xff"
 
     SWITCH_RGB_LED = "\x2a<rtr>\x0b\x44<mod>\x07\x23<tsk>\x01\xc8\xff"
     SET_RGB_LED = "\x2a<rtr>\x0e\x44<mod>\x0a\x23<tsk>\x01<inp><r><g><b><tl><th>\xff"

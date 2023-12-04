@@ -72,6 +72,16 @@ class SettingsHdlr(HdlrBase):
                     self._p5
                 )
                 if self._p5 == 0xFF:
+                    self.response = (
+                        chr(self.api_srv.routers[rt - 1].mode0).encode("iso8859-1")
+                        + self.response
+                    )
+                    response = chr(65).encode()
+                    for g_i in range(65):
+                        response += (
+                            chr(g_i).encode("iso8859-1") + self.response[g_i : g_i + 1]
+                        )
+                    self.response = response
                     self.logger.debug("Read all group modes: ")
                 elif len(self.response) > 1:
                     self.logger.debug(f"Read mode of group {self._p5}: {self.response}")
@@ -81,6 +91,7 @@ class SettingsHdlr(HdlrBase):
                     self.logger.debug(
                         f"Read mode of group {self._p5}: 0x{ord(self.response):2X}"
                     )
+                    self.response = b"\1" + chr(self._p5).encode() + self.response
 
             case spec.MDSET:  # 02 02: Set mode
                 self.check_router_no(rt)

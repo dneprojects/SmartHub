@@ -15,6 +15,7 @@ from const import (
     SETTINGS_TEMPLATE_FILE,
     AUTOMATIONS_TEMPLATE_FILE,
     CONF_PORT,
+    SYS_MODES,
     FingerNames,
     MirrIdx,
     IfDescriptor,
@@ -133,8 +134,7 @@ class ConfigServer:
     async def root(request: web.Request) -> web.Response:
         resp = await request.text()
         form_data = parse_qs(resp)
-        parse_response_form(request.app, form_data)
-        args = form_data["ModSettings"][0]
+        args = parse_response_form(request.app, form_data)
         return await show_next_prev(request, args)
 
     @routes.get("/download")
@@ -301,16 +301,19 @@ def show_router_overview(app) -> web.Response:
     props += f"Hardware:&nbsp;&nbsp;&nbsp;{rtr.serial.decode('iso8859-1')[1:]}<br>"
     props += f"Firmware:&nbsp;&nbsp;&nbsp;{rtr.version.decode('iso8859-1')[1:]}<br>"
     mode0 = rtr.mode0
-    day_mode = mode0 & 0x7
+    config_mode = mode0 == SYS_MODES.Config
+    day_mode = mode0 & 0x3
+    alarm_mode = mode0 & 0x4
     mode0 = mode0 & 0xF8
-    if mode0 == 75:
+    mode_str = ""
+    if config_mode:
         mode_str = "Konfig"
     elif mode0 == 112:
         mode_str = "Urlaub"
     elif mode0 == 96:
-        mode_str = "User2"
+        mode_str = rtr.user_modes[12:].decode("iso8859-1").strip()
     elif mode0 == 80:
-        mode_str = "User1"
+        mode_str = rtr.user_modes[1:11].decode("iso8859-1").strip()
     elif mode0 == 48:
         mode_str = "Schlafen"
     elif mode0 == 32:
@@ -321,7 +324,7 @@ def show_router_overview(app) -> web.Response:
         mode_str += ", Tag"
     elif day_mode == 2:
         mode_str += ", Nacht"
-    if day_mode >= 4:
+    if alarm_mode == 4:
         mode_str += ", Alarm"
     props += (
         f"Mode:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
@@ -920,7 +923,12 @@ def prepare_table(app, mod_addr, step, key) -> str:
             + indent(7)
             + "</tr>\n"
         )
-
+        if key in ["fingers"]:
+            tbl = tbl.replace(
+                '<button name="ModSettings" class="new_button"',
+                '<button name="TeachNewFinger" class="new_button"',
+            )
+            # tbl = tbl.replace('"data[{ci},1000]"','"data[{ci},999]"')
         tbl += (
             indent(7)
             + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},1001]" type="number" min="{min_del}" max="{max_del}" placeholder="Existierende Nummer eintragen" id="{id_name}"/></td>\n'
@@ -964,6 +972,7 @@ def parse_response_form(app, form_data):
                         break
                 if not entry_found:
                     if key == "fingers":
+                        # Add teaching here
                         settings.__getattribute__(key).append(
                             IfDescriptor(
                                 FingerNames[int(form_data[form_key][0]) - 1],
@@ -1095,7 +1104,10 @@ def parse_response_form(app, form_data):
 
     if key == "fingers":
         settings.all_fingers[settings.users[settings.users_sel].nmbr] = settings.fingers
+        if "TeachNewFinger" in list(form_data.keys()):
+            form_data["ModSettings"] = form_data["TeachNewFinger"]
     app["settings"] = settings
+    return form_data["ModSettings"][0]
 
 
 def get_property_kind(app, step):
@@ -1219,12 +1231,14 @@ def seperate_upload(upload_str: str) -> (bytes, bytes):
 async def send_to_router(app, content: str):
     """Send uploads to module."""
     rtr = app["api_srv"].routers[0]
+    await rtr.api_srv.block_api_mode(rtr._id, True)
     await rtr.set_config_mode(True)
     await rtr.hdlr.send_rt_full_status()
     # Routerstatus neu lesen
     # Weiterleitung neu starten
     rtr.smr_upload = b""
     await rtr.set_config_mode(False)
+    await rtr.api_srv.block_api_mode(rtr._id, True)
 
 
 async def send_to_module(app, content: str, mod_addr: int):
@@ -1233,9 +1247,11 @@ async def send_to_module(app, content: str, mod_addr: int):
     module = rtr.get_module(mod_addr)
     module.smg_upload, module.list_upload = seperate_upload(content)
     if ModbusComputeCRC(module.list_upload) != module.get_smc_crc():
+        await rtr.api_srv.block_api_mode(rtr._id, True)
         await rtr.set_config_mode(True)
         await module.hdlr.send_module_list(mod_addr)
         await rtr.set_config_mode(False)
+        await rtr.api_srv.block_api_mode(rtr._id, False)
         module.list = module.list_upload
         module.calc_SMC_crc(module.list)
         app["logger"].debug("Module list upload from configuration server finished")

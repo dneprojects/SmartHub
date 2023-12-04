@@ -123,46 +123,36 @@ class HbtnModule:
         update_info = ""
 
         # print(f"Module update {self._id}")
-        if self._type in ["Smart Nature", "FanGSM", "FanM-Bus"]:
+        if self._type in [
+            "Smart Nature",
+            "FanGSM",
+            "FanM-Bus",
+            "Smart Out 8/R",
+            "Smart Out 8/R-1",
+            "Smart Out 8/R-2",
+            "Smart Out 8/T",
+            "Smart In 8/24V",
+            "Smart In 8/24V-1",
+            "Smart In 8/230V",
+            "Fanekey",
+        ]:
             pass
         else:
             if self._type in [
-                "Smart Out 8/R",
-                "Smart Out 8/R-1",
-                "Smart Out 8/R-2",
-                "Smart Out 8/T",
-            ]:
-                i0 = MirrIdx.OUT_1_8
-                i1 = MirrIdx.OUT_1_8 + 1
-            elif self._type in [
-                "Smart In 8/24V",
-                "Smart In 8/24V-1",
-                "Smart In 8/230V",
-            ]:
-                i0 = MirrIdx.INP_1_8
-                i1 = MirrIdx.INP_1_8 + 1
-                i_diff = self.compare_status(self.status[i0:i1], new_status[i0:i1])
-                if i_diff != []:
-                    self.logger.info("Input change detected!")
-            elif self._type in [
                 "Smart Detect 180",
                 "Smart Detect 180-2",
                 "Smart Detect 360",
             ]:
                 i0 = MirrIdx.LUM
                 i1 = MirrIdx.MOV + 1
-            elif self._type in ["Fanekey"]:
-                i0 = MirrIdx.IR_H
-                i1 = MirrIdx.SMKEY_STAT + 1
             else:  # Controller modules
                 block_list = [
-                    MirrIdx.MOV,
                     MirrIdx.LUM,
                     MirrIdx.TEMP_ROOM,
                     MirrIdx.TEMP_PWR,
                     MirrIdx.TEMP_EXT,
                 ]
-                i0 = MirrIdx.INP_1_8
+                i0 = MirrIdx.DIM_1
                 i1 = MirrIdx.T_SHORT
             i_diff = self.compare_status(self.status[i0:i1], new_status[i0:i1])
             for i_d in i_diff:
@@ -173,8 +163,8 @@ class HbtnModule:
                         + chr(self.status[i_d + i0])
                         + chr(new_status[i_d + i0])
                     )
-                    self.logger.info(
-                        f"Update in module {self._id}: {self._name}: Byte {i_d+i0} - new: {new_status[i_d+i0]}"
+                    self.logger.debug(
+                        f"Update in module status {self._id}: {self._name}: Byte {i_d+i0} - new: {new_status[i_d+i0]}"
                     )
         if len(new_status) > 100:
             self.status = new_status
@@ -291,13 +281,13 @@ class HbtnModule:
         self.status = settings.set_module_settings(self.status)
         self.list = settings.set_list()
         self.list_upload = self.list
-        await self.api_srv.pause_api_mode(self.rt._id, True)
+        await self.api_srv.block_api_mode(self.rt._id, True)
         self.smg_upload = self.build_smg()
         await self.hdlr.send_module_smg(self._id)
         await self.hdlr.send_module_list(self._id)
         await self.hdlr.get_module_status(self._id)
+        await self.api_srv.block_api_mode(self.rt._id, False)
         self.comp_status = self.get_status(False)
-        await self.api_srv.pause_api_mode(self.rt._id, False)
         self.calc_SMG_crc(self.build_smg())
         self._name = (
             self.status[MirrIdx.MOD_NAME : MirrIdx.MOD_NAME + 32]

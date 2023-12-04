@@ -157,6 +157,7 @@ class ModHdlr(HdlrBase):
             flg = chr(7)
             cnt = self.rt_msg._resp_buffer[-2] + 1
             l_cnt += l_p
+            await asyncio.sleep(0.1)
         # await self.handle_router_resp(self.rt_id)
         resp = self.rt_msg._resp_buffer
 

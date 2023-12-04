@@ -45,6 +45,17 @@
     line-height: 16px;
 }
 
+#teach_popup .popup-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888888;
+    width: 200px;
+    color: #6b6c6e;
+    font-size: 11px;
+    line-height: 16px;
+}
+
 #close_popup {
     height: 22px;
     width: 100px;

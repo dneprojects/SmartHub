@@ -73,11 +73,19 @@ class RtHdlr(HdlrBase):
         else:
             rt_cmd = RT_CMDS.GET_GRP_MODE.replace("<grp>", chr(group))
         await self.handle_router_cmd_resp(self.rt_id, rt_cmd)
-        if group == 0:
-            if len(self.rt_msg._resp_msg) > 1:
-                self.logger.warning(
-                    f"Response to get mode 0 command too long: {self.rt_msg._resp_buffer}"
-                )
+
+        if (len(self.rt_msg._resp_msg) > 1) & (group != 255):
+            self.logger.warning(
+                f"Response to get mode {group} command too long: {self.rt_msg._resp_buffer}"
+            )
+            if (b_len := len(self.ser_if[0]._buffer)) > 0:
+                chunk = await self.ser_if[0].read(b_len)  # empty buffer
+            other_responses = True
+            while other_responses:
+                await self.handle_router_cmd_resp(self.rt_id, rt_cmd)
+                other_responses = not (self.rt_msg._resp_buffer[3] == ord(rt_cmd[-2]))
+                self.logger.info(f"Other response: {self.rt_msg._resp_buffer[:5]}")
+        elif group == 0:
             self.rtr.mode0 = self.rt_msg._resp_msg[0]
         return self.rt_msg._resp_msg
 
@@ -572,9 +580,11 @@ class RtHdlr(HdlrBase):
         resp_msg = RtResponse(self, rt_resp)
         if not (resp_msg._crc_ok):
             self.logger.warning(
-                f"Invalid router message crc, message: {resp_msg.resp_data}"
+                f"Invalid API mode router message crc, message: {resp_msg.resp_data}"
             )
             return
         if resp_msg.resp_cmd == RT_RESP.MIRR_STAT:
             mod_id = resp_msg.resp_data[0]
-            return self.rtr.get_module(mod_id).update_status(resp_msg.resp_data)
+            if mod_id in self.rtr.mod_addrs:
+                return self.rtr.get_module(mod_id).update_status(resp_msg.resp_data)
+            return

@@ -150,6 +150,9 @@ class RtMessage(BaseMessage):
         prefix = await self.rt_reader.readexactly(4)
         if (prefix[3] - 3) < 1:
             self.logger.error("Invalid message length")
+            if (b_len := len(self.rt_reader._buffer)) > 0:
+                # Empty buffer
+                await self.rt_reader.readexactly(b_len)
             raise Exception("Invalid message length")
         tail = await self.rt_reader.readexactly(prefix[3] - 3)
         self._resp_buffer = prefix[1:] + tail

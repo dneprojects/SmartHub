@@ -42,7 +42,8 @@ class ApiServer:
         self._hass_ip = ""
         self.mirror_mode = False
         self.event_mode = True
-        self._api_pause = False
+        self._api_cmd_processing = False  # For blocking of config server
+        self._api_blocked = False  # For blocking of api server
 
     async def get_initial_status(self):
         """Starts router object and reads complete system status"""
@@ -50,15 +51,27 @@ class ApiServer:
         self.evnt_srv = EventServer(self)
         await self.set_initial_non_api_mode(1)
         await self.routers[0].get_full_system_status()
-        self.logger.info("API server, router, and modules initialized")
+        self.logger.info(
+            f"API server, router, and {len(self.routers[0].modules)} modules initialized"
+        )
 
     async def handle_api_command(self, ip_reader, ip_writer):
         """Network server handler to receive api commands."""
         self.ip_writer = ip_writer
 
         while self._running:
+            self._api_cmd_processing = False
+            block_time = 0
+            while self._api_blocked:
+                # wait for end of block
+                await asyncio.sleep(1)
+                block_time += 1
+            if block_time > 0:
+                self.logger.info(f"Waited for {block_time} seconds in blocked API mode")
+
             # Read api command from network
             pre = await ip_reader.readexactly(3)
+            self._api_cmd_processing = True
             c_len = int(pre[2] << 8) + int(pre[1])
             request = await ip_reader.readexactly(c_len - 3)
 
@@ -71,6 +84,7 @@ class ApiServer:
             success = True
             if self.api_msg._crc_ok:
                 rt = self.api_msg.get_router_id()
+                # await self.start_api_mode(rt)
                 self.logger.info(
                     f"Processing network API command: {self.api_msg._cmd_grp} {struct.pack('<h', self.api_msg._cmd_spec)[1]} {struct.pack('<h', self.api_msg._cmd_spec)[0]}"
                 )
@@ -130,27 +144,30 @@ class ApiServer:
         self.logger.debug(f"API network response: {self.api_msg._rbuffer}")
         self.ip_writer.write(self.api_msg._rbuffer)
 
-    async def pause_api_mode(self, rt_no, set_pause):
+    async def block_api_mode(self, rt_no, set_block):
         """Set or reset API mode pause."""
-        if self._api_mode & set_pause:
-            self._api_pause = True
+
+        if self._api_mode & set_block:
+            api_time = 0
+            while self._api_cmd_processing:
+                # wait for end of api command handling
+                await asyncio.sleep(1)
+                api_time += 1
+            self._api_blocked = True
+            if api_time > 0:
+                self.logger.info(
+                    f"Waited for {api_time} seconds for finishing API command"
+                )
             await self.stop_api_mode(rt_no)
-            self.logger.info("Setting API mode pause")
-        if not set_pause:
-            self._api_pause = False
+            self.logger.info("Block API mode")
+        if not set_block:
+            self._api_blocked = False
             await self.start_api_mode(rt_no)
-            self.logger.info("Resuming API mode from pause")
+            self.logger.info("Release API mode block")
 
     async def start_api_mode(self, rt_no):
         """Turn on API mode: enable router events"""
-        pause_time = 0
-        while self._api_pause:
-            # wait for end of pause
-            await asyncio.sleep(1)
-            pause_time += 1
-        if pause_time > 0:
-            self.logger.info(f"Waited for {pause_time} seconds in API pause mode")
-        mirror_running = await self.routers[rt_no - 1].mirror_running()
+        mirror_running = self.routers[rt_no - 1].mirror_running()
         if self._api_mode & mirror_running:
             if self._ev_srv_task != []:
                 if self._ev_srv_task._state != "FINISHED":
@@ -158,9 +175,7 @@ class ApiServer:
         if self._api_mode:
             print("\n")
             self.logger.info("Switching to API mode, recovering mirror")
-            # if self._ev_srv_task != []:
-            #     self._ev_srv_task.cancel()
-            #     await asyncio.sleep(0.1)
+            await self.routers[rt_no - 1].set_config_mode(False)
             if self._ev_srv_task == []:
                 self.logger.warning(
                     "No event server registered, start event server task"
@@ -180,8 +195,9 @@ class ApiServer:
         else:
             print("\n")
             self.logger.info("Switching to API mode")
+            await self.routers[rt_no - 1].set_config_mode(False)
             self._api_mode = True
-        # Start event handler first, then enable mirror
+            # Start event handler first, then enable mirror
         if self._ev_srv_task == []:
             self.logger.debug("Start event server task")
             self._ev_srv_task = self.loop.create_task(
@@ -205,6 +221,7 @@ class ApiServer:
         self._api_mode = False
 
         # Disable mirror first, then stop event handler
+        # Serial reader still used by event server
         await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.STOP_EVENTS)
         await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.STOP_MIRROR)
         self.evnt_srv.evnt_running = False
@@ -212,6 +229,8 @@ class ApiServer:
         self._ev_srv_task.cancel()
         self.logger.info("API mode terminated successfully")
         self._ev_srv_task = []
+        await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.CLEAR_RT_SENDBUF)
+        await self.routers[rt_no - 1].set_config_mode(True)
 
     async def set_initial_non_api_mode(self, rt_no):
         """Turn on config mode: disable router events"""
@@ -219,6 +238,8 @@ class ApiServer:
         self._ev_srv_task = []
 
         # Disable mirror first, then stop event handler
+        await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.CLEAR_RT_SENDBUF)
         await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.STOP_EVENTS)
         await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.STOP_MIRROR)
+        await self.routers[rt_no - 1].set_config_mode(False)
         self.logger.debug("API mode turned off initially")

@@ -1,0 +1,10 @@
+[Unit]
+Description=SmartHub autostart
+After=network-online.target
+Wants=network-online.target
+[Service]
+ExecStart=python /home/dietm/SmartHub/smarthub.py
+Restart=always
+User=dietm
+[Install]
+WantedBy=multi-user.target

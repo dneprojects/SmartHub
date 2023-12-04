@@ -27,7 +27,7 @@ from config_server import ConfigServer
 class SMHUB_INFO:
     """Holds information."""
 
-    SW_VERSION = "0.8.8"
+    SW_VERSION = "0.9.0"
     TYPE = "Smart Hub"
     TYPE_CODE = "20"
     SERIAL = "RBPI"
@@ -305,33 +305,32 @@ async def init_serial(logger):
         buf += chr(chksum)
         return buf
 
+    router_booting = True
     rt_serial = await open_serial_interface()
     if len(rt_serial[0]._buffer) > 0:
         await rt_serial[0].readexactly(len(rt_serial[0]._buffer))
         logger.debug("Emptied serial read buffer")
-        # try:
-        #     # resp_buf = b""
-        #     # rt_cmd = calc_CRC(RT_CMDS.CLEAR_RT_SENDBUF.replace("<rtr>", chr(RT_DEF_ADDR)))
-        #     # rt_serial[1].write(rt_cmd.encode("iso8859-1"))
-        #     # reading = asyncio.ensure_future(rt_serial[0].read(1024))
-        #     # await asyncio.sleep(0.2)
-        #     # if reading._state == "FINISHED":
-        #     #     resp_buf = reading.result()
-        #     rt_cmd = calc_CRC(RT_CMDS.GET_GLOB_MODE.replace("<rtr>", chr(RT_DEF_ADDR)))
-        #     rt_serial[1].write(rt_cmd.encode("iso8859-1"))
-        #     reading = asyncio.ensure_future(rt_serial[0].read(1024))
-        #     await asyncio.sleep(0.2)
-        #     if reading._state == "FINISHED":
-        #         resp_buf = reading.result()
-        #         if resp_buf[4] == 0x88:
-        #             logger.debug(f"Test response received correctly")
-        #         else:
-        #             logger.warning(f"Unexpected test response: {resp_buf}")
-        #     else:
-        #         raise Exception(f"No test response received")
-        # except Exception as err_msg:
-        #     logger.error(f"Error during fetch of mode 0: {err_msg}")
-        #     rt_serial = None
+    try:
+        while router_booting:
+            rt_cmd = calc_CRC(RT_CMDS.STOP_MIRROR.replace("<rtr>", chr(RT_DEF_ADDR)))
+            rt_serial[1].write(rt_cmd.encode("iso8859-1"))
+            reading = asyncio.ensure_future(rt_serial[0].read(1024))
+            await asyncio.sleep(0.2)
+            if reading._state == "FINISHED":
+                resp_buf = reading.result()
+                if resp_buf[4] == 0x87:
+                    logger.info(f"Router available")
+                    router_booting = False
+                elif resp_buf[4] == 0xFD:  # 253
+                    logger.info(f"Waiting for router booting...")
+                    await asyncio.sleep(5)
+                else:
+                    logger.warning(f"Unexpected test response: {resp_buf}")
+            else:
+                raise Exception(f"No test response received")
+    except Exception as err_msg:
+        logger.error(f"Error during test stop mirror command: {err_msg}")
+        rt_serial = None
     return rt_serial
 
 

@@ -211,7 +211,7 @@ class ActionsHdlr(HdlrBase):
                     .replace("<val>", chr(self._args[1]))
                 )
                 self.logger.info(
-                    f"Router {rt}, module {mod}: {sr_str} input {inp_no} of logic block {self._args[0]}"
+                    f"Router {rt}, module {mod}: set value of counter {self._args[0]} to {self._args[1]}"
                 )
 
             case spec.OUTP_RBG_OFF | spec.OUTP_RBG_ON:
@@ -276,3 +276,4 @@ class ActionsHdlr(HdlrBase):
 
         # Send command to router
         await self.handle_router_cmd(rt, self._rt_command)
+        self.response = "OK"

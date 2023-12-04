@@ -51,7 +51,7 @@ class HbtnRouter:
         del self.api_srv
         del self.hdlr
 
-    async def mirror_running(self) -> bool:
+    def mirror_running(self) -> bool:
         """Return mirror status based on chan_status."""
         return self.chan_status[-1] == RT_STAT_CODES.MIRROR_ACTIVE
 
@@ -77,6 +77,7 @@ class HbtnRouter:
         for m_idx in range(modules[0]):
             self.mod_addrs.append(modules[m_idx + 1])
         self.mod_addrs.sort()
+        mods_to_remove = []
         for mod_addr in self.mod_addrs:
             try:
                 self.modules.append(
@@ -87,15 +88,18 @@ class HbtnRouter:
                 self.logger.info(f"Module {mod_addr} initialized")
             except Exception as err_msg:
                 self.logger.error(f"Failed to setup module {mod_addr}: {err_msg}")
+                await self.set_config_mode(False)
                 self.modules.remove(self.modules[-1])
-                self.mod_addrs.remove(mod_addr)
+                mods_to_remove.append(mod_addr)
                 self.logger.warning(f"Module {mod_addr} removed")
+        for mod_addr in mods_to_remove:
+            self.mod_addrs.remove(mod_addr)
 
     async def get_status(self) -> str:
         """Returns router channel status"""
-        # await self.set_config_mode(True)
+        await self.set_config_mode(True)
         self.chan_status = await self.hdlr.get_rt_status()
-        # await self.set_config_mode(False)
+        await self.set_config_mode(False)
         return self.chan_status
 
     def get_module(self, mod_id):
@@ -152,9 +156,11 @@ class HbtnRouter:
             await self.hdlr.set_mode(0, SYS_MODES.Config)
             self._in_config_mode = True
             self.logger.debug("Set system to Config mode")
+            self.mode0 = SYS_MODES.Config
             await asyncio.sleep(0.5)
         elif self._in_config_mode:
             new_mode = await self.hdlr.set_mode(0, self.recent_mode)
+            self.mode0 = new_mode[0]
             self._in_config_mode = False
             self.logger.debug(
                 f"Set system back to mode {ord(new_mode.decode('iso8859-1')):#x}"
@@ -246,12 +252,14 @@ class HbtnRouter:
     async def set_settings(self, settings: RouterSettings):
         """Store settings into router."""
         self.settings = settings
+        await self.api_srv.block_api_mode(self._id, True)
         await self.hdlr.send_rt_name(settings.name)
         await self.hdlr.send_mode_names(settings.user1_name, settings.user2_name)
         await self.hdlr.send_rt_group_deps(settings.mode_dependencies[1:])
         # await self.hdlr.rt_reboot()
         # await asyncio.sleep(6)
         await self.get_full_status()
+        await self.api_srv.block_api_mode(self._id, False)
 
     def set_descriptions(self, settings: RouterSettings):
         """Store names into router descriptions."""

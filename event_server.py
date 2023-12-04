@@ -111,7 +111,7 @@ class EventServer:
         """Check for more appended messages."""
         if len(rt_event) > msg_len:
             tail = rt_event[msg_len - 1 :]
-            self.logger.debug(f"Second event message: {tail}")
+            self.logger.warning(f"Second event message: {tail}")
             self.msg_appended = True
             return tail
 
@@ -147,14 +147,14 @@ class EventServer:
 
                 if prefix[3] == 0:
                     # Something went wrong, start reading until 0xFF found
-                    self.logger.warning("Router message with length=0, resync")
+                    self.logger.warning("API mode router message with length=0, resync")
                     recvd_byte = b"\00"
                     while recvd_byte != b"\xff":
                         # Look for new start byte
                         recvd_byte = await rt_rd.readexactly(1)
                 elif prefix[3] < 4:
                     self.logger.warning(
-                        f"Router event message too short: {prefix[3]-3} bytes"
+                        f"API mode router message too short: {prefix[3]-3} bytes"
                     )
                 else:
                     # Read rest of message
@@ -169,7 +169,7 @@ class EventServer:
 
                     if len(tail) == 1:
                         self.logger.info(
-                            f"Unexpected short router event message: {tail[0]}"
+                            f"API mode router message too short: {tail[0]}"
                         )
                     elif (rt_event[4] == 135) & (rt_event[5] == 252):
                         self.logger.info("Router event message: Mirror started")
@@ -177,33 +177,35 @@ class EventServer:
                         tail = self.extract_rest_msg(rt_event, 7)
                     elif (rt_event[4] == 135) & (rt_event[5] == 254):
                         self.logger.info(
-                            "Router event message: Mirror stopped, stopping router event watcher"
+                            "API mode router message: Mirror stopped, stopping router event watcher"
                         )
-                        self.evnt_running = False
-                        tail = self.extract_rest_msg(rt_event, 7)
-                        # self.api_srv._ev_hdlr.cancel()
                     elif rt_event[4] == 100:  # router chan status
                         if rt_event[6] != 0:
                             self.api_srv.routers[rtr_id - 1].chan_status = rt_event[
                                 5:47
                             ]
+                            self.logger.debug(
+                                f"API mode router message: Router channel status, mode 0: {rt_event[6]}"
+                            )
                         else:
                             self.logger.warning(
-                                "Router channel status with mode=0, discarded"
+                                "API mode router message: Router channel status with mode=0, discarded"
                             )
                         tail = self.extract_rest_msg(rt_event, 48)
                     elif rt_event[4] == 68:
-                        self.logger.info(
-                            f"Direct command: Module {rt_event[5]} - Command {rt_event[6:-1]}"
+                        self.logger.debug(
+                            f"API mode router message, direct command: Module {rt_event[5]} - Command {rt_event[6:-1]}"
                         )
                         tail = self.extract_rest_msg(rt_event, rt_event[8] + 8)
                     elif rt_event[4] == 87:
                         # Forward command response
-                        self.logger.debug(f"Forward response: {rt_event[4:-1]}")
+                        self.logger.info(
+                            f"API mode router message, forward response: {rt_event[4:-1]}"
+                        )
                         if self.fwd_hdlr is None:
                             # Instantiate once if needed
                             self.fwd_hdlr = ForwardHdlr(self.api_srv)
-                            self.logger.debug("Forward handler instantiated")
+                            self.logger.info("Forward handler instantiated")
                         await self.fwd_hdlr.send_forward_response(rt_event[4:-1])
                         self.msg_appended = False
                     elif rt_event[4] == 134:  # 0x86: System event
@@ -216,7 +218,7 @@ class EventServer:
                             m_len = 8
                         elif rt_event[6] == 163:
                             self.logger.warning(
-                                f"Unknown event command: {rt_event[6:-1]}"
+                                f"Unknown event command 163: {rt_event[6:-1]}"
                             )
                             m_len = 7
                         elif rt_event[3] == 6:
@@ -228,7 +230,7 @@ class EventServer:
                             mod_id = rt_event[5]
                             event_id = rt_event[6]
                             args = rt_event[7:-1]
-                            self.logger.info(
+                            self.logger.debug(
                                 f"New router event type {event_id} from module {mod_id}: {args}"
                             )
                             m_len = 9
@@ -276,60 +278,27 @@ class EventServer:
                     elif rt_event[4] == 135:  # 0x87: System mirror
                         # strip first byte 0xff and pass to rt_hdlr
                         # rt_hdlr initiates module status update, and sending event to IP client
-                        update_info = self.api_srv.routers[rtr_id - 1].hdlr.parse_event(
-                            rt_event[1:]
-                        )
+                        self.api_srv.routers[rtr_id - 1].hdlr.parse_event(rt_event[1:])
                         tail = self.extract_rest_msg(rt_event, 232)
-                        # if update_info != None:
-                        #     no_updates = round(len(update_info) / 4)
-                        #     for u_i in range(no_updates):
-                        #         mod_id = update_info[4 * u_i]
-                        #         stat_idx = int(update_info[4 * u_i + 1])
-                        #         old_val = int(update_info[4 * u_i + 2])
-                        #         new_val = int(update_info[4 * u_i + 3])
-                        # if stat_idx in [
-                        #     MirrIdx.OUT_1_8,
-                        #     MirrIdx.OUT_9_16,
-                        #     MirrIdx.OUT_17_24,
-                        # ]:
-                        #     # output change
-                        #     event = chr(mod_id) + "\x03"
-                        #     out_byte = stat_idx - MirrIdx.OUT_1_8
-                        #     diff = abs(new_val - old_val)
-                        #     for out_no in range(8):
-                        #         if diff & 1 << out_no:
-                        #             break
-                        #     out_no += out_byte * 8 + 1
-                        #     new_val = int((new_val & diff) > 0)
-                        #     event += chr(out_no) + chr(new_val)
-                        #     await self.notify_event(
-                        #         rtr_id, event.encode("iso8859-1")
-                        #     )
-                        # elif stat_idx in [
-                        #     MirrIdx.INP_1_8,
-                        #     MirrIdx.INP_9_16,
-                        #     MirrIdx.INP_17_24,
-                        # ]:
-                        #     # input change
-                        #     event = chr(mod_id) + "\x01"
-                        #     inp_byte = stat_idx - MirrIdx.INP_1_8
-                        #     diff = abs(new_val - old_val)
-                        #     for inp_no in range(8):
-                        #         if diff & (1 << inp_no):
-                        #             break
-                        #     inp_nmbr = inp_no + inp_byte * 8 + 1
-                        #     if (new_val & (1 << inp_no)) > 0:
-                        #         # This method only detects long press
-                        #         event += chr(inp_nmbr) + chr(2)
-                        #     else:
-                        #         # new_val == 0, end of long press
-                        #         event += chr(inp_nmbr) + chr(3)
-                        #     await self.notify_event(
-                        #         rtr_id, event.encode("iso8859-1")
-                        #     )
+                    elif rt_event[4] == 137:  # System mode
+                        if (rt_event[3] == 6) & (rt_event[5] != 75):
+                            self.api_srv.routers[rtr_id - 1].mode0 = rt_event[5]
+                            self.logger.debug(
+                                f"API mode router message, system mode: {rt_event[5]}"
+                            )
+                        elif rt_event[3] != 6:
+                            self.logger.warning(
+                                f"API mode router message, invalid system mode length: {rt_event}"
+                            )
+                        else:
+                            self.logger.debug(
+                                f"API mode router message, system mode: 'Config'"
+                            )
                     else:
                         # Discard resonse of API command
-                        self.logger.warning(f"API response discarded: {rt_event}")
+                        self.logger.warning(
+                            f"API mode router message, event discarded: {rt_event}"
+                        )
                         pass
             except Exception as error_msg:
                 # Use to get cancel event in api_server
@@ -353,7 +322,7 @@ class EventServer:
                 "evnt_arg1": event[2],
                 "evnt_arg2": event[3],
             }
-            self.logger.info(f"Event alerted: {evnt_data}")
+            self.logger.debug(f"Event alerted: {evnt_data}")
             if self.websck == None:
                 return
             event_cmd = WEBSOCK_MSG.call_service_msg

@@ -1,0 +1,17 @@
+Smart Hub starting...
+Router status initialized
+Module 1 initialized
+Module 3 initialized
+Module 6 initialized
+Module 7 initialized
+Module 8 initialized
+Module 9 initialized
+Module 10 initialized
+Module 13 initialized
+Failed to setup module 16: '\x00\x00'
+Module 16 removed
+API server, router, and modules initialized
+Config server running
+Query server started
+API server started
+Server stopped, restarting Smart IP ...
