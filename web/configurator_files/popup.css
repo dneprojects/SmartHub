@@ -66,10 +66,25 @@
     font: 11px arial, helvetica, clean, sans-serif;
 }
 
+#teach_start {
+    height: 22px;
+    width: 100px;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+    font: 11px arial, helvetica, clean, sans-serif;
+}
+
 #msg_popup_txt {
     text-align: center;
 }
 
+#fngr_nmbr_2_teach {
+    width: 196px;
+    margin-left: 0px;
+    margin-bottom: 10px;
+}
 
 #msg_popup_img {
     width: 50px;

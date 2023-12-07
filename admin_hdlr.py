@@ -26,7 +26,7 @@ class AdminHdlr(HdlrBase):
                 time.sleep(3)
                 self.api_svr.sm_hub.reboot()
             case spec.SMHUB_NET_INFO:
-                await self.api_srv.stop_api_mode(rt)
+                await self.api_srv.stop_opr_mode(rt)
                 ip_len = self._args[0]
                 self.api_srv._hass_ip = self._args[1 : ip_len + 1].decode("iso8859-1")
                 tok_len = self._args[ip_len + 1]

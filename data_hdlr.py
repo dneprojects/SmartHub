@@ -42,7 +42,7 @@ class DataHdlr(HdlrBase):
                 self.check_router_no(rt)
                 if self.args_err:
                     return
-                await self.api_srv.stop_api_mode(rt)
+                await self.api_srv.stop_opr_mode(rt)
                 for module in self.api_srv.routers[rt - 1].modules:
                     await module.initialize()
                 self.response = "OK"
@@ -70,7 +70,7 @@ class DataHdlr(HdlrBase):
                     mod_list = [mod]
                 if self.args_err:
                     return
-                await self.api_srv.stop_api_mode(rt)
+                await self.api_srv.stop_opr_mode(rt)
                 self.response = b""
                 if mod == 255:
                     rd_delay = RD_DELAY
@@ -145,7 +145,7 @@ class DataHdlr(HdlrBase):
                 self.check_router_no(rt)
                 if self.args_err:
                     return
-                if self.api_srv._api_mode:
+                if self.api_srv._opr_mode:
                     # return previously stored status and trigger to get update
                     await self.api_srv.routers[rt - 1].hdlr.query_rt_status()
                     self.response = (

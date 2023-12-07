@@ -171,6 +171,11 @@ class ConfigServer:
             body=str_data,
         )
 
+    @routes.get("/teach")
+    async def root(request: web.Request) -> web.Response:
+        args = request.query_string.split("=")
+        return await show_next_prev(request, args[1])
+
     @routes.post("/upload")
     async def root(request: web.Request) -> web.Response:
         data = await request.post()
@@ -233,36 +238,51 @@ async def show_next_prev(request, args):
     args1 = args.split("-")
     button = args1[0]
     mod_addr = int(args1[1])
-    step = int(args1[2])
+    settings = request.app["settings"]
+    if button == "new_finger":
+        step = 2
+        user_id = settings.users_sel + 1
+        finger_id = int(args1[2])
+        await settings.teach_new_finger(request.app, user_id, finger_id)
+        return show_setting_step(request.app, mod_addr, step)
+    else:
+        step = int(args1[2])
     if button == "cancel":
         if mod_addr > 0:
             return show_module_overview(request.app, mod_addr)
         else:
             return show_router_overview(request.app)
-    settings = request.app["settings"]
-    # Apply changes of form to settings
-    request.app["settings"] = settings
 
     if button == "save":
+        logger = request.app["logger"]
         if mod_addr > 0:
-            module = request.app["api_srv"].routers[0].get_module(mod_addr)
-            await module.set_settings(settings)
-            request.app["side_menu"] = adjust_side_menu(
-                request.app["api_srv"].routers[0].modules
-            )
-            if settings.group != int(settings.group_member):
-                # group membership changed, update in router
-                router = request.app["api_srv"].routers[0]
-                await router.set_module_group(mod_addr, int(settings.group_member))
+            module = settings.module
+            router = module.rt
+            await request.app["api_srv"].block_network_if(module.rt._id, True)
+            try:
+                await module.set_settings(settings)
+                request.app["side_menu"] = adjust_side_menu(router.modules)
+                if settings.group != int(settings.group_member):
+                    # group membership changed, update in router
+                    router = request.app["api_srv"].routers[0]
+                    await router.set_module_group(mod_addr, int(settings.group_member))
+            except Exception as err_msg:
+                logger.error(f"Error while saving module settings: {err_msg}")
+            await request.app["api_srv"].block_network_if(module.rt._id, False)
             return show_module_overview(request.app, mod_addr)
         else:
             # Save settings in router
             router = request.app["api_srv"].routers[0]
-            await router.set_settings(settings)
-            router.set_descriptions(settings)
-            request.app["side_menu"] = adjust_side_menu(
-                request.app["api_srv"].routers[0].modules
-            )
+            await request.app["api_srv"].block_network_if(router._id, True)
+            try:
+                await router.set_settings(settings)
+                router.set_descriptions(settings)
+                request.app["side_menu"] = adjust_side_menu(
+                    request.app["api_srv"].routers[0].modules
+                )
+            except Exception as err_msg:
+                logger.error(f"Error while saving router settings: {err_msg}")
+            await request.app["api_srv"].block_network_if(router._id, False)
             return show_router_overview(request.app)
     props = settings.properties
     request.app["props"] = props
@@ -543,6 +563,12 @@ def fill_settings_template(app, title, subtitle, step, settings, key: str) -> st
         .replace("controller.jpg", mod_image)
         .replace("ModAddress", f"{settings.id}-{step}")
     )
+    if key == "fingers":
+        finger_dict_str = "var fngrNames = {\n"
+        for f_i in range(10):
+            finger_dict_str += f'  {f_i+1}: "{FingerNames[f_i]}",\n'
+        finger_dict_str += "}\n"
+        page = page.replace("var fngrNames = {}", finger_dict_str)
     if step == 0:
         page = disable_button("zurück", page)
         # page = page.replace('form="settings_table"', "")
@@ -787,8 +813,8 @@ def prepare_table(app, mod_addr, step, key) -> str:
     tbl_enries = dict()
     for ci in range(len(tbl_data)):
         if key == "fingers":
-            users_sel = app["settings"].users_sel
-            if tbl_data[ci].type == users_sel + 1:
+            user_id = app["settings"].users[app["settings"].users_sel].nmbr
+            if tbl_data[ci].type == user_id:
                 f_nmbr = tbl_data[ci].nmbr
                 tbl_enries.update({f_nmbr: ci})
         else:
@@ -915,7 +941,7 @@ def prepare_table(app, mod_addr, step, key) -> str:
         tbl += indent(7) + "<tr><td>&nbsp;</td></tr>"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},1000]" type="number" min="{min_new}" max="{max_new}" placeholder="Neue Nummer eintragen" id="{id_name}"/></td>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="new_entry" type="number" min="{min_new}" max="{max_new}" placeholder="Neue Nummer eintragen" id="{id_name}"/></td>\n'
         )
         tbl += (
             indent(7)
@@ -925,13 +951,12 @@ def prepare_table(app, mod_addr, step, key) -> str:
         )
         if key in ["fingers"]:
             tbl = tbl.replace(
-                '<button name="ModSettings" class="new_button"',
-                '<button name="TeachNewFinger" class="new_button"',
+                '<button name="ModSettings" class="new_button" id="config_button" type="submit" ',
+                '<button name="TeachNewFinger" class="new_button" id="config_button" type="button" ',
             )
-            # tbl = tbl.replace('"data[{ci},1000]"','"data[{ci},999]"')
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},1001]" type="number" min="{min_del}" max="{max_del}" placeholder="Existierende Nummer eintragen" id="{id_name}"/></td>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="del_entry" type="number" min="{min_del}" max="{max_del}" placeholder="Existierende Nummer eintragen" id="{id_name}"/></td>\n'
         )
         tbl += (
             indent(7)
@@ -949,7 +974,46 @@ def parse_response_form(app, form_data):
     key = app["key"]
     settings = app["settings"]
     for form_key in list(form_data.keys())[:-1]:
-        if form_key == "users_sel":
+        if form_key == "new_entry":
+            # add element
+            entry_found = False
+            for elem in settings.__getattribute__(key):
+                if elem.nmbr == int(form_data[form_key][0]):
+                    entry_found = True
+                    break
+            if not entry_found:
+                if key == "fingers":
+                    # Add teaching here
+                    settings.__getattribute__(key).append(
+                        IfDescriptor(
+                            FingerNames[int(form_data[form_key][0]) - 1],
+                            int(form_data[form_key][0]),
+                            settings.users[settings.users_sel].nmbr,
+                        )
+                    )
+                elif key == "users":
+                    settings.all_fingers[int(form_data[form_key][0])]: list[
+                        IfDescriptor
+                    ] = []
+                else:
+                    settings.__getattribute__(key).append(
+                        IfDescriptor(
+                            f"{key}_{int(form_data[form_key][0])}",
+                            int(form_data[form_key][0]),
+                            0,
+                        )
+                    )
+        elif form_key == "del_entry":
+            # remove element
+            idx = 0
+            for elem in settings.__getattribute__(key):
+                if elem.nmbr == int(form_data[form_key][0]):
+                    del settings.__getattribute__(key)[idx]
+                    if key == "users":
+                        del settings.all_fingers[int(form_data[form_key][0])]
+                    break
+                idx += 1
+        elif form_key == "users_sel":
             settings.users_sel = int(form_data[form_key][0])
         else:
             indices = form_key.replace("data[", "").replace("]", "").split(",")
@@ -963,40 +1027,7 @@ def parse_response_form(app, form_data):
                 settings.__getattribute__(key)[int(indices[0])].name = form_data[
                     form_key
                 ][0]
-            elif indices[1] == 1000:
-                # add element
-                entry_found = False
-                for elem in settings.__getattribute__(key):
-                    if elem.nmbr == int(form_data[form_key][0]):
-                        entry_found = True
-                        break
-                if not entry_found:
-                    if key == "fingers":
-                        # Add teaching here
-                        settings.__getattribute__(key).append(
-                            IfDescriptor(
-                                FingerNames[int(form_data[form_key][0]) - 1],
-                                int(form_data[form_key][0]),
-                                settings.users[settings.users_sel].nmbr,
-                            )
-                        )
-                    else:
-                        settings.__getattribute__(key).append(
-                            IfDescriptor(
-                                f"{key}_{int(form_data[form_key][0])}",
-                                int(form_data[form_key][0]),
-                                0,
-                            )
-                        )
-            elif indices[1] == 1001:
-                # remove element
-                idx = 0
-                for elem in settings.__getattribute__(key):
-                    if elem.nmbr == int(form_data[form_key][0]):
-                        del settings.__getattribute__(key)[idx]
-                        break
-                    idx += 1
-            if (len(indices) > 1) & (indices[1] != 1000) & (indices[1] != 1001):
+            if len(indices) > 1:
                 match app["key"]:
                     case "inputs":
                         if form_data[form_key][0] == "sw":
@@ -1155,9 +1186,12 @@ def get_property_kind(app, step):
             user_id = settings.users[settings.users_sel].name
             header = f"Fingerabdrücke von '{user_id}'"
             prompt = "Finger"
-            settings.fingers = settings.all_fingers[
-                settings.users[settings.users_sel].nmbr
-            ]
+            if settings.users[settings.users_sel].nmbr in settings.all_fingers.keys():
+                settings.fingers = settings.all_fingers[
+                    settings.users[settings.users_sel].nmbr
+                ]
+            else:
+                settings.fingers = []
             app["settings"] = settings
         case "flags":
             header = "Lokale Merker"
@@ -1231,14 +1265,15 @@ def seperate_upload(upload_str: str) -> (bytes, bytes):
 async def send_to_router(app, content: str):
     """Send uploads to module."""
     rtr = app["api_srv"].routers[0]
-    await rtr.api_srv.block_api_mode(rtr._id, True)
-    await rtr.set_config_mode(True)
-    await rtr.hdlr.send_rt_full_status()
-    # Routerstatus neu lesen
-    # Weiterleitung neu starten
-    rtr.smr_upload = b""
-    await rtr.set_config_mode(False)
-    await rtr.api_srv.block_api_mode(rtr._id, True)
+    await rtr.api_srv.block_network_if(rtr._id, True)
+    try:
+        await rtr.hdlr.send_rt_full_status()
+        # Routerstatus neu lesen
+        # Weiterleitung neu starten
+        rtr.smr_upload = b""
+    except Exception as err_msg:
+        app["logger"].error(f"Error while uploading router settings: {err_msg}")
+    await rtr.api_srv.block_network_if(rtr._id, False)
 
 
 async def send_to_module(app, content: str, mod_addr: int):
@@ -1246,26 +1281,35 @@ async def send_to_module(app, content: str, mod_addr: int):
     rtr = app["api_srv"].routers[0]
     module = rtr.get_module(mod_addr)
     module.smg_upload, module.list_upload = seperate_upload(content)
-    if ModbusComputeCRC(module.list_upload) != module.get_smc_crc():
-        await rtr.api_srv.block_api_mode(rtr._id, True)
-        await rtr.set_config_mode(True)
-        await module.hdlr.send_module_list(mod_addr)
-        await rtr.set_config_mode(False)
-        await rtr.api_srv.block_api_mode(rtr._id, False)
-        module.list = module.list_upload
-        module.calc_SMC_crc(module.list)
-        app["logger"].debug("Module list upload from configuration server finished")
-    else:
-        app["logger"].debug(
-            "Module list upload from configuration server finished: Same CRC"
-        )
-    if module.different_smg_crcs():
-        await module.hdlr.send_module_smg(module._id)
-        await module.hdlr.get_module_status(module._id)
-        app["logger"].debug("Module status upload from configuration server finished")
-    else:
-        app["logger"].debug(
-            "Module status upload from configuration server finished: Same CRC"
-        )
+    list_update = ModbusComputeCRC(module.list_upload) != module.get_smc_crc()
+    stat_update = module.different_smg_crcs()
+    if list_update | stat_update:
+        await rtr.api_srv.block_network_if(rtr._id, True)
+    try:
+        if list_update:
+            await module.hdlr.send_module_list(mod_addr)
+            module.list = await module.hdlr.get_module_list(
+                mod_addr
+            )  # module.list_upload
+            module.calc_SMC_crc(module.list)
+            app["logger"].debug("Module list upload from configuration server finished")
+        else:
+            app["logger"].debug(
+                "Module list upload from configuration server finished: Same CRC"
+            )
+        if stat_update:
+            await module.hdlr.send_module_smg(module._id)
+            await module.hdlr.get_module_status(module._id)
+            app["logger"].debug(
+                "Module status upload from configuration server finished"
+            )
+        else:
+            app["logger"].debug(
+                "Module status upload from configuration server finished: Same CRC"
+            )
+    except Exception as err_msg:
+        app["logger"].error(f"Error while uploading module settings: {err_msg}")
+    if list_update | stat_update:
+        await rtr.api_srv.block_network_if(rtr._id, False)
     module.smg_upload = b""
     module.list_upload = b""

@@ -1,7 +1,7 @@
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from os.path import isfile
 import asyncio
-from const import SYS_MODES, RT_STAT_CODES, DATA_FILES_DIR
+from const import SYS_MODES, RT_STAT_CODES, DATA_FILES_DIR, RT_CMDS
 from router_hdlr import RtHdlr
 from module import HbtnModule
 from module_hdlr import ModHdlr
@@ -45,15 +45,11 @@ class HbtnRouter:
         self.settings = []
         self.properties, self.prop_keys = self.get_properties()
 
-    def __del__(self):
-        """Clean up."""
-        del self.logger
-        del self.api_srv
-        del self.hdlr
-
     def mirror_running(self) -> bool:
         """Return mirror status based on chan_status."""
-        return self.chan_status[-1] == RT_STAT_CODES.MIRROR_ACTIVE
+        if len(self.chan_status) > 40:
+            return self.chan_status[-1] == RT_STAT_CODES.MIRROR_ACTIVE
+        return False
 
     async def get_full_status(self):
         """Load full router status."""
@@ -148,23 +144,49 @@ class HbtnRouter:
         if set_not_reset:
             if self._in_config_mode:
                 return
+            else:
+                self._in_config_mode = True
+            if self.api_srv._opr_mode:
+                self.logger.error("Not in Srv mode when switching to config mode!")
             current_mode = await self.hdlr.get_mode(0)
+            if current_mode[0] > 118:
+                self.logger.warning(
+                    f"Wrong mode 0 value: {current_mode[0]}, retry once"
+                )
+                current_mode = await self.hdlr.get_mode(0)
+                if current_mode[0] > 118:
+                    self.logger.info(
+                        f"Wrong retry mode 0 value: {current_mode[0]}, set recent mode 0 to 0x20"
+                    )
+                    current_mode = b"\x20"
+                else:
+                    self.logger.info(f"Retry mode 0 value: {current_mode[0]}")
             if current_mode[0] != SYS_MODES.Config:
                 self.recent_mode = current_mode[0]
-            await self.api_srv.stop_api_mode(self._id)
             await asyncio.sleep(0.1)
             await self.hdlr.set_mode(0, SYS_MODES.Config)
-            self._in_config_mode = True
             self.logger.debug("Set system to Config mode")
             self.mode0 = SYS_MODES.Config
             await asyncio.sleep(0.5)
-        elif self._in_config_mode:
+        elif self._in_config_mode & (not self.api_srv._netw_blocked):
+            # config mode will be handled by block commands
+            if not self.api_srv._opr_mode:
+                # don't turn off config mode while in Srv mode
+                return
             new_mode = await self.hdlr.set_mode(0, self.recent_mode)
-            self.mode0 = new_mode[0]
-            self._in_config_mode = False
+            self.mode0 = self.recent_mode
+            if new_mode != self.mode0:
+                self.logger.warning(
+                    "Resetting mode 0 to recent non-config value is not confirmed"
+                )
             self.logger.debug(
                 f"Set system back to mode {ord(new_mode.decode('iso8859-1')):#x}"
             )
+            self._in_config_mode = False
+
+    async def flush_buffer(self):
+        """Empty router buffer."""
+        await self.hdlr.handle_router_cmd(self._id, RT_CMDS.CLEAR_RT_SENDBUF)
 
     async def set_module_group(self, mod: int, grp: int):
         """Store new module group setting into router."""
@@ -252,14 +274,14 @@ class HbtnRouter:
     async def set_settings(self, settings: RouterSettings):
         """Store settings into router."""
         self.settings = settings
-        await self.api_srv.block_api_mode(self._id, True)
+        await self.api_srv.block_network_if(self._id, True)
         await self.hdlr.send_rt_name(settings.name)
         await self.hdlr.send_mode_names(settings.user1_name, settings.user2_name)
         await self.hdlr.send_rt_group_deps(settings.mode_dependencies[1:])
         # await self.hdlr.rt_reboot()
         # await asyncio.sleep(6)
         await self.get_full_status()
-        await self.api_srv.block_api_mode(self._id, False)
+        await self.api_srv.block_network_if(self._id, False)
 
     def set_descriptions(self, settings: RouterSettings):
         """Store names into router descriptions."""

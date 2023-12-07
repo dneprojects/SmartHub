@@ -276,6 +276,9 @@ def_len = 0x21
 class RT_CMDS:
     """Define router command strings with placeholders."""
 
+    SET_SRV_MODE = "\x2a<rtr>\x06\x85\x00\xff"
+    SET_OPR_MODE = "\x2a<rtr>\x08\x85\x01<mirr><evnt>\xff"
+
     GET_DATE = "\x2a<rtr>\x07\xbe\x4c\x44\xff"
     GET_TIME = "\x2a<rtr>\x07\xbe\x4c\x54\xff"
     SET_DATE = "\x2a<rtr>\x0a\xbe\x53\x44<day><mon><yr>\xff"
@@ -350,7 +353,7 @@ class RT_CMDS:
     CALL_COLL_CMD = "\x2a<rtr>\x06\x32<cmd>\xff"
 
     SET_LOGIC_UNIT = "\x2a<rtr>\x0d\x44<mod>\x09\x06\x01\x53<lno><md><act>\xff"
-    SET_LOGIC_INP = "\x2a<rtr>\x0b\x44<mod>\x07\x06\x00<sr><inp>\xff"
+    SET_LOGIC_INP = "\x2a<rtr>\x0b\x44<mod>\x07\x04\x00<sr><inp>\xff"
     SET_COUNTER_VAL = "\x2a<rtr>\x0d\x44<mod>\x09\x06\x00<lno>\x05<val>\x00\xff"
     # SET_LOGIC_INP = "\x2a<rtr>\x0c\x44<mod>\x08\x09\x45\x00<sr><inp>\xff"
     # SET_COUNTER_VAL = "\x2a<rtr>\x0e\x44<mod>\x0a\x09\x45\x00<lno>\x05<val>\x00\xff"

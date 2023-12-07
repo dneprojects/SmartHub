@@ -27,7 +27,7 @@ class SettingsHdlr(HdlrBase):
                 self.check_router_no(rt)
                 if self.args_err:
                     return
-                await self.api_srv.stop_api_mode(rt)
+                await self.api_srv.stop_opr_mode(rt)
 
                 self._rt_command = RT_CMDS.GET_DATE.replace("<rtr>", chr(rt))
                 await self.handle_router_cmd_resp(rt, self._rt_command)
@@ -41,7 +41,7 @@ class SettingsHdlr(HdlrBase):
                 self.check_router_no(rt)
                 if self.args_err:
                     return
-                await self.api_srv.stop_api_mode(rt)
+                await self.api_srv.stop_opr_mode(rt)
                 self._rt_command = (
                     RT_CMDS.SET_DATE.replace("<rtr>", chr(rt))
                     .replace("<yr>", chr(self._args[0]))
@@ -67,7 +67,7 @@ class SettingsHdlr(HdlrBase):
                 )
                 if self.args_err:
                     return
-                await self.api_srv.stop_api_mode(rt)
+                await self.api_srv.stop_opr_mode(rt)
                 self.response = await self.api_srv.routers[rt - 1].hdlr.get_mode(
                     self._p5
                 )
@@ -112,13 +112,13 @@ class SettingsHdlr(HdlrBase):
                     if self.args_err:
                         return
                     # send all 64 group modes
-                    await self.api_srv.stop_api_mode(rt)
+                    await self.api_srv.stop_opr_mode(rt)
                     self.response = await self.api_srv.routers[rt - 1].hdlr.set_mode(
                         self._p5, self._args[1:]
                     )
 
                 else:
-                    await self.api_srv.stop_api_mode(rt)
+                    await self.api_srv.stop_opr_mode(rt)
                     self.response = await self.api_srv.routers[rt - 1].hdlr.set_mode(
                         self._p5, self._args[2]
                     )
@@ -138,7 +138,7 @@ class SettingsHdlr(HdlrBase):
                 #     self.response = self.err_msg
                 #     return
                 self.api_srv.mirror_mode = True
-                await self.api_srv.start_api_mode(rt)
+                await self.api_srv.start_opr_mode(rt)
                 self.response = "OK"
                 self.logger.debug(f"Mirror mode started on router {rt}")
 
@@ -149,7 +149,7 @@ class SettingsHdlr(HdlrBase):
                 #     self.response = self.err_msg
                 #     return
                 self.api_srv.mirror_mode = False
-                await self.api_srv.stop_api_mode(rt)
+                await self.api_srv.stop_opr_mode(rt)
                 self.response = "OK"
                 self.logger.debug(f"Mirror mode stopped on router {rt}")
 
@@ -160,7 +160,7 @@ class SettingsHdlr(HdlrBase):
                 #     self.response = self.err_msg
                 #     return
                 self.api_srv.event_mode = True
-                await self.api_srv.start_api_mode(rt)
+                await self.api_srv.start_opr_mode(rt)
                 self.response = "OK"
                 self.logger.debug(f"Event mode started on router {rt}")
 
@@ -171,7 +171,7 @@ class SettingsHdlr(HdlrBase):
                 #     self.response = self.err_msg
                 #     return
                 self.api_srv.event_mode = False
-                await self.api_srv.stop_api_mode(rt)
+                await self.api_srv.stop_opr_mode(rt)
                 self.response = "OK"
                 self.logger.debug(f"Event mode stopped on router {rt}")
 

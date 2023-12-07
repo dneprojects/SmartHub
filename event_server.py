@@ -138,20 +138,24 @@ class EventServer:
                         # If something goes wrong, rtr_id and tail are without value
                         prefix = ("\xff#" + chr(0) + chr(4)).encode("iso8859-1")
                 elif recvd_byte == b"\xff":
-                    # Last loop of while found first byte, reduce prefix to 3
-                    prefix = recvd_byte + await rt_rd.readexactly(3)
+                    # Last loop of while found first 2 bytes, reduce prefix to 2
+                    prefix = b"\xff\x23" + await rt_rd.readexactly(2)
                     recvd_byte = b"\00"  # Turn off special condition
                 else:
                     # Normal behaviour, read prefix of 4 bytes
                     prefix = await rt_rd.readexactly(4)
 
-                if prefix[3] == 0:
-                    # Something went wrong, start reading until 0xFF found
+                if (prefix[3] == 0) | (prefix[0] != 0xFF) | (prefix[1] != 0x23):
+                    # Something went wrong, start reading until sequence 0xFF 0x23 found
                     self.logger.warning("API mode router message with length=0, resync")
-                    recvd_byte = b"\00"
-                    while recvd_byte != b"\xff":
-                        # Look for new start byte
-                        recvd_byte = await rt_rd.readexactly(1)
+                    resynced = False
+                    while not resynced:
+                        recvd_byte = b"\00"
+                        while recvd_byte != b"\xff":
+                            # Look for new start byte
+                            recvd_byte = await rt_rd.readexactly(1)
+                        resynced = await rt_rd.readexactly(1) == b"\x23"
+
                 elif prefix[3] < 4:
                     self.logger.warning(
                         f"API mode router message too short: {prefix[3]-3} bytes"
@@ -173,7 +177,7 @@ class EventServer:
                         )
                     elif (rt_event[4] == 135) & (rt_event[5] == 252):
                         self.logger.info("Router event message: Mirror started")
-                        self.api_srv._api_mode = True
+                        self.api_srv._opr_mode = True
                         tail = self.extract_rest_msg(rt_event, 7)
                     elif (rt_event[4] == 135) & (rt_event[5] == 254):
                         self.logger.info(
@@ -297,15 +301,14 @@ class EventServer:
                     else:
                         # Discard resonse of API command
                         self.logger.warning(
-                            f"API mode router message, event discarded: {rt_event}"
+                            f"API mode router message, response discarded: {rt_event}"
                         )
                         pass
             except Exception as error_msg:
                 # Use to get cancel event in api_server
-                self.logger.error(f"Event server exception: {error_msg}")
-                self.evnt_running = False
-                self.api_srv._api_mode = False
-                self.api_srv._ev_srv_task = []
+                self.logger.error(
+                    f"Event server exception: {error_msg}, event server still running"
+                )
 
     async def notify_event(self, rtr: int, event: [int]):
         """Trigger event on remote host (e.g. home assistant)"""

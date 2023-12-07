@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy as dpcopy
 from pymodbus.utilities import checkCRC as ModbusCheckCRC
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from const import (
@@ -21,13 +22,13 @@ class ModuleSettings:
         """Fill all properties with module's values."""
         self.id = module._id
         self.module = module
-        self.name = module._name
+        self.name = dpcopy(module._name)
         self.typ = module._typ
         self.type = module._type
-        self.list = module.list
-        self.status = module.status
-        self.smg = module.build_smg()
-        self.desc = rtr.descriptions
+        self.list = dpcopy(module.list)
+        self.status = dpcopy(module.status)
+        self.smg = dpcopy(module.build_smg())
+        self.desc = dpcopy(rtr.descriptions)
         self.logger = logging.getLogger(__name__)
         self.properties: dict = module.io_properties
         self.prop_keys = module.io_prop_keys
@@ -38,7 +39,7 @@ class ModuleSettings:
         self.get_names()
         self.get_settings()
         self.get_descriptions()
-        self.group = rtr.groups[self.id]
+        self.group = dpcopy(rtr.groups[self.id])
 
     def get_io_interfaces(self):
         """Parse config files to extract names, etc."""
@@ -376,7 +377,9 @@ class ModuleSettings:
             return True
         if self.type == "Fanekey":
             self.users_sel = 0
-            self.module.all_fingers = self.all_fingers  # stores the ative settings
+            self.module.org_fingers = dpcopy(
+                self.all_fingers
+            )  # stores the active settings
             if len(self.users) > 0:
                 self.fingers = self.all_fingers[self.users[self.users_sel].nmbr]
             return True
@@ -457,9 +460,40 @@ class ModuleSettings:
             ptr += l_len
         return str_data
 
-    def set_list(self):
+    async def update_ekey_entries(self):
+        """Check for differences in users/fingers and delete if needed."""
+        org_fingers = self.module.org_fingers
+        new_fingers = self.all_fingers
+        usr_nmbrs = []
+        for u_i in range(len(self.users)):
+            usr_nmbrs.append(self.users[u_i].nmbr)
+        for usr_id in org_fingers.keys():
+            if not usr_id in new_fingers.keys():
+                self.response = await self.module.hdlr.del_ekey_entry(usr_id, 255)
+                self.logger.info(f"User {usr_id} deleted from ekey data base")
+            else:
+                f_msk = 0
+                for fngr in new_fingers[usr_id]:
+                    f_msk = f_msk | 1 << fngr.nmbr
+                self.users[usr_nmbrs.index(usr_id)].type = f_msk
+                new_usr_fngr_nmbrs = []
+                for fngr_id in range(len(new_fingers[usr_id])):
+                    new_usr_fngr_nmbrs.append(new_fingers[usr_id][fngr_id].nmbr)
+                for fngr_id in range(len(org_fingers[usr_id])):
+                    org_finger = org_fingers[usr_id][fngr_id].nmbr
+                    if not org_finger in new_usr_fngr_nmbrs:
+                        self.response = await self.module.hdlr.del_ekey_entry(
+                            usr_id, org_finger
+                        )
+                        self.logger.info(
+                            f"Finger {org_finger} of user {usr_id} deleted from ekey data base"
+                        )
+
+    async def set_list(self):
         """Store config entries to list and send to module."""
         list_lines = self.format_smc(self.list).split("\n")
+        if self.module._typ == b"\x1e\x01":
+            await self.update_ekey_entries()
 
         new_list = []
         new_line = ""
@@ -469,7 +503,7 @@ class ModuleSettings:
         for line in list_lines[1:]:
             if len(line) > 0:
                 tok = line.split(";")
-                if (tok[0] != "253") & (tok[0] != "255"):
+                if (tok[0] != "252") & (tok[0] != "253") & (tok[0] != "255"):
                     new_line = ""
                     for lchr in line.split(";")[:-1]:
                         new_line += chr(int(lchr))
@@ -527,6 +561,16 @@ class ModuleSettings:
             list_bytes += line
         list_bytes = list_bytes.encode("iso8859-1")
         return list_bytes
+
+    async def teach_new_finger(self, app, user_id, finger_id):
+        """Teach new finger and add to fingers."""
+        settings = app["settings"]
+        res = await settings.module.hdlr.set_ekey_teach_mode(user_id, finger_id, 30)
+        if res == "OK":
+            settings.all_fingers[user_id].append(
+                IfDescriptor(FingerNames[finger_id - 1], finger_id, user_id)
+            )
+            app["settings"] = settings
 
 
 class RouterSettings:

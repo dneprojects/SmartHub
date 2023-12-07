@@ -188,5 +188,5 @@ class SetupHdlr(HdlrBase):
         """Check user no and finger number."""
         self.check_arg(self._args[0], range(1, 201), "Error: user out of range 1..200")
         self.check_arg(
-            self._args[1], [*range(1, 11), 255], "Error: finger out of range 1..10"
+            self._args[1], [*range(1, 11), 255], "Error: finger out of range 1..10, 255"
         )

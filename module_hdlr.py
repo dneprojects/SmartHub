@@ -32,7 +32,7 @@ class ModHdlr(HdlrBase):
 
     async def get_module_status(self, mod_addr: int) -> bytes:
         """Get all module settings."""
-        await self.api_srv.stop_api_mode(self.rt_id)
+        await self.api_srv.stop_opr_mode(self.rt_id)
         await self.handle_router_cmd_resp(
             self.rt_id, RT_CMDS.GET_MOD_MIRROR.replace("<mod>", chr(mod_addr))
         )
@@ -75,10 +75,10 @@ class ModHdlr(HdlrBase):
             await self.set_supply_prio()
             await self.set_module_light()
             await self.set_limit_temperature()
-        if self.mod._typ == "\x1e\x01":
+        if self.mod._typ == b"\x1e\x01":
             # Ekey specific settings
             await self.set_ekey_version()
-        if self.mod._typ == "\x1e\x01":
+        if self.mod._typ == b"\x1e\x03":
             # GSM specific settings
             await self.set_pin()
             await self.set_logic_units()
@@ -87,8 +87,7 @@ class ModHdlr(HdlrBase):
     async def get_module_list(self, mod_addr: int) -> bytes:
         """Get the module description and command list."""
 
-        await self.api_srv.stop_api_mode(self.rt_id)
-        await self.set_config_mode(True)
+        await self.api_srv.stop_opr_mode(self.rt_id)
         pckg = 1
         area = 50
         cnt = 1
@@ -117,6 +116,8 @@ class ModHdlr(HdlrBase):
                 pckg += 1
                 if pckg == 0:
                     area += 1
+                if area == 100:
+                    self.logger.error("Content of module will be deleted!")
                 rt_command = (
                     RT_CMDS.GET_MOD_SMC.replace("<rtr>", chr(self.rt_id))
                     .replace("<mod>", chr(mod_addr))
@@ -131,12 +132,13 @@ class ModHdlr(HdlrBase):
                 else:
                     self.logger.debug(f"SMC package {resp[0]} read again, discarded")
                     cnt -= 1
-        await self.set_config_mode(False)
         return smc_buffer
 
     async def send_module_list(self, mod_addr: int):
         """Send SMC data from Smart Hub to router/module."""
+        await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.STOP_MIRROR)
         mod_list = self.mod.list_upload
+        resp_flg = 0
         l_len = len(mod_list)
         l_cnt = 0
         flg = chr(6)
@@ -144,8 +146,6 @@ class ModHdlr(HdlrBase):
         while l_cnt < l_len:
             l_pckg = mod_list[l_cnt : l_cnt + min(12, l_len - l_cnt)]
             l_p = len(l_pckg)
-            if l_p < 12:
-                pass
             cmd = (
                 RT_CMDS.SEND_MOD_SMC.replace("<rtr>", chr(self.rt_id))
                 .replace("<mod>", chr(mod_addr))
@@ -155,11 +155,22 @@ class ModHdlr(HdlrBase):
             cmd += flg + chr(cnt) + l_pckg.decode("iso8859-1") + "\xff"
             await self.handle_router_cmd_resp(self.rt_id, cmd)
             flg = chr(7)
-            cnt = self.rt_msg._resp_buffer[-2] + 1
-            l_cnt += l_p
-            await asyncio.sleep(0.1)
-        # await self.handle_router_resp(self.rt_id)
-        resp = self.rt_msg._resp_buffer
+            resp_cnt = self.rt_msg._resp_buffer[-2]
+            resp_flg = self.rt_msg._resp_buffer[-3]
+            if resp_cnt == cnt:
+                cnt += 1
+                l_cnt += l_p
+            elif resp_flg == 8:
+                cnt += 1
+                l_cnt += l_p
+            self.logger.debug(
+                f"List upload (SMC) returned: Count {cnt} Flag {resp_flg}"
+            )
+            await asyncio.sleep(0.5)
+        self.logger.info(
+            f"List upload (SMC) terminated: Count {resp_cnt} Flag {resp_flg}"
+        )
+        return
 
     async def set_module_language(self):
         """Send language settings to module."""
@@ -490,7 +501,7 @@ class ModHdlr(HdlrBase):
             .replace("<fgr>", chr(finger))
             .replace("<tim>", chr(time))
         )
-        await self.handle_router_cmd_resp(self.rt_id, cmd)
+        await self.handle_router_cmd(self.rt_id, cmd)
         return "OK"
 
     async def ekey_db_read(self):

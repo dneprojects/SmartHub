@@ -41,11 +41,6 @@ class ApiMessage(BaseMessage):
             self.response = "CRC error"
             self.resp_prepare_std(self.response)
 
-    def __del__(self):
-        """Clean up."""
-        del self.logger
-        del self.api_srv
-
     def check_CRC(self) -> bool:
         """Validates received api message."""
         return ModbusCheckCRC(self._buffer[:-3], self._crc)
@@ -144,6 +139,7 @@ class RtMessage(BaseMessage):
     async def rt_send(self) -> None:
         """Sends router command via serial interface"""
         len = self.ser_writer.write(self._buffer.encode("iso8859-1"))
+        self.logger.debug(f"Sent to router: {self._buffer.encode('iso8859-1')}")
 
     async def rt_recv(self) -> None:
         """Reads router's response message via serial interface"""
@@ -164,6 +160,7 @@ class RtMessage(BaseMessage):
             self.logger.error(
                 f"Router returned error {self._resp_code} on command {self.f_hex(self._buffer)}"
             )
+        self.logger.debug(f"Router returned: {self._resp_buffer}")
 
     def f_hex(self, msg: str) -> str:
         """Make pretty hex string."""

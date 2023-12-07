@@ -45,7 +45,7 @@ class RtHdlr(HdlrBase):
             rt_cmd = RT_CMDS.SET_GLOB_MODE
             rt_cmd = rt_cmd.replace("<md>", chr(new_mode))
             await self.handle_router_cmd_resp(self.rt_id, rt_cmd)
-            self.rtr._in_config_mode = new_mode != SYS_MODES.Config
+            self.rtr._in_config_mode = new_mode == SYS_MODES.Config
             return self.rt_msg._resp_buffer[-2:-1]
         if group == 255:
             # All groups but 0
@@ -171,6 +171,7 @@ class RtHdlr(HdlrBase):
     async def get_rt_full_status(self):
         """Get full router status."""
         # Create continuous status byte array and indices
+        await self.rt_msg.api_hdlr.api_srv.stop_opr_mode(1)
         stat_idx = [0]
         rt_stat = chr(self.rt_id).encode()
         stat_idx.append(len(rt_stat))
@@ -213,7 +214,7 @@ class RtHdlr(HdlrBase):
         return rt_stat
 
     async def query_rt_status(self):
-        """Get router system status. Used in api mode"""
+        """Get router system status. Used in Opr mode"""
         await self.handle_router_cmd(self.rt_id, RT_CMDS.GET_RT_STATUS)
         return "OK"
 
@@ -226,7 +227,7 @@ class RtHdlr(HdlrBase):
                 f"Router channel status with wrong length {len(self.rt_msg._resp_msg)}, return stored value"
             )
             return self.rtr.chan_status
-        # Deal with option "L", makes 1 byte difference
+        # Deal with option "L", makes 1 byte difference: take value relative to the end
         if self.rt_msg._resp_buffer[-42] != 0:
             return self.rt_msg._resp_buffer[-43:-1]
         self.logger.warning("Router channel status with mode=0, return stored value")
@@ -234,7 +235,7 @@ class RtHdlr(HdlrBase):
 
     async def get_rt_modules(self):
         """Get all modules connected to router."""
-        await self.rt_msg.api_hdlr.api_srv.stop_api_mode(1)
+        await self.rt_msg.api_hdlr.api_srv.stop_opr_mode(1)
         await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.GET_RT_MODULES)
         return self.rt_msg._resp_msg
 

@@ -148,10 +148,18 @@
     </div>
     <div id="teach_popup" class="popup">
       <div class="popup-content">
-        <h1 id="msg_popup_txt">ContentTitle</h1>
-        <h3 id="msg_popup_txt">Einstellungen speichern</h3>
-        <div id="image_container_wait">
-          <img src="./configurator_files/wait_red.gif" alt="Please wait" id="msg_popup_img">
+        <h1>ContentTitle</h1>
+        <h3>Finger einlernen</h3>
+        <form id="teach_finger" action="teach">
+          <div style="position: relative;">
+            <input id="fngr_nmbr_2_teach" name="Anlernen" type="text" disabled value="<fngr>" />
+            <button name="FngrTeach" id="teach_start" type="submit" value="new_finger-ModAddress">Start</button>
+          </div>
+        </form>
+        <div>
+          <button id="close_popup">
+            Abbruch
+          </button>
         </div>
       </div>
     </div>
@@ -160,8 +168,16 @@
   </div>
   <script type="text/javascript">
     const save_btn = document.getElementById("config_button_sv");
+    const teach_btn = document.getElementsByName("TeachNewFinger")[0];
+    var fngrNames = {}
     save_btn.addEventListener("click", function () {
       openMsgPopup();
+    });
+    teach_btn.addEventListener("click", function () {
+      openTeachPopup();
+    });
+    close_popup.addEventListener("click", function () {
+      teach_popup.classList.remove("show");
     });
 
     window.addEventListener("click", function (event) {
@@ -171,6 +187,12 @@
     });
     function openMsgPopup() {
       sav_popup.classList.add("show");
+    };
+    function openTeachPopup() {
+      fngrNmbr = settings_table.elements["new_entry"].value;
+      fngr_nmbr_2_teach.value = fngrNmbr + ' ' + fngrNames[fngrNmbr];
+      teach_start.value = teach_start.value.slice(0, -1) + fngrNmbr;
+      teach_popup.classList.add("show");
     };
   </script>
 </body>
