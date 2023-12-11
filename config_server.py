@@ -19,8 +19,6 @@ from const import (
     FingerNames,
     MirrIdx,
     IfDescriptor,
-    EventCodes,
-    ActionCodes,
 )
 
 routes = web.RouteTableDef()
@@ -108,7 +106,7 @@ class ConfigServer:
             return show_settings(request.app, mod_addr)
         if args[0] == "EditAutomtns":
             mod_addr = int(args[1])
-            return show_automations(request.app, mod_addr)
+            return build_show_automations(request.app, mod_addr)
         elif args[0] == "RtrSettings":
             return show_settings(request.app, 0)
         elif args[0] == "ConfigFiles":
@@ -199,6 +197,36 @@ class ConfigServer:
                     f"Module configuration file does not fit to module number {mod_addr}, upload aborted"
                 )
             return show_module_overview(request.app, mod_addr)  # web.HTTPNoContent()
+
+    @routes.post("/automtns")
+    async def root(request: web.Request) -> web.Response:
+        resp = await request.text()
+        form_data = parse_qs(resp)
+        if "ModSettings" in form_data.keys():
+            mod_addr = int(form_data["ModSettings"][0].split("-")[1])
+            request.app["logger"].warning("Save of automations not yet implemented")
+            return show_module_overview(request.app, mod_addr)
+        else:
+            # delete selected automation
+            settings = request.app["settings"]
+            sel_automtn = int(form_data["atmn_tbl"][0])
+            request.app["automations_def"].selected = sel_automtn
+            # request.app["logger"].warning(
+            #     f"Delete of automation {sel_automtn} not yet implemented"
+            # )
+            automations = request.app["automations_def"].automations
+            del automations[sel_automtn]
+            return show_automations(request.app)
+
+    @routes.get(path="/{key:.*}")
+    async def _(request):
+        request.app["logger"].warning("Route not yet implemented")
+        return web.HTTPNoContent()
+
+    @routes.post(path="/{key:.*}")
+    async def _(request):
+        request.app["logger"].warning("Route not yet implemented")
+        return web.HTTPNoContent()
 
 
 def get_html(html_file) -> str:
@@ -418,13 +446,19 @@ def show_settings(app, mod_addr) -> web.Response:
     return web.Response(text=page, content_type="text/html")
 
 
-def show_automations(app, mod_addr) -> web.Response:
+def build_show_automations(app, mod_addr) -> web.Response:
     """Prepare automations page of module."""
     settings = app["api_srv"].routers[0].get_module(mod_addr).get_module_settings()
     title_str = f"Modul '{settings.name}'"
-    automations = settings.automations
-    app["automations"] = automations
+    app["automations_def"] = settings.automtns_def
     app["settings"] = settings
+    page = fill_automations_template(app, title_str, "Lokale Automatisierungen", 0)
+    return web.Response(text=page, content_type="text/html")
+
+
+def show_automations(app) -> web.Response:
+    """Prepare automations page of module."""
+    title_str = f"Modul '{app['settings'].name}'"
     page = fill_automations_template(app, title_str, "Lokale Automatisierungen", 0)
     return web.Response(text=page, content_type="text/html")
 
@@ -617,26 +651,23 @@ def disable_button(key: str, page) -> str:
 
 def prepare_automations_list(app):
     """Prepare automations list page."""
-    automations = app["automations"]
+    automations = app["automations_def"].automations
     tbl = indent(4) + f'<form id="automations_table" action="automtns" method="post">\n'
     tbl += indent(5) + "<table>\n"
     for at_i in range(len(automations)):
         tbl += indent(6) + "<tr>\n"
-        id_name = f"atm{at_i}"
-        prompt = f"#{at_i}"
-        evnt_name, ec_1, ec_2 = automations[at_i].event_description()
-        actn_name = automations[at_i].action_name()
-        ac_args = ""
-        for ac_arg in automations[at_i].action_args[1:]:
-            ac_args += f"&nbsp;&nbsp;&nbsp;{ac_arg}"
+        evnt_desc = automations[at_i].event_description()
+        actn_desc = automations[at_i].action_description()
+        id_name = f"atmn_tbl"
+        sel_chkd = ""
+        if at_i == app["automations_def"].selected:
+            sel_chkd = "checked"
         tbl += (
             indent(7)
-            + f"<td>{evnt_name}</td><td align=right>&nbsp;{ec_1}</td><td align=right>&nbsp;{ec_2}</td><td align=center>&nbsp;&nbsp;&rArr;&nbsp;&nbsp;</td>\n"
+            + f"<td>{evnt_desc}</td><td align=center>&nbsp;&nbsp;&rArr;&nbsp;&nbsp;</td>\n"
         )
-        tbl += (
-            indent(7)
-            + f"<td>{actn_name}</td><td align=right>&nbsp;{automations[at_i].action_args[0]}</td><td align=left>&nbsp;{ac_args}</td>\n"
-        )
+        tbl += indent(7) + f"<td>{actn_desc}</td>\n"
+        tbl += f'<td><input type="radio" name="{id_name}" id="{id_name}" value="{at_i}" {sel_chkd}></td>'
         tbl += indent(6) + "</tr>\n"
     tbl += indent(5) + "</table>\n"
     tbl += indent(4) + "</form>\n"
@@ -983,7 +1014,6 @@ def parse_response_form(app, form_data):
                     break
             if not entry_found:
                 if key == "fingers":
-                    # Add teaching here
                     settings.__getattribute__(key).append(
                         IfDescriptor(
                             FingerNames[int(form_data[form_key][0]) - 1],
@@ -991,11 +1021,13 @@ def parse_response_form(app, form_data):
                             settings.users[settings.users_sel].nmbr,
                         )
                     )
-                elif key == "users":
-                    settings.all_fingers[int(form_data[form_key][0])]: list[
-                        IfDescriptor
-                    ] = []
                 else:
+                    if key == "users":
+                        settings.all_fingers[int(form_data[form_key][0])]: list[
+                            IfDescriptor
+                        ] = []
+                        if not ("users_sel" in dir(settings)):
+                            settings.users_sel = 0
                     settings.__getattribute__(key).append(
                         IfDescriptor(
                             f"{key}_{int(form_data[form_key][0])}",

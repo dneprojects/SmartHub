@@ -12,7 +12,7 @@ from const import (
     RtStatIIdx,
     FingerNames,
 )
-from automation import AutomationDefinition
+from automation import AutomationDefinition, AutomationsSet
 
 
 class ModuleSettings:
@@ -35,10 +35,10 @@ class ModuleSettings:
         self.cover_times = [0, 0, 0, 0, 0]
         self.blade_times = [0, 0, 0, 0, 0]
         self.get_io_interfaces()
-        self.get_automations()
         self.get_names()
         self.get_settings()
         self.get_descriptions()
+        self.automtns_def = AutomationsSet(self)
         self.group = dpcopy(rtr.groups[self.id])
 
     def get_io_interfaces(self):
@@ -67,6 +67,8 @@ class ModuleSettings:
         self.setvalues: list[IfDescriptor] = []
         self.users: list[IfDescriptor] = []
         self.fingers: list[IfDescriptor] = []
+        self.glob_flags: list[IfDescriptor] = []
+        self.coll_cmds: list[IfDescriptor] = []
 
     def get_settings(self) -> bool:
         """Get settings of Habitron module."""
@@ -254,27 +256,6 @@ class ModuleSettings:
             )
         return status
 
-    def get_automations(self) -> bool:
-        """Get automations of Habitron module."""
-
-        self.automations = []
-        list = self.list
-        no_lines = int.from_bytes(list[:2], "little")
-        list = list[4 : len(list)]  # Strip 4 header bytes
-        if len(list) == 0:
-            return False
-        for _ in range(no_lines):
-            if list == b"":
-                break
-            line_len = int(list[5]) + 5
-            line = list[0:line_len]
-            src_rt = int(line[0])
-            src_mod = int(line[1])
-            if ((src_rt == 0) | (src_rt == 250)) & (src_mod == 0):  # local automation
-                self.automations.append(AutomationDefinition(line))
-            list = list[line_len : len(list)]  # Strip processed line
-        return True
-
     def get_names(self) -> bool:
         """Get summary of Habitron module."""
 
@@ -399,9 +380,9 @@ class ModuleSettings:
             entry_no = int(line[3])
             entry_name = line[9:line_len].decode("iso8859-1").strip()
             if content_code == 767:  # FF 02: global flg (Merker)
-                pass
+                self.glob_flags.append(IfDescriptor(entry_name, entry_no, 0))
             elif content_code == 1023:  # FF 03: collective commands (Sammelbefehle)
-                pass
+                self.coll_cmds.append(IfDescriptor(entry_name, entry_no, 0))
             elif content_code == 2303:  # FF 08: alarm commands
                 pass
             elif self.id == line[1]:
@@ -462,6 +443,8 @@ class ModuleSettings:
 
     async def update_ekey_entries(self):
         """Check for differences in users/fingers and delete if needed."""
+        if not ("org_fingers" in dir(self.module)):
+            self.module.org_fingers = {}
         org_fingers = self.module.org_fingers
         new_fingers = self.all_fingers
         usr_nmbrs = []
@@ -471,23 +454,24 @@ class ModuleSettings:
             if not usr_id in new_fingers.keys():
                 self.response = await self.module.hdlr.del_ekey_entry(usr_id, 255)
                 self.logger.info(f"User {usr_id} deleted from ekey data base")
-            else:
-                f_msk = 0
-                for fngr in new_fingers[usr_id]:
-                    f_msk = f_msk | 1 << fngr.nmbr
-                self.users[usr_nmbrs.index(usr_id)].type = f_msk
-                new_usr_fngr_nmbrs = []
-                for fngr_id in range(len(new_fingers[usr_id])):
-                    new_usr_fngr_nmbrs.append(new_fingers[usr_id][fngr_id].nmbr)
-                for fngr_id in range(len(org_fingers[usr_id])):
-                    org_finger = org_fingers[usr_id][fngr_id].nmbr
-                    if not org_finger in new_usr_fngr_nmbrs:
-                        self.response = await self.module.hdlr.del_ekey_entry(
-                            usr_id, org_finger
-                        )
-                        self.logger.info(
-                            f"Finger {org_finger} of user {usr_id} deleted from ekey data base"
-                        )
+        for usr_id in org_fingers.keys():
+            new_usr_fngr_ids = []
+            for fngr_id in range(len(new_fingers[usr_id])):
+                new_usr_fngr_ids.append(new_fingers[usr_id][fngr_id].nmbr)
+            for fngr_id in range(len(org_fingers[usr_id])):
+                org_finger = org_fingers[usr_id][fngr_id].nmbr
+                if not org_finger in new_usr_fngr_ids:
+                    self.response = await self.module.hdlr.del_ekey_entry(
+                        usr_id, org_finger
+                    )
+                    self.logger.info(
+                        f"Finger {org_finger} of user {usr_id} deleted from ekey data base"
+                    )
+        for usr_id in new_fingers.keys():
+            f_msk = 0
+            for fngr in new_fingers[usr_id]:
+                f_msk = f_msk | 1 << (fngr.nmbr - 1)
+            self.users[usr_nmbrs.index(usr_id)].type = f_msk
 
     async def set_list(self):
         """Store config entries to list and send to module."""
@@ -547,7 +531,7 @@ class ModuleSettings:
             fgr_high = abs(uid.type) >> 8
             desc += " " * (32 - len(desc))
             new_list.append(
-                f"\xfc{uid.nmbr}\xeb{chr(fgr_low)}{chr(fgr_high)}\x23\0\xeb" + desc
+                f"\xfc{chr(uid.nmbr)}\xeb{chr(fgr_low)}{chr(fgr_high)}\x23\0\xeb" + desc
             )
         no_lines = len(new_list) - 1
         no_chars = 0

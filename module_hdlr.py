@@ -547,9 +547,8 @@ class ModHdlr(HdlrBase):
             await self.handle_router_cmd_resp(self.rt_id, cmd)
         return "OK"
 
-    async def del_ekey_list(self, user, list):
+    async def del_ekey_list(self, no_users, list):
         """Send Ekey delete command for a single entry to module."""
-        no_users = list[0]
         if no_users > 1:
             return "ERROR"
         user_id = list[1]
@@ -559,7 +558,7 @@ class ModHdlr(HdlrBase):
             cmd = (
                 RT_CMDS.DEL_EKEY_1.replace("<rtr>", chr(self.rt_id))
                 .replace("<mod>", chr(self.mod_id))
-                .replace("<usr>", chr(user))
+                .replace("<usr>", chr(user_id))
                 .replace("<fgr>", chr(fngr))
             )
             await self.handle_router_cmd_resp(self.rt_id, cmd)

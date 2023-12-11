@@ -737,39 +737,3 @@ FingerNames = [
     "Ringfinger rechts",
     "Kleiner Finger rechts",
 ]
-
-EventCodes = {
-    6: "Merker/Logik",
-    50: "Sammelereignis",
-    137: "Modusänderung",
-    149: "Dimmbefehl",
-    150: "Taste kurz",
-    151: "Taste lang",
-    152: "Schalter ein",
-    153: "Schalter aus",
-    154: "Taster lang Ende",
-}
-
-ActionCodes = {
-    1: "Ausgang ein",
-    2: "Ausgang aus",
-    3: "Ausgang wechseln",
-    6: "Logik",
-    9: "Zeitfunktion",
-    10: "Summton",
-    17: "Rollladenbefehl",
-    22: "Dimmcount start,",
-    23: "Dimmcount stop",
-    24: "Dimmen komplett",
-    30: "Prozentwert anzeigen",
-    31: "Prozentwert in Register",
-    35: "RGB-LED",
-    50: "Sammelbefehl",
-    55: "Alarmmeldung auslösen",
-    56: "Meldung setzen",
-    57: "Meldung zurücksetzen",
-    64: "Modus setzen",
-    220: "Klimaeinstellung",
-    221: "Klimabefehl",
-    240: "Modulbeleuchtung",
-}

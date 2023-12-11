@@ -48,7 +48,7 @@ class SetupHdlr(HdlrBase):
                 return
             case spec.KEY_DEL_LIST:
                 self.check_router_module_no(rt, mod)
-                self.check_user_finger()
+                # self.check_user_finger()
                 if self.args_err:
                     return
 
@@ -69,7 +69,7 @@ class SetupHdlr(HdlrBase):
                 self.response = await (
                     self.api_srv.routers[rt - 1]
                     .get_module(mod)
-                    .hdlr.del_ekey_all_users(self._args[0], self._args[1])
+                    .hdlr.del_ekey_all_users()
                 )
                 await self.api_srv.routers[rt - 1].set_config_mode(False)
                 return

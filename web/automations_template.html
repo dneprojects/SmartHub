@@ -23,6 +23,7 @@
   <meta name="keywords" content="">
   <link href="./configurator_files/style.css" rel="stylesheet" type="text/css" media="screen">
   <link href="./configurator_files/nav.css" rel="stylesheet" type="text/css" media="screen">
+  <link href="./configurator_files/popup.css" rel="stylesheet" type="text/css" media="screen">
   <!--[if IE]>
 <link href="tl_files/habitron/style_ie.css" rel="stylesheet" type="text/css" media="screen"  />
 <![endif]-->
@@ -113,6 +114,11 @@
                 <p>ContentText</p>
                 <!-- MainContentEnd -->
               </div>
+              <div id="autmnbuttons">
+                <button name="NewAutomtn" class="config_button" id="new_button" value="new">Neu</button>
+                <button name="ChangeAutomtn" class="config_button" id="change_button" value="change">Ändern</button>
+                <button name="DelAutomtn" class="config_button" id="del_button" value="del">Löschen</button>
+              </div>
             </div>
           </div>
         </div>
@@ -124,7 +130,7 @@
             <form action="settings_step">
               <button name="ModSettings" class="config_button" id="config_button" type="submit"
                 value="cancel-ModAddress">Abbruch</button>
-              <button name="ModSettings" class="config_button" id="config_button" type="submit" form="settings_table"
+              <button name="ModSettings" class="config_button" id="config_button" type="submit" form="automations_table"
                 value="save-ModAddress">Speichern</button>
             </form>
           </div>
@@ -133,15 +139,73 @@
 
     </div>
   </div>
-
+  <div id="automtn_del_popup" class="popup">
+    <div class="popup-content">
+      <h1>ContentTitle</h1>
+      <h2>Löschen der ausgewählten Automatisierung</h2>
+      <h3>Sind Sie sicher?</h3>
+      <div id="del_buttons">
+        <button id="close_del_popup">Abbruch</button>
+        <button id="del_automtn" type="submit" form="automations_table">Löschen</button>
+      </div>
+    </div>
+  </div>
+  <div id="automtn_change_popup" class="popup">
+    <div class="popup-content">
+      <h1>ContentTitle</h1>
+      <h2>Ändern der ausgewählten Automatisierung</h2>
+      <h3>Ereignisteil der Automatisierung</h3>
+      <div id="chg_buttons">
+        <button id="close_change_popup">Abbruch</button>
+        <button id="chg_automtn_next">Weiter</button>
+      </div>
+    </div>
+  </div>
+  <div id="automtn_new_popup" class="popup">
+    <div class="popup-content">
+      <h1>ContentTitle</h1>
+      <h2>Neue Automatisierung anlegen</h2>
+      <h3>Ereignisteil der Automatisierung</h3>
+      <div id="new_buttons">
+        <button id="close_new_popup">Abbruch</button>
+        <button id="chg_automtn_next">Weiter</button>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>
-<!--
-<script type="text/javascript">
-  const frm = document.getElementById("settings_table");
 
-  frm.addEventListener("change", function () {
-    document.getElementById("settings_table").submit();
+<script type="text/javascript">
+  const frm = document.getElementById("automations_table");
+  new_button.addEventListener("click", function () {
+    automtn_new_popup.classList.add("show");
   });
-</script>-->
+  close_new_popup.addEventListener("click", function () {
+    automtn_new_popup.classList.remove("show");
+  });
+  change_button.addEventListener("click", function () {
+    automtn_change_popup.classList.add("show");
+  });
+  close_change_popup.addEventListener("click", function () {
+    automtn_change_popup.classList.remove("show");
+  });
+  del_button.addEventListener("click", function () {
+    open_del_popup();
+  });
+  close_del_popup.addEventListener("click", function () {
+    automtn_del_popup.classList.remove("show");
+  });
+  function open_del_popup() {
+    var sel = 0
+    for (let l = 0; l < frm.length; l++) {
+      if (frm[l].checked) {
+        sel = l;
+      }
+    }
+    del_automtn.value = "del_automtn-" + sel;
+    automtn_del_popup.classList.add("show");
+  };
+
+
+</script>

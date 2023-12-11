@@ -736,14 +736,6 @@ body.produkte.sub #right .ce_text a {
    border: 1px solid #C0372D;
 }
 
-#file_button {
-   height: 22px;
-   width: 100px;
-   top: 0;
-   margin-right: 0px;
-   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
-   font: 11px arial, helvetica, clean, sans-serif;
-}
 
 #automtns_button {
    height: 22px;
@@ -1195,6 +1187,16 @@ div.produkte_box img {
 }
 
 /*----------------------------------------------------------Diverse-----------------------------------*/
+
+div#autmnbuttons {
+   margin-top: 10px;
+}
+
+button.config_button {
+   width: 100px;
+   height: 20px;
+   margin-right: 20px;
+}
 
 .grid_row {
    display: flex;

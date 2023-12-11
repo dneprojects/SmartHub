@@ -56,7 +56,78 @@
     line-height: 16px;
 }
 
-#close_popup {
+#automtn_new_popup .popup-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888888;
+    width: 400px;
+    color: #6b6c6e;
+    font-size: 11px;
+    line-height: 16px;
+}
+
+#automtn_change_popup .popup-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888888;
+    width: 400px;
+    color: #6b6c6e;
+    font-size: 11px;
+    line-height: 16px;
+}
+
+#automtn_del_popup .popup-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888888;
+    width: 400px;
+    color: #6b6c6e;
+    font-size: 11px;
+    line-height: 16px;
+}
+
+#file_button {
+    height: 22px;
+    width: 100px;
+    top: 0;
+    margin-right: 0px;
+    margin-left: 10px;
+    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+    font: 11px arial, helvetica, clean, sans-serif;
+}
+
+
+#close_file_popup_box,
+#del_buttons,
+#chg_buttons,
+#new_buttons {
+
+    display: grid;
+    justify-content: center;
+    align-content: center;
+}
+
+
+<button id="close_popup">schließen </button></div>#close_popup {
+    height: 22px;
+    width: 100px;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+    font: 11px arial, helvetica, clean, sans-serif;
+}
+
+#close_del_popup,
+#del_automtn,
+#close_change_popup,
+#close_new_popup,
+#chg_automtn_next,
+#chg_automtn_prev,
+#teach_start {
     height: 22px;
     width: 100px;
     margin-top: 50px;
@@ -66,15 +137,6 @@
     font: 11px arial, helvetica, clean, sans-serif;
 }
 
-#teach_start {
-    height: 22px;
-    width: 100px;
-    margin-top: 10px;
-    margin-left: auto;
-    margin-right: auto;
-    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
-    font: 11px arial, helvetica, clean, sans-serif;
-}
 
 #msg_popup_txt {
     text-align: center;
@@ -89,11 +151,6 @@
 #msg_popup_img {
     width: 50px;
     height: 50px;
-}
-
-.popup-content button {
-    display: block;
-    margin: 0 auto;
 }
 
 .show {

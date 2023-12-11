@@ -25,12 +25,6 @@ class HbtnModule:
         self.list: bytes = b""  # SMC information: labels, commands
         self.list_upload: bytes = b""  # buffer for SMC upload
 
-    def __del__(self):
-        """Clean up."""
-        del self.logger
-        del self.api_srv
-        del self.hdlr
-
     async def initialize(self):
         """Get full module status"""
         self.hdlr.initialize(self)
