@@ -1,4 +1,4 @@
-FROM armv7: ghcr.io/home-assistant/armv7-base:3.18
+FROM ghcr.io/home-assistant/armv7-base:3.18
 
 ARG \
     PYTHON_VERSION \
