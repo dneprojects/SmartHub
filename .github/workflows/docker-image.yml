@@ -5,7 +5,14 @@ name: Create and publish a Docker image
 on:
   push:
     branches: ['main']
-
+    
+build_from:
+  aarch64: ghcr.io/home-assistant/aarch64-base:3.18
+  amd64: ghcr.io/home-assistant/amd64-base:3.18
+  armhf: ghcr.io/home-assistant/armhf-base:3.18
+  armv7: ghcr.io/home-assistant/armv7-base:3.18
+  i386: ghcr.io/home-assistant/i386-base:3.18
+  
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
   REGISTRY: ghcr.io
