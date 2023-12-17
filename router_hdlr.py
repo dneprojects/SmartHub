@@ -11,7 +11,7 @@ from const import (
     SYS_MODES,
 )
 from hdlr_class import HdlrBase
-from messages import RtResponse
+from messages import RtMessage, RtResponse
 
 
 class RtHdlr(HdlrBase):
@@ -24,6 +24,7 @@ class RtHdlr(HdlrBase):
         self.ser_if = self.api_srv._rt_serial
         self.rt_id = rtr._id
         self.logger = logging.getLogger(__name__)
+        self.rt_msg = RtMessage(self, 0, "   ")  # initialize empty object
 
     async def rt_reboot(self):
         """Initiates a router reboot"""
@@ -91,8 +92,13 @@ class RtHdlr(HdlrBase):
 
     async def get_rt_channels(self) -> bytes:
         """Get router channels."""
+        await asyncio.sleep(0.2)
         await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.GET_RT_CHANS)
+        if self.rt_msg._resp_code == 133:
+            # switch to Srv mode made without response, may be still in buffer
+            await self.handle_router_resp(self.rt_id)
         self.rtr.channels = self.rt_msg._resp_msg
+        self.rtr.mode0 = self.rtr.channels[1]
         return self.rtr.channels
 
     async def get_rt_timeout(self) -> bytes:
@@ -172,6 +178,7 @@ class RtHdlr(HdlrBase):
         """Get full router status."""
         # Create continuous status byte array and indices
         await self.rt_msg.api_hdlr.api_srv.stop_opr_mode(1)
+        await asyncio.sleep(0.1)
         stat_idx = [0]
         rt_stat = chr(self.rt_id).encode()
         stat_idx.append(len(rt_stat))
@@ -229,8 +236,11 @@ class RtHdlr(HdlrBase):
             return self.rtr.chan_status
         # Deal with option "L", makes 1 byte difference: take value relative to the end
         if self.rt_msg._resp_buffer[-42] != 0:
+            # mode 0 not zero, should be 'K', config while reading status
             return self.rt_msg._resp_buffer[-43:-1]
-        self.logger.warning("Router channel status with mode=0, return stored value")
+        self.logger.warning(
+            "Router channel status with mode 0 = 0, return stored value"
+        )
         return self.rtr.chan_status
 
     async def get_rt_modules(self):
@@ -581,7 +591,7 @@ class RtHdlr(HdlrBase):
         resp_msg = RtResponse(self, rt_resp)
         if not (resp_msg._crc_ok):
             self.logger.warning(
-                f"Invalid API mode router message crc, message: {resp_msg.resp_data}"
+                f"Invalid Opr mode router message crc, message: {resp_msg.resp_data}"
             )
             return
         if resp_msg.resp_cmd == RT_RESP.MIRR_STAT:

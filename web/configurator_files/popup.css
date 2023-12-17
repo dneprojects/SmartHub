@@ -18,6 +18,7 @@
     padding: 20px;
     border: 1px solid #888888;
     width: 500px;
+    height: 240px;
     color: #6b6c6e;
     font-size: 11px;
     line-height: 16px;
@@ -51,6 +52,7 @@
     padding: 20px;
     border: 1px solid #888888;
     width: 200px;
+    height: 150px;
     color: #6b6c6e;
     font-size: 11px;
     line-height: 16px;
@@ -104,21 +106,7 @@
 #del_buttons,
 #chg_buttons,
 #new_buttons {
-
-    display: grid;
-    justify-content: center;
-    align-content: center;
-}
-
-
-<button id="close_popup">schließen </button></div>#close_popup {
-    height: 22px;
-    width: 100px;
-    margin-top: 10px;
-    margin-left: auto;
-    margin-right: auto;
-    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
-    font: 11px arial, helvetica, clean, sans-serif;
+    display: flow;
 }
 
 #close_del_popup,
@@ -126,8 +114,7 @@
 #close_change_popup,
 #close_new_popup,
 #chg_automtn_next,
-#chg_automtn_prev,
-#teach_start {
+#chg_automtn_prev {
     height: 22px;
     width: 100px;
     margin-top: 50px;
@@ -137,6 +124,17 @@
     font: 11px arial, helvetica, clean, sans-serif;
 }
 
+#close_popup,
+#teach_start {
+    height: 22px;
+    width: 80px;
+    float: left;
+    margin-top: 20px;
+    margin-left: 12px;
+    margin-right: auto;
+    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+    font: 11px arial, helvetica, clean, sans-serif;
+}
 
 #msg_popup_txt {
     text-align: center;

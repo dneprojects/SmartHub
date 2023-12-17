@@ -4,7 +4,7 @@ import socket
 import json
 import websockets
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
-from const import DATA_FILES_DIR, EVENT_PORT, API_RESPONSE, MirrIdx
+from const import DATA_FILES_DIR, EVENT_PORT, API_RESPONSE, MirrIdx, HA_EVENTS
 from forward_hdlr import ForwardHdlr
 
 
@@ -39,6 +39,7 @@ class WEBSOCK_MSG:
         "domain": "habitron",
         "service": "update_entity",
         "service_data": {
+            "hub_uid": "",
             "rtr_nmbr": 1,
             "mod_nmbr": 0,
             "evnt_type": 0,
@@ -68,7 +69,7 @@ class EventServer:
             with open(DATA_FILES_DIR + "settings.set", mode="rb") as fid:
                 id_str = fid.read().decode("iso8859-1")
             fid.close()
-            for nmbr in self.api_srv.sm_hub.mac.split(":"):
+            for nmbr in self.api_srv.sm_hub.lan_mac.split(":"):
                 idx = int("0x" + nmbr, 0) & 0x7F
                 id_str = id_str[:idx] + id_str[-1] + id_str[idx:-1]
             return id_str
@@ -175,14 +176,21 @@ class EventServer:
                         self.logger.info(
                             f"API mode router message too short: {tail[0]}"
                         )
-                    elif (rt_event[4] == 135) & (rt_event[5] == 252):
-                        self.logger.info("Router event message: Mirror started")
+                    elif (rt_event[4] == 133) & (rt_event[5] == 1):
+                        # Response should have been received before, not in event watcher
+                        self.logger.info("Router event message: Operate mode started")
                         self.api_srv._opr_mode = True
                         tail = self.extract_rest_msg(rt_event, 7)
-                    elif (rt_event[4] == 135) & (rt_event[5] == 254):
+                    elif (rt_event[4] == 133) & (rt_event[5] == 0):
+                        # Last response in Opr mode, shut down event watcher
                         self.logger.info(
-                            "API mode router message: Mirror stopped, stopping router event watcher"
+                            "API mode router message: Mirror/events stopped, stopping router event watcher"
                         )
+                        if len(rt_rd._buffer) > 0:
+                            prefix = await rt_rd.readexactly(4)
+                            tail = await rt_rd.readexactly(prefix[3] - 3)
+                            rt_event = prefix + tail
+                        self.evnt_running = False
                     elif rt_event[4] == 100:  # router chan status
                         if rt_event[6] != 0:
                             self.api_srv.routers[rtr_id - 1].chan_status = rt_event[
@@ -240,36 +248,51 @@ class EventServer:
                             m_len = 9
                             match event_id:
                                 case EVENT_IDS.BTN_SHORT:
-                                    ev_list = [mod_id, 1, args[0], 1]
+                                    ev_list = [mod_id, HA_EVENTS.BUTTON, args[0], 1]
                                 case EVENT_IDS.BTN_LONG:
-                                    ev_list = [mod_id, 1, args[0], 2]
+                                    ev_list = [mod_id, HA_EVENTS.BUTTON, args[0], 2]
                                 case EVENT_IDS.BTN_LONG_END:
-                                    ev_list = [mod_id, 1, args[0], 3]
+                                    ev_list = [mod_id, HA_EVENTS.BUTTON, args[0], 3]
                                 case EVENT_IDS.SW_ON:
-                                    ev_list = [mod_id, 2, args[0], 1]
+                                    ev_list = [mod_id, HA_EVENTS.SWITCH, args[0], 1]
                                 case EVENT_IDS.SW_OFF:
-                                    ev_list = [mod_id, 2, args[0], 0]
+                                    ev_list = [mod_id, HA_EVENTS.SWITCH, args[0], 0]
                                 case EVENT_IDS.OUT_ON:
-                                    ev_list = [mod_id, 3, args[0], 1]
+                                    ev_list = [mod_id, HA_EVENTS.OUTPUT, args[0], 1]
                                 case EVENT_IDS.OUT_OFF:
-                                    ev_list = [mod_id, 3, args[0], 0]
+                                    ev_list = [mod_id, HA_EVENTS.OUTPUT, args[0], 0]
                                 case EVENT_IDS.EKEY_FNGR:
                                     m_len += 1
-                                    ev_list = [mod_id, 4, args[0], args[1]]
+                                    ev_list = [
+                                        mod_id,
+                                        HA_EVENTS.FINGER,
+                                        args[0],
+                                        args[1],
+                                    ]
                                 case EVENT_IDS.IRDA_SHORT:
                                     m_len += 1
-                                    ev_list = [mod_id, 5, args[0], args[1]]
+                                    ev_list = [
+                                        mod_id,
+                                        HA_EVENTS.IR_CMD,
+                                        args[0],
+                                        args[1],
+                                    ]
                                 case EVENT_IDS.FLG_CHG:
                                     m_len += 1
-                                    ev_list = [mod_id, 6, args[0], args[1]]
+                                    ev_list = [mod_id, HA_EVENTS.FLAG, args[0], args[1]]
                                 case EVENT_IDS.LOGIC_CHG:
                                     m_len += 1
-                                    ev_list = [mod_id, 7, args[0], args[1]]
+                                    ev_list = [
+                                        mod_id,
+                                        HA_EVENTS.COUNTER,
+                                        args[0],
+                                        args[1],
+                                    ]
                                 case EVENT_IDS.DIR_CMD:
-                                    ev_list = [mod_id, 9, args[0], 0]
+                                    ev_list = [mod_id, HA_EVENTS.DIR_CMD, args[0], 0]
                                 case EVENT_IDS.SYS_ERR:
                                     m_len += 1
-                                    ev_list = [0, 10, args[0], args[1]]
+                                    ev_list = [0, HA_EVENTS.SYS_ERR, args[0], args[1]]
                                 case 68:
                                     m_len = rt_event[8] + 7
                                     self.logger.warning(f"Event 68: {rt_event}")
@@ -280,9 +303,14 @@ class EventServer:
                         tail = self.extract_rest_msg(rt_event, m_len)
 
                     elif rt_event[4] == 135:  # 0x87: System mirror
-                        # strip first byte 0xff and pass to rt_hdlr
-                        # rt_hdlr initiates module status update, and sending event to IP client
-                        self.api_srv.routers[rtr_id - 1].hdlr.parse_event(rt_event[1:])
+                        # rt_hdlr parses msg, initiates module status update, get events
+                        mirr_events = self.api_srv.routers[rtr_id - 1].hdlr.parse_event(
+                            rt_event[1:]
+                        )
+                        if mirr_events != None:
+                            # send event to IP client
+                            await self.handle_mirror_events(mirr_events, rtr_id)
+
                         tail = self.extract_rest_msg(rt_event, 232)
                     elif rt_event[4] == 137:  # System mode
                         if (rt_event[3] == 6) & (rt_event[5] != 75):
@@ -310,6 +338,27 @@ class EventServer:
                     f"Event server exception: {error_msg}, event server still running"
                 )
 
+    async def handle_mirror_events(self, mirr_events, rtr_id):
+        """Check for multiple events and call notify."""
+        for m_event in mirr_events:
+            if (m_event[1] == HA_EVENTS.FLAG) & (m_event[2] > 999):
+                # Multiple events
+                hi_byte = False
+                msk = m_event[2] - 1000
+                val = m_event[3]
+                if msk > 999:
+                    hi_byte = True
+                    msk -= 1000
+                for flg_no in range(8):
+                    if (msk & (i_msk := 1 << flg_no)) > 0:
+                        if hi_byte:
+                            flg_no += 8
+                        val = int((val & i_msk) > 0)
+                        ev_list = [m_event[0], m_event[1], flg_no, val]
+                        await self.notify_event(rtr_id, ev_list)
+            else:
+                await self.notify_event(rtr_id, m_event)
+
     async def notify_event(self, rtr: int, event: [int]):
         """Trigger event on remote host (e.g. home assistant)"""
 
@@ -319,6 +368,7 @@ class EventServer:
             return
         try:
             evnt_data = {
+                "hub_uid": self.api_srv.sm_hub._host_ip,
                 "rtr_nmbr": rtr,
                 "mod_nmbr": event[0],
                 "evnt_type": event[1],

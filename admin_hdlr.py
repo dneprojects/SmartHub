@@ -24,7 +24,7 @@ class AdminHdlr(HdlrBase):
             case spec.SMHUB_REBOOT:
                 self.response = "Smart Hub will be rebooted"
                 time.sleep(3)
-                self.api_svr.sm_hub.reboot()
+                self.api_srv.sm_hub.reboot_hub()
             case spec.SMHUB_NET_INFO:
                 await self.api_srv.stop_opr_mode(rt)
                 ip_len = self._args[0]

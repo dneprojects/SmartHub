@@ -3,7 +3,7 @@ import const
 import asyncio
 from asyncio import StreamReader, StreamWriter
 
-from const import RT_CMDS, MIRROR_CYC_TIME, API_CATEGS
+from const import RT_CMDS, SYS_MODES, API_CATEGS
 import logging
 from messages import ApiMessage
 from data_hdlr import DataHdlr
@@ -30,7 +30,7 @@ class ApiServer:
         self.sm_hub = sm_hub
         self.logger = logging.getLogger(__name__)
         self._rt_serial: (StreamReader, StreamWriter) = rt_serial
-        self._opr_mode: bool = False  # Allows explicitly setting operate mode off
+        self._opr_mode: bool = True  # Allows explicitly setting operate mode off
         self.hdlr = []
         self.routers = []
         self.routers.append(HbtnRouter(self, 1))
@@ -82,7 +82,7 @@ class ApiServer:
             success = True
             if self.api_msg._crc_ok:
                 rt = self.api_msg.get_router_id()
-                self.logger.info(
+                self.logger.debug(
                     f"Processing network API command: {self.api_msg._cmd_grp} {struct.pack('<h', self.api_msg._cmd_spec)[1]} {struct.pack('<h', self.api_msg._cmd_spec)[0]}"
                 )
                 match self.api_msg._cmd_grp:
@@ -124,13 +124,16 @@ class ApiServer:
             if self._auto_restart_opr & (not self._opr_mode):
                 await self.start_opr_mode(rt)
 
+        self.sm_hub.restart_hub(False)
+
     async def shutdown(self, rt, restart_flg):
         """Terminating all tasks and self."""
         await self.sm_hub.conf_srv.runner.cleanup()
         await self.stop_opr_mode(rt)
-        await asyncio.sleep(3)
-        self.sm_hub.restart(restart_flg)
+        await self.routers[rt - 1].flush_buffer()
+        self.sm_hub.q_srv._q_running = False
         self._running = False
+        self._auto_restart_opr = False
 
     async def respond_client(self, response):
         """Send api command response"""
@@ -171,14 +174,13 @@ class ApiServer:
         # Client ip needed for event handling;
         # method "get_extra_info" is only implemented for writer object
         self._client_ip = self.ip_writer.get_extra_info("peername")[0]
-        mirror_running = self.routers[rt_no - 1].mirror_running()
-        if self._opr_mode & mirror_running:  # mirror running is old
+        if self._opr_mode:
             if self._ev_srv_task != []:
                 if self._ev_srv_task._state != "FINISHED":
                     return
         if self._opr_mode:
             print("\n")
-            self.logger.info("Already in Opr mode, recovering mirror")
+            self.logger.info("Already in Opr mode, recovering event server")
             if self._ev_srv_task == []:
                 self.logger.warning("No EventSrv registered, start event server task")
                 self._ev_srv_task = self.loop.create_task(
@@ -190,36 +192,20 @@ class ApiServer:
                 self._ev_srv_task = self.loop.create_task(
                     self.evnt_srv.watch_rt_events(self._rt_serial[0])
                 )
-                await asyncio.sleep(0.1)
         else:
-            # New switch -----------
             m_chr = chr(int(self.mirror_mode_enabled))
             e_chr = chr(int(self.event_mode_enabled))
             cmd = RT_CMDS.SET_OPR_MODE.replace("<mirr>", m_chr).replace("<evnt>", e_chr)
-            await self.hdlr.handle_router_cmd(rt_no, cmd)
-            # ----------------------
-            await self.routers[rt_no - 1].set_config_mode(False)
+            await self.hdlr.handle_router_cmd_resp(rt_no, cmd)
             print("\n")
             self.logger.info("Switched from Srv to Opr mode")
             self._opr_mode = True
-            # Start event handler first, then enable mirror
+            # Start event handler
             if self._ev_srv_task == []:
                 self.logger.debug("Start EventSrv task")
                 self._ev_srv_task = self.loop.create_task(
                     self.evnt_srv.watch_rt_events(self._rt_serial[0])
                 )
-                await asyncio.sleep(0.1)
-        # Old switch -----------
-        if self.mirror_mode_enabled:
-            strt_mirr_cmd = RT_CMDS.START_MIRROR.replace(
-                "<cyc>", chr(min(round(MIRROR_CYC_TIME * 100), 255))
-            )
-            await self.hdlr.handle_router_cmd(rt_no, strt_mirr_cmd)
-            await asyncio.sleep(0.2)
-        if self.event_mode_enabled:
-            await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.START_EVENTS)
-            await asyncio.sleep(0.2)
-        # ----------------------
 
     async def stop_opr_mode(self, rt_no):
         """Turn on server mode: disable router events"""
@@ -228,19 +214,8 @@ class ApiServer:
 
         # Disable mirror first, then stop event handler
         # Serial reader still used by event server
-
-        # New switch -----------
-        # await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.SET_SRV_MODE)
-        # ----------------------
-
-        # Old switch -----------
-        await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.STOP_EVENTS)
-        await asyncio.sleep(0.2)
-        await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.STOP_MIRROR)
-        await asyncio.sleep(0.2)
-        self.evnt_srv.evnt_running = False
-        # ----------------------
-
+        await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.SET_SRV_MODE)
+        # waiting for event server to receive response and shut down
         t_wait = 0.0
         while (self._ev_srv_task._state != "FINISHED") & (t_wait < 1.0):
             await asyncio.sleep(0.1)
@@ -255,11 +230,6 @@ class ApiServer:
         self._ev_srv_task = []
         self._opr_mode = False
 
-        # Old switch -----------
-        await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.CLEAR_RT_SENDBUF)
-        await self.routers[rt_no - 1].set_config_mode(True)
-        # ----------------------
-
         print("\n")
         self.logger.info("Switched from Opr to Srv mode")
 
@@ -268,9 +238,5 @@ class ApiServer:
         self._opr_mode = False
         self._ev_srv_task = []
 
-        # Disable mirror first, then stop event handler
-        await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.CLEAR_RT_SENDBUF)
-        await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.STOP_EVENTS)
-        await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.STOP_MIRROR)
-        await self.routers[rt_no - 1].set_config_mode(False)
+        await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.SET_SRV_MODE)
         self.logger.debug("API mode turned off initially")

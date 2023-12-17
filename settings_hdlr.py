@@ -152,6 +152,7 @@ class SettingsHdlr(HdlrBase):
                 await self.api_srv.stop_opr_mode(rt)
                 self.response = "OK"
                 self.logger.debug(f"Mirror mode stopped on router {rt}")
+                self.api_srv._auto_restart_opr = False
 
             case spec.EVENTSTART:
                 # self.check_router_no(rt)
@@ -174,6 +175,7 @@ class SettingsHdlr(HdlrBase):
                 await self.api_srv.stop_opr_mode(rt)
                 self.response = "OK"
                 self.logger.debug(f"Event mode stopped on router {rt}")
+                self._auto_restart_opr = False
 
             case _:
                 self.response = f"Unknown API settings command: {self.msg._cmd_grp} {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"

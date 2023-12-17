@@ -1,7 +1,7 @@
 import logging
 from pymodbus.utilities import checkCRC as ModbusCheckCRC
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
-from const import MirrIdx, SMGIdx, MStatIdx, MODULE_CODES, CStatBlkIdx
+from const import MirrIdx, SMGIdx, MStatIdx, MODULE_CODES, CStatBlkIdx, HA_EVENTS
 from configuration import ModuleSettings
 
 
@@ -98,13 +98,23 @@ class HbtnModule:
     def has_automations(self) -> bool:
         """Return True if local automations available."""
         if len(self.list) > 5:
-            return (self.list[4] == 0) & (self.list[5] == 0)
+            # atms = self.settings.automtns_def
+            # return len(atms.local) + len(atms.external) + len(atms.forward) > 0
+            return (self.list[4] == 0) | (self.list[4] == 1)
         return False
 
-    def compare_status(self, stat1: str, stat2: str) -> list:
+    def swap_mirr_cover_idx(self, mirr_idx: int) -> int:
+        """Return cover index from mirror index (0..2 -> 2..4)."""
+        cvr_idx = mirr_idx
+        if self._typ[0] != 1:
+            return cvr_idx
+        cvr_idx += 2
+        if cvr_idx > 4:
+            cvr_idx -= 5
+        return cvr_idx
+
+    def compare_status(self, stat1: str, stat2: str, diff_idx, idx) -> list:
         """Find updates fields."""
-        diff_idx = []
-        idx = 0
         for x, y in zip(stat1, stat2):
             if x != y:
                 diff_idx.append(idx)
@@ -114,17 +124,14 @@ class HbtnModule:
     def update_status(self, new_status: bytes):
         """Saves new mirror status and returns differences."""
         block_list = []
-        update_info = ""
+        update_info = []
+        i_diff = []
 
         # print(f"Module update {self._id}")
         if self._type in [
             "Smart Nature",
             "FanGSM",
             "FanM-Bus",
-            "Smart Out 8/R",
-            "Smart Out 8/R-1",
-            "Smart Out 8/R-2",
-            "Smart Out 8/T",
             "Smart In 8/24V",
             "Smart In 8/24V-1",
             "Smart In 8/230V",
@@ -139,7 +146,12 @@ class HbtnModule:
             ]:
                 i0 = MirrIdx.LUM
                 i1 = MirrIdx.MOV + 1
-            else:  # Controller modules
+            elif self._type in [
+                "Smart Out 8/R",
+                "Smart Out 8/R-1",
+                "Smart Out 8/R-2",
+                "Smart Out 8/T",
+            ]:
                 block_list = [
                     MirrIdx.LUM,
                     MirrIdx.TEMP_ROOM,
@@ -147,26 +159,93 @@ class HbtnModule:
                     MirrIdx.TEMP_EXT,
                 ]
                 i0 = MirrIdx.DIM_1
+                i1 = MirrIdx.T_SHORT  # includes BLAD_POS
+            else:  # Controller modules
+                block_list = [
+                    MirrIdx.HUM,
+                    MirrIdx.AQI,
+                    MirrIdx.LUM,
+                    MirrIdx.TEMP_ROOM,
+                    MirrIdx.TEMP_PWR,
+                    MirrIdx.TEMP_EXT,
+                ]
+                i0 = MirrIdx.DIM_1
                 i1 = MirrIdx.T_SHORT
-            i_diff = self.compare_status(self.status[i0:i1], new_status[i0:i1])
+                i2 = MirrIdx.LOGIC
+                i3 = MirrIdx.LOGIC_OUT
+                i_diff = self.compare_status(
+                    self.status[i2:i3], new_status[i2:i3], i_diff, i2 - i0
+                )
+            i_diff = self.compare_status(
+                self.status[i0:i1], new_status[i0:i1], i_diff, 0
+            )
             for i_d in i_diff:
-                if not (i_d + i0 in block_list):
-                    update_info += (
-                        chr(self._id)
-                        + chr(i_d + i0)
-                        + chr(self.status[i_d + i0])
-                        + chr(new_status[i_d + i0])
-                    )
-                    self.logger.debug(
-                        f"Update in module status {self._id}: {self._name}: Byte {i_d+i0} - new: {new_status[i_d+i0]}"
-                    )
+                idx = i_d + i0
+                if not (idx in block_list):
+                    ev_type = 0
+                    ev_str = "-"
+                    val = new_status[idx]
+                    if idx in range(MirrIdx.MOV, MirrIdx.MOV + 1):
+                        ev_type = HA_EVENTS.MOVE
+                        ev_str = "Movement"
+                        idv = 0
+                    elif idx in range(MirrIdx.COVER_POS, MirrIdx.COVER_POS + 8):
+                        ev_type = HA_EVENTS.COV_VAL
+                        idv = self.swap_mirr_cover_idx(idx - MirrIdx.COVER_POS)
+                        ev_str = f"Cover {idv + 1} pos"
+                    elif idx in range(MirrIdx.BLAD_POS, MirrIdx.BLAD_POS + 8):
+                        ev_type = HA_EVENTS.BLD_VAL
+                        idv = self.swap_mirr_cover_idx(idx - MirrIdx.BLAD_POS)
+                        ev_str = f"Blade {idv + 1} pos"
+                    elif idx in range(MirrIdx.DIM_1, MirrIdx.DIM_4 + 1):
+                        ev_type = HA_EVENTS.DIM_VAL
+                        idv = idx - MirrIdx.DIM_1
+                        ev_str = f"Dimmmer {idv + 1}"
+                    elif idx in range(MirrIdx.FLAG_LOC, MirrIdx.FLAG_LOC + 2):
+                        ev_type = HA_EVENTS.FLAG
+                        old_val = self.status[idx]
+                        new_val = new_status[idx]
+                        chg_msk = old_val ^ new_val
+                        val = new_val & chg_msk
+                        for i in range(8):
+                            if (chg_msk & (1 << i)) > 0:
+                                break
+                        idv = 1 << i
+                        if idv != chg_msk:
+                            # more than one flag changed, return mask and byte
+                            idv = chg_msk + 1000
+                            if idx > MirrIdx.FLAG_LOC:  # upper byte
+                                idv = idv + 1000
+                        else:
+                            # single change, return flag no and value 0/1
+                            idv = i
+                            if idx > MirrIdx.FLAG_LOC:  # upper byte
+                                idv = idv + 8
+                            val = int(val > 0)
+                        ev_str = f"Flag {idv + 1}"
+                    elif idx in range(MirrIdx.COUNTER_VAL, MirrIdx.COUNTER_VAL + 28):
+                        ev_type = HA_EVENTS.CNT_VAL
+                        idv = int((idx - MirrIdx.COUNTER_VAL) / 3)
+                        ev_str = f"Counter {idv + 1}"
+                    if ev_type > 0:
+                        update_info.append(
+                            [
+                                self._id,
+                                ev_type,
+                                idv,
+                                val,
+                            ]
+                        )
+                        self.logger.debug(
+                            f"Update in module status {self._id}: {self._name}: Event {ev_str}, Byte {idx} - new: {val}"
+                        )
         if len(new_status) > 100:
             self.status = new_status
             self.comp_status = self.get_status(False)
         else:
             self.comp_status = new_status
         self.logger.debug(f"Status of module {self._id} updated")
-        return update_info.encode("iso8859-1")
+        return update_info
 
     def build_smg(self) -> bytes:
         """Pick smg values from full module status."""

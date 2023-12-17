@@ -21,6 +21,7 @@ class HdlrBase:
         self.response: str = "OK"
         self.ser_if = api_srv._rt_serial
         self.args_err: bool = False
+        self.rt_msg = RtMessage(self, 0, "   ")  # initialize empty object
 
     def get_router_module(self) -> int:
         if (self._p4 == 0) & (len(self._args) > 0):

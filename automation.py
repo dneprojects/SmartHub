@@ -1,5 +1,9 @@
 EventCodes = {
     6: "Merker/Logik",
+    10: "Ausgangsänderung",
+    23: "IR-Befehl",
+    40: "Bewegung Innenlicht",
+    41: "Bewegung Außenlicht",
     50: "Sammelereignis",
     137: "Modusänderung",
     149: "Dimmbefehl",
@@ -8,6 +12,14 @@ EventCodes = {
     152: "Schalter ein",
     153: "Schalter aus",
     154: "Taste lang Ende",
+    169: "Ekey",
+    170: "Timer",
+    203: "Außenhelligkeit",
+    204: "Wind",
+    205: "Regen",
+    215: "Feuchte",
+    221: "Klima Sensor intern",
+    222: "Klima Sensor extern",
 }
 
 ActionCodes = {
@@ -54,6 +66,9 @@ class AutomationsSet:
 
     def __init__(self, settings):
         """Initialize set of automations."""
+        self.local: list(AutomationDefinition) = []
+        self.external: list(AutomationDefinition) = []
+        self.forward: list(AutomationDefinition) = []
         self.get_autmn_dict(settings)
         self.get_automations(settings)
         self.selected = 0
@@ -85,7 +100,6 @@ class AutomationsSet:
     def get_automations(self, settings):
         """Get automations of Habitron module."""
 
-        self.automations = []
         list = settings.list
         no_lines = int.from_bytes(list[:2], "little")
         list = list[4 : len(list)]  # Strip 4 header bytes
@@ -99,7 +113,13 @@ class AutomationsSet:
             src_rt = int(line[0])
             src_mod = int(line[1])
             if ((src_rt == 0) | (src_rt == 250)) & (src_mod == 0):  # local automation
-                self.automations.append(
+                self.local.append(AutomationDefinition(line, self.autmn_dict, settings))
+            elif (src_rt == settings.module.rt._id) | (src_rt == 250):
+                self.external.append(
+                    AutomationDefinition(line, self.autmn_dict, settings)
+                )
+            elif src_rt < 65:
+                self.forward.append(
                     AutomationDefinition(line, self.autmn_dict, settings)
                 )
             list = list[line_len : len(list)]  # Strip processed line
@@ -213,6 +233,11 @@ class AutomationDefinition:
             self.event_arg_name = self.get_dict_entry("coll_cmds", event_arg)
             event_trig = f"Sammelereignis {self.event_arg_name}"
             event_desc = ""
+        elif event_trig[:5] == "Klima":
+            if self.event_arg1 == 1:
+                event_desc = "heizen"
+            else:
+                event_desc = "kühlen"
         return event_trig + chr(32) + event_desc
 
     def action_description(self) -> str:

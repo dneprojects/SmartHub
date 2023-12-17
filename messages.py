@@ -109,11 +109,6 @@ class RtMessage(BaseMessage):
         self.rt_prepare()
         self._length = ord(self._buffer[2])
 
-    def __del__(self):
-        """Clean up."""
-        del self.api_hdlr
-        del self.logger
-
     def rt_prepare(self):
         """Set current router, encode, and calc crc"""
         self._buffer = self.rt_command.replace("<rtr>", chr(self.rt))

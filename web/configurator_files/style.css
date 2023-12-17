@@ -583,24 +583,26 @@ a:hover {
    left: -48px;
    top: 0px;
    z-index: 450;
-   width: 217px;
+   width: 180px;
    overflow: visible;
    min-height: 300px;
    padding-top: 59px;
+   background: #FFF;
 }
 
 #mitte {
    z-index: 400;
-   margin-right: 49px;
-   margin-left: 49px;
    position: relative;
-   background: #FFF url(design/dehn.png) repeat-y center top;
+   background: #FFF;
 }
 
 #left {
-   float: left;
    position: relative;
+   height: 100px;
    z-index: 450;
+   margin-left: 49px;
+   padding-top: 59px;
+   background: #FFF;
 }
 
 #footer {
@@ -627,9 +629,10 @@ a:hover {
 }
 
 #mitte {
+   width: 570px;
    padding-bottom: 20px;
-   padding-left: 0px;
-   padding-right: 70px;
+   padding-left: 10px;
+   padding-right: 10px;
    padding-top: 40px;
 }
 
@@ -645,9 +648,23 @@ a:hover {
    height: auto;
 }
 
+#left img {
+   position: relative;
+   padding-top: 0px;
+   padding-bottom: 0px;
+   padding-left: 10px;
+   max-width: 100%;
+   height: auto;
+}
+
+#bild-links {
+   margin-top: 40px;
+   width: 120px;
+   padding-left: 0px;
+}
+
 #bild-rechts {
    padding-left: 10px;
-   size: 80%;
 }
 
 body.start #right img {

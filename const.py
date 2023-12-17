@@ -102,8 +102,8 @@ class API_ACTIONS:
     # New commands
     ALARM_CMD = 256 * 5 + 1
 
-    SET_API_MODE = 256 * 10 + 1
-    SET_CONFIG_MODE = 256 * 10 + 2
+    SET_OPR_MODE = 256 * 10 + 1
+    SET_SRV_MODE = 256 * 10 + 2
 
     OUTP_OFF = 256 * 11 + 0
     OUTP_ON = 256 * 11 + 1
@@ -737,3 +737,22 @@ FingerNames = [
     "Ringfinger rechts",
     "Kleiner Finger rechts",
 ]
+
+
+class HA_EVENTS:
+    """Identifier for home assistant events, e.g. input changes."""
+
+    BUTTON = 1
+    SWITCH = 2
+    OUTPUT = 3
+    COV_VAL = 4
+    BLD_VAL = 5
+    DIM_VAL = 6
+    FINGER = 7
+    IR_CMD = 8
+    FLAG = 9
+    CNT_VAL = 10
+    PERCNT = 11
+    DIR_CMD = 12
+    MOVE = 13
+    SYS_ERR = 16

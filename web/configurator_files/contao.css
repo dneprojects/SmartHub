@@ -26,6 +26,10 @@ img {
     float: left;
 }
 
+#mitte {
+    float: left;
+}
+
 #right {
     float: right;
 }

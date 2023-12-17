@@ -106,7 +106,8 @@ class ConfigServer:
             return show_settings(request.app, mod_addr)
         if args[0] == "EditAutomtns":
             mod_addr = int(args[1])
-            return build_show_automations(request.app, mod_addr)
+            request.app["step"] = 0
+            return build_show_automations(request.app, mod_addr, 0)
         elif args[0] == "RtrSettings":
             return show_settings(request.app, 0)
         elif args[0] == "ConfigFiles":
@@ -203,9 +204,22 @@ class ConfigServer:
         resp = await request.text()
         form_data = parse_qs(resp)
         if "ModSettings" in form_data.keys():
-            mod_addr = int(form_data["ModSettings"][0].split("-")[1])
-            request.app["logger"].warning("Save of automations not yet implemented")
-            return show_module_overview(request.app, mod_addr)
+            args = form_data["ModSettings"][0].split("-")
+            action = args[0]
+            mod_addr = int(args[1])
+            step = int(args[2])
+            match action:
+                case "save":
+                    request.app["logger"].warning(
+                        "Save of automations not yet implemented"
+                    )
+                    return show_module_overview(request.app, mod_addr)
+                case "next":
+                    step += 1
+                case "back":
+                    step -= 1
+            request.app["step"] = step
+            return show_automations(request.app, step)
         else:
             # delete selected automation
             settings = request.app["settings"]
@@ -214,9 +228,15 @@ class ConfigServer:
             # request.app["logger"].warning(
             #     f"Delete of automation {sel_automtn} not yet implemented"
             # )
-            automations = request.app["automations_def"].automations
-            del automations[sel_automtn]
-            return show_automations(request.app)
+            if request.app["step"] == 0:
+                del request.app["automations_def"].local[sel_automtn]
+            else:
+                l_ext = len(request.app["automations_def"].external)
+                if sel_automtn < l_ext:
+                    del request.app["automations_def"].external[sel_automtn]
+                else:
+                    del request.app["automations_def"].forward[sel_automtn - l_ext]
+            return show_automations(request.app, request.app["step"])
 
     @routes.get(path="/{key:.*}")
     async def _(request):
@@ -346,8 +366,12 @@ def show_router_overview(app) -> web.Response:
     side_menu = activate_side_menu(app["side_menu"], ">Router<")
     type_desc = "Smart Router - Kommunikationsschnittstelle zwischen den Modulen"
     props = "<h3>Eigenschaften</h3>"
-    props += f"Hardware:&nbsp;&nbsp;&nbsp;{rtr.serial.decode('iso8859-1')[1:]}<br>"
-    props += f"Firmware:&nbsp;&nbsp;&nbsp;{rtr.version.decode('iso8859-1')[1:]}<br>"
+    props += (
+        f"Hardware:&nbsp;&nbsp;&nbsp;&nbsp;{rtr.serial.decode('iso8859-1')[1:]}<br>"
+    )
+    props += (
+        f"Firmware:&nbsp;&nbsp;&nbsp;&nbsp;{rtr.version.decode('iso8859-1')[1:]}<br>"
+    )
     mode0 = rtr.mode0
     config_mode = mode0 == SYS_MODES.Config
     day_mode = mode0 & 0x3
@@ -374,15 +398,27 @@ def show_router_overview(app) -> web.Response:
         mode_str += ", Nacht"
     if alarm_mode == 4:
         mode_str += ", Alarm"
+    if mode_str[0] == ",":
+        mode_str = mode_str[2:]
     props += (
-        f"Mode:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+        f"Mode:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
         + mode_str
         + "<br>"
     )
-    if rtr.mirror_running():
-        props += f"Spiegel:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aktiv"
+    if api_srv._opr_mode:
+        props += f"Betriebsart:&nbsp;&nbsp;Operate<br>"
     else:
-        props += f"Spiegel:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gestoppt"
+        props += f"Betriebsart:&nbsp;&nbsp;Client/Server<br>"
+    if api_srv.mirror_mode_enabled & api_srv._opr_mode:
+        props += f"Spiegel:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aktiv<br>"
+    else:
+        props += f"Spiegel:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inaktiv<br>"
+    if api_srv.event_mode_enabled & api_srv._opr_mode:
+        props += (
+            f"Events:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aktiv<br>"
+        )
+    else:
+        props += f"Events:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inaktiv<br>"
 
     def_filename = f"router.smr"
     page = fill_page_template(
@@ -446,20 +482,22 @@ def show_settings(app, mod_addr) -> web.Response:
     return web.Response(text=page, content_type="text/html")
 
 
-def build_show_automations(app, mod_addr) -> web.Response:
+def build_show_automations(app, mod_addr, step) -> web.Response:
     """Prepare automations page of module."""
     settings = app["api_srv"].routers[0].get_module(mod_addr).get_module_settings()
-    title_str = f"Modul '{settings.name}'"
     app["automations_def"] = settings.automtns_def
     app["settings"] = settings
-    page = fill_automations_template(app, title_str, "Lokale Automatisierungen", 0)
-    return web.Response(text=page, content_type="text/html")
+    return show_automations(app, step)
 
 
-def show_automations(app) -> web.Response:
+def show_automations(app, step) -> web.Response:
     """Prepare automations page of module."""
     title_str = f"Modul '{app['settings'].name}'"
-    page = fill_automations_template(app, title_str, "Lokale Automatisierungen", 0)
+    if step == 0:
+        subtitle = "Lokale Automatisierungen"
+    else:
+        subtitle = "Externe Automatisierungen"
+    page = fill_automations_template(app, title_str, subtitle, step)
     return web.Response(text=page, content_type="text/html")
 
 
@@ -575,11 +613,11 @@ def get_module_image(type_code: bytes) -> (str, str):
 def get_module_properties(mod) -> str:
     """Return module properties, like firmware."""
     props = "<h3>Eigenschaften</h3>"
-    props += f"Adresse:   {mod._id}<br>"
+    props += f"Adresse:&nbsp;&nbsp;&nbsp;{mod._id}<br>"
     ser = mod.get_serial()
     if len(ser) > 0:
-        props += f"Hardware:   {mod.get_serial()}<br>"
-    props += f"Firmware:   {mod.get_sw_version()}<br>"
+        props += f"Hardware:&nbsp;&nbsp;{mod.get_serial()}<br>"
+    props += f"Firmware:&nbsp;&nbsp;{mod.get_sw_version()}<br>"
     return props
 
 
@@ -629,13 +667,13 @@ def fill_automations_template(app, title, subtitle, step) -> str:
     )
     if step == 0:
         page = disable_button("zurück", page)
-        # page = page.replace('form="settings_table"', "")
-        settings_form = prepare_automations_list(app)
-
-    # else:
-    #     if step == app["props"]["no_keys"]:
-    #         page = disable_button("weiter", page)
-    #     settings_form = prepare_table(app, settings.id, step, key)
+        if (len(app["automations_def"].external) == 0) & (
+            len(app["automations_def"].forward) == 0
+        ):
+            page = disable_button("weiter", page)
+    else:
+        page = disable_button("weiter", page)
+    settings_form = prepare_automations_list(app, step)
     page = page.replace("<p>ContentText</p>", settings_form)
     return page
 
@@ -649,12 +687,23 @@ def disable_button(key: str, page) -> str:
     return page.replace(f">{key}<", f" disabled>{key}<")
 
 
-def prepare_automations_list(app):
+def prepare_automations_list(app, step):
     """Prepare automations list page."""
-    automations = app["automations_def"].automations
+    curr_mod = 0
+    if step == 0:
+        automations = app["automations_def"].local
+    else:
+        automations = app["automations_def"].external
     tbl = indent(4) + f'<form id="automations_table" action="automtns" method="post">\n'
     tbl += indent(5) + "<table>\n"
     for at_i in range(len(automations)):
+        if step > 0:
+            src_mod = automations[at_i].src_mod
+            if src_mod != curr_mod:
+                tbl += (
+                    indent(6)
+                    + f"<tr><td><b>Von Router {automations[at_i].src_rt}, Modul {src_mod}</b></td></tr>\n"
+                )
         tbl += indent(6) + "<tr>\n"
         evnt_desc = automations[at_i].event_description()
         actn_desc = automations[at_i].action_description()

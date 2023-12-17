@@ -33,8 +33,6 @@
     <!--/*
     -->
   <![CDATA[/*><!--*/
-#left { width:190px; }
-#main { margin-left:190px; }
 /*]]>*/-->
   </style>
   <link rel="stylesheet" href="./configurator_files/contao.css" type="text/css" media="screen">
@@ -74,31 +72,17 @@
       <div id="inhalt">
         <div id="left">
           <div class="inside">
-            <!-- indexer::stop -->
-            <div class="mod_navigation block" id="subnavi">
-
-              <a href="http://habitron.de/sortiment-habitron.html#skipNavigation17" class="invisible">Navigation
-                überspringen</a>
-
-              <!-- SideMenu -->
-
-              <a name="skipNavigation17" id="skipNavigation17" class="invisible">&nbsp;</a>
-
+            <div class="mod_article block" id="bild-links">
+              <div class="ce_image block">
+                <div class="image_container">
+                  <img id="hbtn_module_left" src="./configurator_files/controller.jpg" alt="Habitron GmbH">
+                </div>
+              </div>
             </div>
-            <!-- indexer::continue -->
           </div>
         </div>
         <div id="right">
           <div class="inside">
-            <div class="mod_article block" id="bild-rechts">
-              <div class="ce_image block">
-                <div class="image_container">
-                  <img src="./configurator_files/controller.jpg" alt="Habitron GmbH">
-                </div>
-
-              </div>
-
-            </div>
           </div>
         </div>
         <div id="mitte">
@@ -128,10 +112,14 @@
         <div class="inside">
           <div id="confbuttons">
             <form action="settings_step">
+              <button name="ModSettings" class="config_button" id="config_button" type="submit" form="automations_table"
+                value="back-ModAddress">zurück</button>
               <button name="ModSettings" class="config_button" id="config_button" type="submit"
                 value="cancel-ModAddress">Abbruch</button>
               <button name="ModSettings" class="config_button" id="config_button" type="submit" form="automations_table"
                 value="save-ModAddress">Speichern</button>
+              <button name="ModSettings" class="config_button" id="config_button" type="submit" form="automations_table"
+                value="next-ModAddress">weiter</button>
             </form>
           </div>
         </div>

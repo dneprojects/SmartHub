@@ -27,7 +27,7 @@ from config_server import ConfigServer
 class SMHUB_INFO:
     """Holds information."""
 
-    SW_VERSION = "0.9.0"
+    SW_VERSION = "0.9.5"
     TYPE = "Smart Hub"
     TYPE_CODE = "20"
     SERIAL = "RBPI"
@@ -50,7 +50,7 @@ class QueryServer:
         serial_str = SMHUB_INFO.SERIAL
         empty_str_10 = "0000000000"
         mac_str = ""
-        for nmbr in self.sm_hub.mac.split(":"):
+        for nmbr in self.sm_hub.lan_mac.split(":"):
             mac_str += chr(int(nmbr, 16))
         self.resp_str = (
             resp_header
@@ -107,7 +107,7 @@ class SmartHub:
         self.api_srv: ApiServer = []
         self.q_srv: QueryServer = []
         self.conf_srv: ConfigServer = []
-        self.mac = self.get_mac()
+        self.get_mac()
         self._serial = ""
         self._pi_model = ""
         self._cpu_info = ""
@@ -118,12 +118,12 @@ class SmartHub:
         self.skip_init = False
         self.restart = False
 
-    def reboot(self):
+    def reboot_hub(self):
         """Reboot hardware."""
         self.logger.warning("Reboot of Smart Hub host requested")
         os.system("sudo reboot")
 
-    def restart(self, skip_init):
+    def restart_hub(self, skip_init):
         """Restart SmartIP software."""
         self.skip_init = skip_init > 0
         self.restart = True
@@ -136,7 +136,10 @@ class SmartHub:
 
     def get_mac(self):
         """Ask for own mac address."""
-        return ":".join(re.findall("..", "%012x" % uuid.getnode()))
+        self.lan_mac = psutil.net_if_addrs()["eth0"][-1].address
+        self.wlan_mac = psutil.net_if_addrs()["wlan0"][-1].address
+        self.curr_mac = ":".join(re.findall("..", "%012x" % uuid.getnode()))
+        return
 
     def get_version(self):
         """Return version string"""
@@ -239,7 +242,9 @@ class SmartHub:
         info_str = info_str + "  network:\n"
         info_str = info_str + f"    host: {self._host}\n"
         info_str = info_str + f"    ip: {self._host_ip}\n"
-        info_str = info_str + f"    mac: {self.mac}\n"
+        info_str = info_str + f"    mac: {self.curr_mac}\n"
+        info_str = info_str + f"    lan mac: {self.lan_mac}\n"
+        info_str = info_str + f"    wlan mac: {self.wlan_mac}\n"
 
         info_str = info_str + "software:\n"
         info_str = info_str + f"  type: {SMHUB_INFO.TYPE}\n"
@@ -342,6 +347,7 @@ async def close_serial_interface(rt_serial):
 
 async def main(init_flag, ev_loop):
     """Open serial connection, start server, and tasks"""
+    init_flag = True
     startup_ok = False
     retry_serial = 2
     logger = setup_logging()

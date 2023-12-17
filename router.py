@@ -56,7 +56,6 @@ class HbtnRouter:
         await self.set_config_mode(True)
         self.status = await self.hdlr.get_rt_full_status()
         self.chan_status = await self.hdlr.get_rt_status()
-        await self.set_config_mode(False)
         self.build_smr()
         self.logger.info("Router status initialized")
         self.load_descriptions()
@@ -84,7 +83,6 @@ class HbtnRouter:
                 self.logger.info(f"Module {mod_addr} initialized")
             except Exception as err_msg:
                 self.logger.error(f"Failed to setup module {mod_addr}: {err_msg}")
-                await self.set_config_mode(False)
                 self.modules.remove(self.modules[-1])
                 mods_to_remove.append(mod_addr)
                 self.logger.warning(f"Module {mod_addr} removed")
@@ -93,9 +91,8 @@ class HbtnRouter:
 
     async def get_status(self) -> str:
         """Returns router channel status"""
-        await self.set_config_mode(True)
+        await self.api_srv.stop_opr_mode(self._id)
         self.chan_status = await self.hdlr.get_rt_status()
-        await self.set_config_mode(False)
         return self.chan_status
 
     def get_module(self, mod_id):
@@ -114,6 +111,7 @@ class HbtnRouter:
         """Build SMR file content from status."""
         st_idx = self.status_idx
         chan_buf = self.channels
+        self.logger.debug(f"self.channels: {chan_buf}")
         chan_list = b""
         ch_idx = 1
         for ch_i in range(4):
@@ -142,47 +140,13 @@ class HbtnRouter:
     async def set_config_mode(self, set_not_reset: bool):
         """Switches to config mode and back."""
         if set_not_reset:
-            if self._in_config_mode:
+            if not self.api_srv._opr_mode:
+                # already in Srv mode, config mode is set in router
                 return
-            else:
-                self._in_config_mode = True
             if self.api_srv._opr_mode:
                 self.logger.error("Not in Srv mode when switching to config mode!")
-            current_mode = await self.hdlr.get_mode(0)
-            if current_mode[0] > 118:
-                self.logger.warning(
-                    f"Wrong mode 0 value: {current_mode[0]}, retry once"
-                )
-                current_mode = await self.hdlr.get_mode(0)
-                if current_mode[0] > 118:
-                    self.logger.info(
-                        f"Wrong retry mode 0 value: {current_mode[0]}, set recent mode 0 to 0x20"
-                    )
-                    current_mode = b"\x20"
-                else:
-                    self.logger.info(f"Retry mode 0 value: {current_mode[0]}")
-            if current_mode[0] != SYS_MODES.Config:
-                self.recent_mode = current_mode[0]
-            await asyncio.sleep(0.1)
-            await self.hdlr.set_mode(0, SYS_MODES.Config)
-            self.logger.debug("Set system to Config mode")
-            self.mode0 = SYS_MODES.Config
-            await asyncio.sleep(0.5)
-        elif self._in_config_mode & (not self.api_srv._netw_blocked):
-            # config mode will be handled by block commands
-            if not self.api_srv._opr_mode:
-                # don't turn off config mode while in Srv mode
-                return
-            new_mode = await self.hdlr.set_mode(0, self.recent_mode)
-            self.mode0 = self.recent_mode
-            if new_mode != self.mode0:
-                self.logger.warning(
-                    "Resetting mode 0 to recent non-config value is not confirmed"
-                )
-            self.logger.debug(
-                f"Set system back to mode {ord(new_mode.decode('iso8859-1')):#x}"
-            )
-            self._in_config_mode = False
+                await self.api_srv.stop_opr_mode(self._id)
+        return
 
     async def flush_buffer(self):
         """Empty router buffer."""
