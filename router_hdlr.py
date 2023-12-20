@@ -178,7 +178,11 @@ class RtHdlr(HdlrBase):
         """Get full router status."""
         # Create continuous status byte array and indices
         await self.rt_msg.api_hdlr.api_srv.stop_opr_mode(1)
-        await asyncio.sleep(0.1)
+        # await asyncio.sleep(0.3)
+        # await self.handle_router_cmd_resp(
+        #     1, RT_CMDS.SET_GLOB_MODE.replace("<md>", chr(75))
+        # )
+        await asyncio.sleep(0.3)
         stat_idx = [0]
         rt_stat = chr(self.rt_id).encode()
         stat_idx.append(len(rt_stat))

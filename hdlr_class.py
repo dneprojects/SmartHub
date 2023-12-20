@@ -74,13 +74,13 @@ class HdlrBase:
         self.rt_msg = RtMessage(self, rt_no, cmd)
         await self.rt_msg.rt_send()
         await asyncio.sleep(0.05)
+        self.rt_msg._resp_msg = b"\0"
+        self.rt_msg._resp_buffer = b"\0\0"
         if not self.api_srv._opr_mode:
             await self.rt_msg.rt_recv()
         else:
             # no response possible
             self.logger.warning("handle_router_cmd_resp called in Opr mode, return 0 0")
-            self.rt_msg._resp_msg = b"\0"
-            self.rt_msg._resp_buffer = b"\0\0"
         return self.rt_msg._resp_msg
 
     async def handle_router_cmd(self, rt_no: int, cmd: RT_CMDS) -> None:

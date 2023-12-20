@@ -287,6 +287,8 @@ class HbtnModule:
                         * self.status[MirrIdx.COVER_INTERP + ci]
                         / 10
                     )
+                    if t_cover > 255:
+                        t_cover = 0
                     t_blind = self.status[MirrIdx.BLAD_T + ci]
 
                     pol_mask = int.from_bytes(

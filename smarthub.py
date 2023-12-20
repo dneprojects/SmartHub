@@ -3,6 +3,7 @@ import logging
 from logging import config
 import yaml
 import serial
+import serial.tools.list_ports
 import serial_asyncio
 import re
 import socket
@@ -284,10 +285,12 @@ def setup_logging():
     return logging.getLogger(__name__)
 
 
-async def open_serial_interface() -> (any, any):
-    """Opens serial connection to router."""
+async def open_serial_interface(device, logger) -> (any, any):
+    """Open serial connection of given device."""
+
+    logger.info(f"Try to open serial connection: {device}")
     ser_rd, ser_wr = await serial_asyncio.open_serial_connection(
-        url="/dev/ttyAMA0",
+        url=device,
         baudrate=RT_BAUDRATE,
         bytesize=serial.EIGHTBITS,
         parity=serial.PARITY_NONE,
@@ -295,6 +298,10 @@ async def open_serial_interface() -> (any, any):
         timeout=RT_TIMEOUT,
         xonxoff=False,
     )
+
+    if len(ser_rd._buffer) > 0:
+        await ser_rd.readexactly(len(ser_rd._buffer))
+        logger.info(f"Emptied serial read buffer of {device}")
     return (ser_rd, ser_wr)
 
 
@@ -311,10 +318,15 @@ async def init_serial(logger):
         return buf
 
     router_booting = True
-    rt_serial = await open_serial_interface()
-    if len(rt_serial[0]._buffer) > 0:
-        await rt_serial[0].readexactly(len(rt_serial[0]._buffer))
-        logger.debug("Emptied serial read buffer")
+
+    ser_devices = serial.tools.list_ports.comports()
+    for ser_interface in ser_devices:
+        try:
+            dev_path = ser_interface.device
+            rt_serial = await open_serial_interface(dev_path, logger)
+            break
+        except Exception as err_msg:
+            logger.info(f"Error opening {dev_path}: {err_msg}")
     try:
         while router_booting:
             rt_cmd = calc_CRC(RT_CMDS.STOP_MIRROR.replace("<rtr>", chr(RT_DEF_ADDR)))
@@ -349,16 +361,17 @@ async def main(init_flag, ev_loop):
     """Open serial connection, start server, and tasks"""
     init_flag = True
     startup_ok = False
-    retry_serial = 2
+    retry_max = 20
+    retry_serial = retry_max
     logger = setup_logging()
     try:
         # Instantiate SmartHub object
         sm_hub = SmartHub(ev_loop, logger)
         rt_serial = None
         while (rt_serial == None) & (retry_serial >= 0):
-            if retry_serial < 2:
+            if retry_serial < retry_max:
                 logger.warning(
-                    f"Initialization of serial connection failed, retry {2-retry_serial}"
+                    f"Initialization of serial connection failed, retry {retry_max-retry_serial}"
                 )
             rt_serial = await init_serial(logger)
             retry_serial -= 1

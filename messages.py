@@ -100,8 +100,12 @@ class RtMessage(BaseMessage):
 
     def __init__(self, api_hdlr, rt_id: int, rt_command: str) -> None:
         self.api_hdlr = api_hdlr
-        self.rt_reader = api_hdlr.ser_if[0]
-        self.ser_writer = api_hdlr.ser_if[1]
+        if api_hdlr.ser_if != None:
+            self.rt_reader = api_hdlr.ser_if[0]
+            self.ser_writer = api_hdlr.ser_if[1]
+        else:
+            self.rt_reader = None
+            self.ser_writer = None
         self.logger = logging.getLogger(__name__)
         self.rt = rt_id
         self.rt_command = rt_command

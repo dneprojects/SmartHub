@@ -88,6 +88,7 @@ class EventServer:
 
         # token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMWI1ZjgyNmUxMDg0MjFhYWFmNTZlYWQ0ZThkZGNiZSIsImlhdCI6MTY5NDUzNTczOCwiZXhwIjoyMDA5ODk1NzM4fQ.0YZWyuQn5DgbCAfEWZXbQZWaViNBsR4u__LjC4Zf2lY"
         # token for 192.168.178.133: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlYjQ2MTA4ZjUxOTU0NTY3Yjg4ZjUxM2Q5ZjBkZWRlYSIsImlhdCI6MTY5NDYxMDEyMywiZXhwIjoyMDA5OTcwMTIzfQ.3LtGwhonmV2rAbRnKqEy3WYRyqiS8DTh3ogx06pNz1g"
+        # token for 192.168.178.140: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI4OTNlZDJhODU2ZmY0ZDQ3YmVlZDE2MzIyMmU1ODViZCIsImlhdCI6MTcwMjgyMTYxNiwiZXhwIjoyMDE4MTgxNjE2fQ.NT-WSwkG9JN8f2cCt5fXlP4A8FEOAgDTrS1sdhB0ioo"
         token = self.get_ident()
 
         if token != None:

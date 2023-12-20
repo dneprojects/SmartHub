@@ -330,7 +330,7 @@ class RT_CMDS:
     GET_MD_ERRORS = "\x2a<rtr>\x06\x64\xff\xff"
 
     GET_AIR_QUAL = "\x2a<rtr>\x0a\x44<mod>\x06\xd2\x03\x14\xff"
-    CAL_AIR_QUAL = "\x2a<rtr>\x11\x44<mod>\x0d\xd2\x03\x14\x01<prc_good><good_long><prc_bad><bad_long>\xff"
+    CAL_AIR_QUAL = "\x2a<rtr>\x0f\x44<mod>\x0b\xd2\x03\x14\x01<prc_good><good_long><prc_bad><bad_long>\xff"
 
     RT_REBOOT = "\x2a<rtr>\x0a\xf0\x52\x45\x53\x45\x54\xff"
     MD_REBOOT = "\x2a<rtr>\x0d\x44<mod>\x09\xf0RESET\xff"
@@ -359,7 +359,7 @@ class RT_CMDS:
     # SET_COUNTER_VAL = "\x2a<rtr>\x0e\x44<mod>\x0a\x09\x45\x00<lno>\x05<val>\x00\xff"
 
     SWITCH_RGB_LED = "\x2a<rtr>\x0b\x44<mod>\x07\x23<tsk>\x01\xc8\xff"
-    SET_RGB_LED = "\x2a<rtr>\x0e\x44<mod>\x0a\x23<tsk>\x01<inp><r><g><b><tl><th>\xff"
+    SET_RGB_LED = "\x2a<rtr>\x10\x44<mod>\x0c\x23<tsk>\x01<inp><r><g><b><tl><th>\xff"
     SET_COVER_SETTGS = "\x2a<rtr>\x0a\x44<mod>\x06\x15\x4f<set>\xff"
     SET_COVER_TIME = "\x2a<rtr>\x0d\x44<mod>\x09\x11<sob><int><out><vala><valb>\xff"
     SET_INP_TIMES = "\x2a<rtr>\x0a\x44<mod>\x06\x02<tshrt><tlng>\xff"
