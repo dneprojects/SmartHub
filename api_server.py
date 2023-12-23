@@ -40,6 +40,7 @@ class ApiServer:
         self._running = True
         self._client_ip = ""
         self._hass_ip = ""
+        self.is_addon = False
         self.mirror_mode_enabled = True
         self.event_mode_enabled = True
         self._api_cmd_processing = False  # For blocking of config server io requests
@@ -174,6 +175,8 @@ class ApiServer:
         # Client ip needed for event handling;
         # method "get_extra_info" is only implemented for writer object
         self._client_ip = self.ip_writer.get_extra_info("peername")[0]
+        self.is_addon = self._client_ip == self.sm_hub.get_host_ip()
+        # SmartHub running with Home Assistant, use internal websocket
         if self._opr_mode:
             if self._ev_srv_task != []:
                 if self._ev_srv_task._state != "FINISHED":

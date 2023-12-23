@@ -2,6 +2,7 @@ import aioserial
 import logging
 import socket
 import json
+import os
 import websockets
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from const import DATA_FILES_DIR, EVENT_PORT, API_RESPONSE, MirrIdx, HA_EVENTS
@@ -54,9 +55,10 @@ class EventServer:
 
     def __init__(self, api_srv):
         self.api_srv = api_srv
+        self._is_addon = api_srv.is_addon
         self._hass_ip = api_srv._hass_ip
         self._client_ip = api_srv._client_ip
-        self._uri = "ws://<ip>:8123/api/websocket".replace("<ip>", self._client_ip)
+        self._uri = ""
         self.logger = logging.getLogger(__name__)
         self.websck = []
         self.notify_id = 1
@@ -82,29 +84,50 @@ class EventServer:
     async def open_websocket(self):
         """Opens web socket connection to home assistant."""
 
-        if self._client_ip == "":
-            self._client_ip = self.api_srv._client_ip
-        self._uri = "ws://<ip>:8123/api/websocket".replace("<ip>", self._client_ip)
+        if self._is_addon:
+            # SmartHub running with Home Assistant, use internal websocket
+            self._uri = "ws://supervisor/core/websocket"
+            self.token = os.environ["SUPERVISOR_TOKEN"]
+        else:
+            if self._client_ip == "":
+                self._client_ip = self.api_srv._client_ip
+            self._uri = "ws://<ip>:8123/api/websocket".replace("<ip>", self._client_ip)
+            # token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMWI1ZjgyNmUxMDg0MjFhYWFmNTZlYWQ0ZThkZGNiZSIsImlhdCI6MTY5NDUzNTczOCwiZXhwIjoyMDA5ODk1NzM4fQ.0YZWyuQn5DgbCAfEWZXbQZWaViNBsR4u__LjC4Zf2lY"
+            # token for 192.168.178.133: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlYjQ2MTA4ZjUxOTU0NTY3Yjg4ZjUxM2Q5ZjBkZWRlYSIsImlhdCI6MTY5NDYxMDEyMywiZXhwIjoyMDA5OTcwMTIzfQ.3LtGwhonmV2rAbRnKqEy3WYRyqiS8DTh3ogx06pNz1g"
+            # token for 192.168.178.140: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI4OTNlZDJhODU2ZmY0ZDQ3YmVlZDE2MzIyMmU1ODViZCIsImlhdCI6MTcwMjgyMTYxNiwiZXhwIjoyMDE4MTgxNjE2fQ.NT-WSwkG9JN8f2cCt5fXlP4A8FEOAgDTrS1sdhB0ioo"
+            self.token = self.get_ident()
 
-        # token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMWI1ZjgyNmUxMDg0MjFhYWFmNTZlYWQ0ZThkZGNiZSIsImlhdCI6MTY5NDUzNTczOCwiZXhwIjoyMDA5ODk1NzM4fQ.0YZWyuQn5DgbCAfEWZXbQZWaViNBsR4u__LjC4Zf2lY"
-        # token for 192.168.178.133: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlYjQ2MTA4ZjUxOTU0NTY3Yjg4ZjUxM2Q5ZjBkZWRlYSIsImlhdCI6MTY5NDYxMDEyMywiZXhwIjoyMDA5OTcwMTIzfQ.3LtGwhonmV2rAbRnKqEy3WYRyqiS8DTh3ogx06pNz1g"
-        # token for 192.168.178.140: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI4OTNlZDJhODU2ZmY0ZDQ3YmVlZDE2MzIyMmU1ODViZCIsImlhdCI6MTcwMjgyMTYxNiwiZXhwIjoyMDE4MTgxNjE2fQ.NT-WSwkG9JN8f2cCt5fXlP4A8FEOAgDTrS1sdhB0ioo"
-        token = self.get_ident()
-
-        if token != None:
+        if self.token != None:
             try:
-                self.websck = await websockets.connect(self._uri)
+                if self._is_addon:
+                    self.websck = await websockets.connect(
+                        self._uri,
+                        extra_headers={"Authorization": f"Bearer {self.token}"},
+                    )
+                else:
+                    self.websck = await websockets.connect(self._uri)
             except Exception as err_msg:
                 self.logger.error(f"Websocket connect failed: {err_msg}")
                 self.websck = []
                 return
             resp = await self.websck.recv()
             if json.loads(resp)["type"] == "auth_required":
-                msg = WEBSOCK_MSG.auth_msg
-                msg["access_token"] = token
-                await self.websck.send(json.dumps(msg))
-                resp = await self.websck.recv()
-            self.logger.info(f"Websocket connected to {self._uri}, response: {resp}")
+                try:
+                    msg = WEBSOCK_MSG.auth_msg
+                    msg["access_token"] = self.token
+                    await self.websck.send(json.dumps(msg))
+                    resp = await self.websck.recv()
+                    self.logger.info(
+                        f"Websocket connected to {self._uri}, response: {resp}"
+                    )
+                except Exception as err_msg:
+                    self.logger.error(f"Websocket connect failed: {err_msg}")
+                    self.websck = []
+                    return
+            else:
+                self.logger.info(
+                    f"Websocket connected to {self._uri}, response: {resp}"
+                )
         else:
             self.websck = None
         return

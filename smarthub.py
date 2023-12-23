@@ -142,6 +142,10 @@ class SmartHub:
         self.curr_mac = ":".join(re.findall("..", "%012x" % uuid.getnode()))
         return
 
+    def get_host_ip(self):
+        """Return own ip."""
+        return self._host_ip
+
     def get_version(self):
         """Return version string"""
         return SMHUB_INFO.SW_VERSION
@@ -262,7 +266,7 @@ class SmartHub:
     async def run_api_server(self, loop, api_srv):
         """Main server for serving Smart IP calls."""
         self.server = await asyncio.start_server(
-            api_srv.handle_api_command, OWN_IP, SMHUB_PORT
+            api_srv.handle_api_command, self._host_ip, SMHUB_PORT
         )
         self.logger.info("API server started")
         async with self.server:
@@ -319,14 +323,13 @@ async def init_serial(logger):
 
     router_booting = True
 
-    ser_devices = serial.tools.list_ports.comports()
-    for ser_interface in ser_devices:
-        try:
-            dev_path = ser_interface.device
-            rt_serial = await open_serial_interface(dev_path, logger)
-            break
-        except Exception as err_msg:
-            logger.info(f"Error opening {dev_path}: {err_msg}")
+    # For Pi5: "dtparam=uart0_console" into config.txt on sd boot partition
+    def_device = "/dev/serial0"  # ["/dev/ttyS0", "/dev/ttyS1", "/dev/ttyAMA0", "/dev/tty1", "/dev/tty0"]
+    try:
+        rt_serial = await open_serial_interface(def_device, logger)
+    except Exception as err_msg:
+        logger.info(f"Error opening {def_device}: {err_msg}")
+
     try:
         while router_booting:
             rt_cmd = calc_CRC(RT_CMDS.STOP_MIRROR.replace("<rtr>", chr(RT_DEF_ADDR)))
@@ -361,7 +364,7 @@ async def main(init_flag, ev_loop):
     """Open serial connection, start server, and tasks"""
     init_flag = True
     startup_ok = False
-    retry_max = 20
+    retry_max = 3
     retry_serial = retry_max
     logger = setup_logging()
     try:
@@ -403,17 +406,25 @@ async def main(init_flag, ev_loop):
         return 0
 
     # Initialization successfulle done, start servers
-    async with sm_hub.tg:
-        logger.debug("Starting API server")
-        skip_init = sm_hub.tg.create_task(
-            sm_hub.run_api_server(ev_loop, sm_hub.api_srv), name="api_srv"
+    try:
+        async with sm_hub.tg:
+            logger.debug("Starting API server")
+            skip_init = sm_hub.tg.create_task(
+                sm_hub.run_api_server(ev_loop, sm_hub.api_srv), name="api_srv"
+            )
+            logger.debug("Starting query server")
+            sm_hub.tg.create_task(sm_hub.q_srv.run_query_srv(), name="q_srv")
+            logger.debug("Starting config server")
+            await sm_hub.conf_srv.prepare()
+            sm_hub.tg.create_task(sm_hub.conf_srv.site.start(), name="conf_srv")
+            logger.info("Config server running")
+    except Exception as err_msg:
+        logger.error(
+            f"Error starting servers, SmartHub already running? Msg: {err_msg}"
         )
-        logger.debug("Starting query server")
-        sm_hub.tg.create_task(sm_hub.q_srv.run_query_srv(), name="q_srv")
-        logger.debug("Starting config server")
-        await sm_hub.conf_srv.prepare()
-        sm_hub.tg.create_task(sm_hub.conf_srv.site.start(), name="conf_srv")
-        logger.info("Config server running")
+        logger.warning("Program terminates in 4 s.")
+        await asyncio.sleep(4)
+        exit()
 
     # Waiting until finished
     try:
