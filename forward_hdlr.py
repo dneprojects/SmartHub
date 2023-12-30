@@ -98,7 +98,7 @@ class ForwardHdlr(HdlrBase):
         t_ip = self.fwd_mapping[f"{t_rt}"]
         # Wrap message
         r_len = len(response)
-        cmd_prefix = f"\xa8\0\0\x08SmartHub\x04passS\x05\80\x01\x01{chr(t_rt)}{chr(t_mod)}{chr(r_len & 0xFF)}{chr(r_len >> 8)}"
+        cmd_prefix = f"\xa8\0\0\x08SmartHub\x04passS\x05\x50\x01\x01{chr(t_rt)}{chr(t_mod)}{chr(r_len & 0xFF)}{chr(r_len >> 8)}"
         cmd_postfix = "\x3f"
         full_string = cmd_prefix + response.decode("iso8859-1")
         cmd_len = len(full_string) + 3

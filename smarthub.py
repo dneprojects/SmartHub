@@ -28,7 +28,7 @@ from config_server import ConfigServer
 class SMHUB_INFO:
     """Holds information."""
 
-    SW_VERSION = "0.9.5"
+    SW_VERSION = "0.9.7"
     TYPE = "Smart Hub"
     TYPE_CODE = "20"
     SERIAL = "RBPI"
@@ -137,7 +137,10 @@ class SmartHub:
 
     def get_mac(self):
         """Ask for own mac address."""
-        self.lan_mac = psutil.net_if_addrs()["eth0"][-1].address
+        if "eth0" in psutil.net_if_addrs():
+            self.lan_mac = psutil.net_if_addrs()["eth0"][-1].address
+        else:
+            self.lan_mac = psutil.net_if_addrs()["end0"][-1].address
         self.wlan_mac = psutil.net_if_addrs()["wlan0"][-1].address
         self.curr_mac = ":".join(re.findall("..", "%012x" % uuid.getnode()))
         return
@@ -180,6 +183,10 @@ class SmartHub:
         else:
             get_all = False
 
+        if "hardware_raw" in self._cpu_info.keys():
+            hardware_raw = self._cpu_info["hardware_raw"]
+        else:
+            hardware_raw = "BCM2712"
         info_str = "hardware:\n  platform:\n"
         info_str = info_str + "    type: " + self._pi_model + "\n"
         info_str = info_str + "    serial: " + self._serial + "\n"
@@ -189,7 +196,7 @@ class SmartHub:
             + "    type: "
             + self._cpu_info["arch_string_raw"]
             + " "
-            + self._cpu_info["hardware_raw"]
+            + hardware_raw
             + "\n"
         )
         info_str = (
@@ -331,23 +338,41 @@ async def init_serial(logger):
         logger.info(f"Error opening {def_device}: {err_msg}")
 
     try:
+        new_query = True
         while router_booting:
-            rt_cmd = calc_CRC(RT_CMDS.STOP_MIRROR.replace("<rtr>", chr(RT_DEF_ADDR)))
-            rt_serial[1].write(rt_cmd.encode("iso8859-1"))
+            if new_query:
+                rt_cmd = calc_CRC(
+                    RT_CMDS.STOP_MIRROR.replace("<rtr>", chr(RT_DEF_ADDR))
+                )
+                rt_serial[1].write(rt_cmd.encode("iso8859-1"))
             reading = asyncio.ensure_future(rt_serial[0].read(1024))
             await asyncio.sleep(0.2)
             if reading._state == "FINISHED":
                 resp_buf = reading.result()
-                if resp_buf[4] == 0x87:
+                if len(resp_buf) < 4:
+                    # sometimes just 0xff comes, needs another read
+                    logger.warning(f"Unexpected short test response: {resp_buf}")
+                    new_query = False
+                elif new_query & (resp_buf[4] == 0x87):
                     logger.info(f"Router available")
                     router_booting = False
-                elif resp_buf[4] == 0xFD:  # 253
+                elif (not new_query) & (resp_buf[3] == 0x87):
+                    logger.info(f"Router available")
+                    router_booting = False
+                elif new_query & (resp_buf[4] == 0xFD):  # 253
                     logger.info(f"Waiting for router booting...")
                     await asyncio.sleep(5)
+                    new_query = True
+                elif (not new_query) & (resp_buf[3] == 0xFD):  # 253
+                    logger.info(f"Waiting for router booting...")
+                    await asyncio.sleep(5)
+                    new_query = True
                 else:
                     logger.warning(f"Unexpected test response: {resp_buf}")
+                    new_query = True
             else:
                 raise Exception(f"No test response received")
+                new_query = True
     except Exception as err_msg:
         logger.error(f"Error during test stop mirror command: {err_msg}")
         rt_serial = None
