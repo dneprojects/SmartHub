@@ -78,7 +78,7 @@ class ConfigServer:
         if api_srv.is_addon:
             html_str = get_html("hub.html").replace("HubTitle", f"Smart Center '{hub_name}'")
             html_str = html_str.replace(
-                "Overview", "Smart Center - 'Habitron Home Assistant Zentrale"
+                "Overview", "Smart Center - Habitron Home Assistant Zentrale"
             )
         else:
             html_str = get_html("hub.html").replace("HubTitle", f"Smart Hub '{hub_name}'")
@@ -371,7 +371,7 @@ def show_router_overview(app) -> web.Response:
     rtr = api_srv.routers[0]
     side_menu = activate_side_menu(app["side_menu"], ">Router<")
     type_desc = "Smart Router - Kommunikationsschnittstelle zwischen den Modulen"
-    if rtr.settings == []:
+    if rtr.channels == []:
         page = fill_page_template(
             f"Router", type_desc, "Router not found", side_menu, "router.jpg", ""
         )
