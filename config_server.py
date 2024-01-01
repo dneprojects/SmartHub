@@ -80,21 +80,21 @@ class ConfigServer:
             html_str = html_str.replace(
                 "Overview", "Smart Center - Habitron Home Assistant Zentrale"
             )
+            smhub_info = api_srv.sm_hub.info.replace("type:  Smart Hub", "type:  Smart Hub Add-on")
         else:
             html_str = get_html("hub.html").replace("HubTitle", f"Smart Hub '{hub_name}'")
             html_str = html_str.replace(
                 "Overview", "Smart Hub - Systemzentrale und Schnittstelle zum Netzwerk"
             )
+            smhub_info = api_srv.sm_hub.info
         html_str = html_str.replace(
             "ContentText",
             "<h3>Eigenschaften</h3>\n<p>"
-            + api_srv.sm_hub.info.replace(" ", "&nbsp;&nbsp;").replace(
+            + smhub_info.replace(" ", "&nbsp;&nbsp;").replace(
                 "\n", "</p>\n<p>"
             )
             + "</p>",
         )
-        if api_srv.is_addon:
-            html_str = html_str.replace("type:  Smart Hub", "type:  Smart Hub Add-on")
         return web.Response(text=html_str, content_type="text/html")
 
     @routes.get("/modules")
