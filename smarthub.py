@@ -259,10 +259,7 @@ class SmartHub:
         info_str = info_str + f"    wlan mac: {self.wlan_mac}\n"
 
         info_str = info_str + "software:\n"
-        if self.api_srv.is_addon:
-            info_str = info_str + f"  type: Smart Center\n"
-        else:
-            info_str = info_str + f"  type: {SMHUB_INFO.TYPE}\n"
+        info_str = info_str + f"  type: {SMHUB_INFO.TYPE}\n"
         info_str = info_str + f"  version: {SMHUB_INFO.SW_VERSION}\n"
 
         # Get logging levels
