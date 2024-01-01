@@ -96,7 +96,7 @@ class EventServer:
             # SmartHub running with Home Assistant, use internal websocket
             self._uri = "ws://supervisor/core/websocket"
             self.logger.debug(f"URI: {self._uri}")
-            self.token = os.environ["SUPERVISOR_TOKEN"]
+            self.token = os.getenv("SUPERVISOR_TOKEN")
         else:
             if self._client_ip == "":
                 self._client_ip = self.api_srv._client_ip
