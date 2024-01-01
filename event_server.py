@@ -60,6 +60,7 @@ class EventServer:
         self._uri = ""
         self.logger = logging.getLogger(__name__)
         self.websck = []
+        self.token = None
         self.notify_id = 1
         self.evnt_running = False
         self.msg_appended = False
@@ -83,19 +84,24 @@ class EventServer:
     async def open_websocket(self):
         """Opens web socket connection to home assistant."""
 
-        if self.websck == None | self.websck == []:
-            self.logger.info("Open websocket to home assistant.")
+        if (self.websck == None) | (self.websck == []):
+            if self.api_srv.is_addon:
+                self.logger.info("Open internal add-on websocket to home assistant.")
+            else:
+                self.logger.info("Open websocket to home assistant.")
         else:
             return
 
         if self.api_srv.is_addon:
             # SmartHub running with Home Assistant, use internal websocket
             self._uri = "ws://supervisor/core/websocket"
+            self.logger.debug(f"URI: {self._uri}")
             self.token = os.environ["SUPERVISOR_TOKEN"]
         else:
             if self._client_ip == "":
                 self._client_ip = self.api_srv._client_ip
             self._uri = "ws://<ip>:8123/api/websocket".replace("<ip>", self._client_ip)
+            self.logger.debug(f"URI: {self._uri}")
             # token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMWI1ZjgyNmUxMDg0MjFhYWFmNTZlYWQ0ZThkZGNiZSIsImlhdCI6MTY5NDUzNTczOCwiZXhwIjoyMDA5ODk1NzM4fQ.0YZWyuQn5DgbCAfEWZXbQZWaViNBsR4u__LjC4Zf2lY"
             # token for 192.168.178.133: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlYjQ2MTA4ZjUxOTU0NTY3Yjg4ZjUxM2Q5ZjBkZWRlYSIsImlhdCI6MTY5NDYxMDEyMywiZXhwIjoyMDA5OTcwMTIzfQ.3LtGwhonmV2rAbRnKqEy3WYRyqiS8DTh3ogx06pNz1g"
             # token for 192.168.178.140: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI4OTNlZDJhODU2ZmY0ZDQ3YmVlZDE2MzIyMmU1ODViZCIsImlhdCI6MTcwMjgyMTYxNiwiZXhwIjoyMDE4MTgxNjE2fQ.NT-WSwkG9JN8f2cCt5fXlP4A8FEOAgDTrS1sdhB0ioo"
@@ -121,11 +127,11 @@ class EventServer:
                 )
             else:
                 self.websck = await websockets.connect(self._uri)
+            resp = await self.websck.recv()
         except Exception as err_msg:
             self.logger.error(f"Websocket connect failed: {err_msg}")
             self.websck = []
             return
-        resp = await self.websck.recv()
         if json.loads(resp)["type"] == "auth_required":
             try:
                 msg = WEBSOCK_MSG.auth_msg
