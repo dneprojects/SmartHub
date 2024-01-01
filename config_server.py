@@ -365,6 +365,12 @@ def show_router_overview(app) -> web.Response:
     rtr = api_srv.routers[0]
     side_menu = activate_side_menu(app["side_menu"], ">Router<")
     type_desc = "Smart Router - Kommunikationsschnittstelle zwischen den Modulen"
+    if rtr.settings == []:
+        page = fill_page_template(
+            f"Router", type_desc, "Router not found", side_menu, "router.jpg", ""
+        )
+        page = adjust_settings_button(page, "", f"{0}")
+        return web.Response(text=page, content_type="text/html")
     props = "<h3>Eigenschaften</h3>"
     props += (
         f"Hardware:&nbsp;&nbsp;&nbsp;&nbsp;{rtr.serial.decode('iso8859-1')[1:]}<br>"
@@ -546,6 +552,9 @@ def adjust_settings_button(page, type, addr: str) -> str:
         page = page.replace("ModSettings", "GtwSettings")
     elif type.lower() == "rtr":
         page = page.replace("ModSettings", "RtrSettings")
+    elif type == "":
+        page = page.replace(">Einstellungen"," disabled >Einstellungen")
+        page = page.replace(">Konfigurationsdatei"," disabled >Konfigurationsdatei")
     else:
         page = page.replace("ModAddress", addr)
     return page

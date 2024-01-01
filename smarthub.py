@@ -28,7 +28,7 @@ from config_server import ConfigServer
 class SMHUB_INFO:
     """Holds information."""
 
-    SW_VERSION = "0.9.7"
+    SW_VERSION = "0.9.8"
     TYPE = "Smart Hub"
     TYPE_CODE = "20"
     SERIAL = "RBPI"
