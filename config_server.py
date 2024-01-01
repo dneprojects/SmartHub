@@ -93,6 +93,8 @@ class ConfigServer:
             )
             + "</p>",
         )
+        if api_srv.is_addon:
+            html_str = html_str.replace("type:  Smart Hub", "type:  Smart Hub Add-on")
         return web.Response(text=html_str, content_type="text/html")
 
     @routes.get("/modules")
