@@ -177,7 +177,7 @@ class SmartHub:
                 self.logger.warning(
                     "Could not access devicetree, using default information"
                 )
-                self._pi_model = "Raspberry Pi 4 Model B Rev 1.4"
+                self._pi_model = "Raspberry Pi"
                 self._serial = "10000000e3d90xxx"
             self._cpu_info = cpuinfo.get_cpu_info()
         else:
@@ -259,7 +259,10 @@ class SmartHub:
         info_str = info_str + f"    wlan mac: {self.wlan_mac}\n"
 
         info_str = info_str + "software:\n"
-        info_str = info_str + f"  type: {SMHUB_INFO.TYPE}\n"
+        if self.api_srv.is_addon:
+            info_str = info_str + f"  type: Smart Center\n"
+        else:
+            info_str = info_str + f"  type: {SMHUB_INFO.TYPE}\n"
         info_str = info_str + f"  version: {SMHUB_INFO.SW_VERSION}\n"
 
         # Get logging levels

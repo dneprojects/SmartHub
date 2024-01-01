@@ -75,10 +75,16 @@ class ConfigServer:
     async def root(request: web.Request) -> web.Response:
         api_srv = request.app["api_srv"]
         hub_name = api_srv.sm_hub._host
-        html_str = get_html("hub.html").replace("HubTitle", f"Smart Hub '{hub_name}'")
-        html_str = html_str.replace(
-            "Overview", "Smart Hub - Systemzentrale und Schnittstelle zum Netzwerk"
-        )
+        if api_srv.is_addon:
+            html_str = get_html("hub.html").replace("HubTitle", f"Smart Center '{hub_name}'")
+            html_str = html_str.replace(
+                "Overview", "Smart Center - 'Habitron Home Assistant Zentrale"
+            )
+        else:
+            html_str = get_html("hub.html").replace("HubTitle", f"Smart Hub '{hub_name}'")
+            html_str = html_str.replace(
+                "Overview", "Smart Hub - Systemzentrale und Schnittstelle zum Netzwerk"
+            )
         html_str = html_str.replace(
             "ContentText",
             "<h3>Eigenschaften</h3>\n<p>"
