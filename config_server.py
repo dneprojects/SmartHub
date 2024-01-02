@@ -74,19 +74,18 @@ class ConfigServer:
     @routes.get("/hub")
     async def root(request: web.Request) -> web.Response:
         api_srv = request.app["api_srv"]
-        hub_name = api_srv.sm_hub._host
+        smhub = api_srv.sm_hub
+        smhub_info = smhub.info
+        hub_name = smhub._host
         if api_srv.is_addon:
+            pic_file, subtitle = get_module_image(b"\xca\x00")
             html_str = get_html("hub.html").replace("HubTitle", f"Smart Center '{hub_name}'")
-            html_str = html_str.replace(
-                "Overview", "Smart Center - Habitron Home Assistant Zentrale"
-            )
-            smhub_info = api_srv.sm_hub.info.replace("type: Smart Hub", "type:  Smart Hub Add-on")
+            smhub_info = smhub_info.replace("type: Smart Hub", "type:  Smart Hub Add-on")
         else:
+            pic_file, subtitle = get_module_image(b"\xc9\x00")
             html_str = get_html("hub.html").replace("HubTitle", f"Smart Hub '{hub_name}'")
-            html_str = html_str.replace(
-                "Overview", "Smart Hub - Systemzentrale und Schnittstelle zum Netzwerk"
-            )
-            smhub_info = api_srv.sm_hub.info
+        html_str = html_str.replace("Overview", subtitle)
+        html_str = html_str.replace("smart-Ip.jpg", pic_file)
         html_str = html_str.replace(
             "ContentText",
             "<h3>Eigenschaften</h3>\n<p>"
@@ -624,6 +623,15 @@ def get_module_image(type_code: bytes) -> (str, str):
                 case 101:
                     mod_image = "smart-detect-360.jpg"
                     type_desc = "Smart Detect 360 - Bewegungsmelder für Deckeneinbau"
+        case 200:
+            mod_image = "smart-ip.jpg"
+            type_desc = "Smart Hub - Systemzentrale und Schnittstelle zum Netzwerk"
+        case 201:
+            mod_image = "smart-center.jpg"
+            type_desc = "Smart Hub - Systemzentrale und Schnittstelle zum Netzwerk"
+        case 202:
+            mod_image = "smart-center.jpg"
+            type_desc = "Smart Center - Habitron Home Assistant Zentrale"
     return mod_image, type_desc
 
 
