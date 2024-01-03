@@ -148,11 +148,19 @@ class AutomationDefinition:
 
     def event_name(self) -> str:
         """Return event name."""
-        return EventCodes[self.event_code]
+        try:
+            evnt_name = EventCodes[self.event_code]
+        except:
+            evnt_name = f"Unknown event {self.event_code}"
+        return evnt_name
 
     def action_name(self) -> str:
         """Return action name."""
-        return ActionCodes[self.action_code]
+        try:
+            actn_name = ActionCodes[self.action_code]
+        except:
+            actn_name = f"Unknown action {self.action_code}"
+        return actn_name
 
     def get_dict_entry(self, key, arg) -> str:
         """Lookup dict and return value, if found."""
@@ -238,6 +246,8 @@ class AutomationDefinition:
                 event_desc = "heizen"
             else:
                 event_desc = "kühlen"
+        else:
+            return f"Unknown event: {self.event_code} / {self.event_arg1} / {self.event_arg2}"
         return event_trig + chr(32) + event_desc
 
     def action_description(self) -> str:
