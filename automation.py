@@ -151,7 +151,7 @@ class AutomationDefinition:
         try:
             evnt_name = EventCodes[self.event_code]
         except:
-            evnt_name = f"Unknown event {self.event_code}"
+            evnt_name = "Unknown event"
         return evnt_name
 
     def action_name(self) -> str:
@@ -159,7 +159,7 @@ class AutomationDefinition:
         try:
             actn_name = ActionCodes[self.action_code]
         except:
-            actn_name = f"Unknown action {self.action_code}"
+            actn_name = "Unknown action"
         return actn_name
 
     def get_dict_entry(self, key, arg) -> str:
@@ -247,11 +247,11 @@ class AutomationDefinition:
             else:
                 event_desc = "kühlen"
         else:
-            return f"Unknown event: {self.event_code} / {self.event_arg1} / {self.event_arg2}"
+            return f"{event_trig}: {self.event_code} / {self.event_arg1} / {self.event_arg2}"
         return event_trig + chr(32) + event_desc
 
     def action_description(self) -> str:
-        """Parse action arguments and return 2 readable fields."""
+        """Parse action arguments and return description."""
         actn_target = self.action_name()
         actn_desc = ""
         for actn_arg in self.action_args:
@@ -294,6 +294,8 @@ class AutomationDefinition:
         elif actn_target[:5] == "Klima":
             actn_target += f", Offset {self.action_args[0]}"
             actn_desc = f"Ausgang {self.get_dict_entry('outputs', self.action_args[1])}"
+        else:
+            return f"{actn_target}: {self.action_code} / {actn_desc}"
         return actn_target + chr(32) + actn_desc
 
     def make_definition(self) -> bytes:
