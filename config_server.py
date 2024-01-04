@@ -247,13 +247,25 @@ class ConfigServer:
 
     @routes.get(path="/{key:.*}")
     async def _(request):
-        request.app["logger"].warning("Route not yet implemented")
-        return web.HTTPNoContent()
+        warning_txt = f"Route '{request.path}' not yet implemented"
+        request.app["logger"].warning(warning_txt)
+        mod_image, type_desc = get_module_image(request.app["settings"].typ)
+        page = fill_page_template(
+            f"Modul '{request.app['settings'].name}'", type_desc, warning_txt, request.app["side_menu"], mod_image, ""
+        )
+        page = adjust_settings_button(page, "", f"{0}")
+        return web.Response(text=page, content_type="text/html")
 
     @routes.post(path="/{key:.*}")
     async def _(request):
-        request.app["logger"].warning("Route not yet implemented")
-        return web.HTTPNoContent()
+        warning_txt = f"Route '{request.path}' not yet implemented"
+        request.app["logger"].warning(warning_txt)
+        mod_image, type_desc = get_module_image(request.app["settings"].typ)
+        page = fill_page_template(
+            f"Modul '{request.app['settings'].name}'", type_desc, warning_txt, request.app["side_menu"], mod_image, ""
+        )
+        page = adjust_settings_button(page, "", f"{0}")
+        return web.Response(text=page, content_type="text/html")
 
 
 def get_html(html_file) -> str:
@@ -719,16 +731,20 @@ def prepare_automations_list(app, step):
         automations = app["automations_def"].local
     else:
         automations = app["automations_def"].external
+        last_source_header = ""
     tbl = indent(4) + f'<form id="automations_table" action="automtns" method="post">\n'
     tbl += indent(5) + "<table>\n"
     for at_i in range(len(automations)):
         if step > 0:
             src_mod = automations[at_i].src_mod
             if src_mod != curr_mod:
-                tbl += (
-                    indent(6)
-                    + f"<tr><td><b>Von Router {automations[at_i].src_rt}, Modul {src_mod}</b></td></tr>\n"
-                )
+                source_header = f"Von Router {automations[at_i].src_rt}, Modul {src_mod}"
+                if source_header != last_source_header:
+                    last_source_header = source_header
+                    tbl += (
+                        indent(6)
+                        + f"<tr><td><b>{source_header}</b></td></tr>\n"
+                    )
         tbl += indent(6) + "<tr>\n"
         evnt_desc = automations[at_i].event_description()
         actn_desc = automations[at_i].action_description()

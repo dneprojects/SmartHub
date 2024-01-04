@@ -262,10 +262,25 @@ class AutomationDefinition:
                 actn_target = (
                     f"Ausgang {self.get_dict_entry('outputs', self.action_args[0])}"
                 )
+            elif self.action_args[0] < 34:
+                actn_desc = actn_target.replace("Ausgang", "").strip()
+                actn_target = (
+                    f"LED {self.get_dict_entry('leds', self.action_args[0]  -16)}"
+                )
+            elif self.action_args[0] < 117:
+                actn_desc = actn_target.replace("Ausgang", "").strip()
+                actn_target = (
+                    f"Lok. Merker {self.get_dict_entry('flags', self.action_args[0]-100)}"
+                )
+            elif self.action_args[0] < 149:
+                actn_desc = actn_target.replace("Ausgang", "").strip()
+                actn_target = (
+                    f"Glob. Merker {self.get_dict_entry('glob_flags', self.action_args[0]-132)}"
+                )
             else:
                 actn_desc = actn_target.replace("Ausgang", "").strip()
                 actn_target = (
-                    f"LED {self.get_dict_entry('leds', self.action_args[0 -16])}"
+                    f"Logikeingang {self.action_args[0] -164}"
                 )
         elif actn_target[:4] == "Dimm":
             actn_desc = actn_target.split()[1]
