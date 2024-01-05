@@ -29,7 +29,8 @@ ActionCodes = {
     1: "Ausgang ein",
     2: "Ausgang aus",
     3: "Ausgang wechseln",
-    6: "Logik",
+    6: "Counter",
+    7: "Rollladenbefehl",
     9: "Zeitfunktion",
     10: "Summton",
     17: "Rollladenbefehl",
@@ -317,6 +318,9 @@ class AutomationDefinition:
                 actn_target = (
                     f"{actn_target.split()[0]} {out_desc}"
                 )
+            elif actn_target[:6] == "Counter":
+                actn_target = f"Zähler {self.get_dict_entry('logic', self.action_args[0])}"
+                actn_desc = f"auf {self.action_args[2]} setzen"
             elif actn_target[:6] == "Sammel":
                 actn_target = f"{actn_target.split()[0]} {self.get_dict_entry('coll_cmds',self.action_args[0])}"
                 actn_desc = ""
@@ -344,12 +348,12 @@ class AutomationDefinition:
                     temp_desc = f"für {self.action_args[1]} Min. "
                 else:
                     temp_desc = ""
-                if self.action_code > 10:
-                    self.action_code -= 10
+                if self.action_args[1] > 10:
+                    self.action_args[1] -= 10
                     actn_desc = f"{cover_desc} {temp_desc}auf {self.action_args[2]}% setzen"
                 else:
                     actn_desc = f"{cover_desc} {temp_desc}auf {self.action_args[2]}% setzen"
-                if self.action_code == 1:
+                if self.action_args[1] == 1:
                     actn_target = "Rollladen"
                 else:
                     actn_target = "Lamellen"
