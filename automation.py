@@ -170,8 +170,9 @@ class AutomationDefinition:
 
     def get_dict_entry(self, key, arg) -> str:
         """Lookup dict and return value, if found."""
-        if arg in self.autmn_dict[key].keys():
-            return self.autmn_dict[key][arg]
+        if key in self.autmn_dict.keys():
+            if arg in self.autmn_dict[key].keys():
+                return self.autmn_dict[key][arg]
         return f"{arg}"
 
     def event_description(self) -> str:
@@ -211,7 +212,7 @@ class AutomationDefinition:
                     event_desc = set_str
                 elif event_arg in range(81, 91):
                     event_arg -= 80
-                    self.event_arg_name = self.get_dict_entry("counters", event_arg)
+                    self.event_arg_name = self.get_dict_entry("logic", event_arg)
                     event_trig = f"Logikausgang {self.event_arg_name}"
                     event_desc = set_str
                 else:
@@ -219,7 +220,7 @@ class AutomationDefinition:
                         if event_arg in range(96 + cnt_i * 16, 96 + (cnt_i + 1) * 16):
                             event_arg2 = event_arg - 95 - cnt_i * 16
                             event_arg = cnt_i + 1
-                            self.event_arg_name = self.get_dict_entry("counters", event_arg)
+                            self.event_arg_name = self.get_dict_entry("logic", event_arg)
                             event_trig = f"Counter {self.event_arg_name}"
                             event_desc = f"Wert {event_arg2} erreicht"
                             break
@@ -320,7 +321,7 @@ class AutomationDefinition:
                 actn_target = f"{actn_target.split()[0]} {self.get_dict_entry('coll_cmds',self.action_args[0])}"
                 actn_desc = ""
             elif actn_target[:4] == "Meld":
-                actn_target = f"Meldung {self.get_dict_entry('msgs',self.action_args[0])}"
+                actn_target = f"Meldung {self.get_dict_entry('messages',self.action_args[0])}"
                 if self.action_code == 58:
                     actn_desc = f"für {self.action_args[1]} Min. setzen"
                 else:
@@ -359,8 +360,8 @@ class AutomationDefinition:
                 actn_target += f" {self.action_args[2]}x:"
                 actn_desc = f"Höhe {self.action_args[0]}, Dauer {self.action_args[1]}"
             else:
-                return f"{actn_target}: {self.action_code} / {actn_desc}"
-            return actn_target + chr(32) + f"{self.action_code} / {self.action_args}"
+                return f"{actn_target}: {self.action_code} / {self.action_args}"
+            return actn_target + chr(32) + actn_desc
         except Exception as err_msg:
             self.settings.logger.error(f"Could not handle action code:  {self.action_code} / {self.action_args}, Error: {err_msg}")
             return actn_target + chr(32) + f"{self.action_code} / {self.action_args}"
