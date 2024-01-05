@@ -370,25 +370,16 @@ class AutomationDefinition:
     def get_output_desc(self, arg) -> str:
         """Return string description for output arg."""
         if arg < 17:
-            actn_target = (
-                f"Ausgang {self.get_dict_entry('outputs', arg)}"
-            )
+            out_desc = f"Ausgang {self.get_dict_entry('outputs', arg)}"
         elif arg < 34:
-            actn_target = (
-                f"LED {self.get_dict_entry('leds', arg  -16)}"
-            )
+            out_desc = f"LED {self.get_dict_entry('leds', arg  -16)}"
         elif arg < 117:
-            actn_target = (
-                f"Lok. Merker {self.get_dict_entry('flags', arg-100)}"
-            )
+            out_desc = f"Lok. Merker {self.get_dict_entry('flags', arg-100)}"
         elif arg < 149:
-            actn_target = (
-                f"Glob. Merker {self.get_dict_entry('glob_flags', arg-132)}"
-            )
+            out_desc = f"Glob. Merker {self.get_dict_entry('glob_flags', arg-132)}"
         else:
-            actn_target = (
-                f"Logikeingang {arg -164}"
-            )
+            out_desc = f"Logikeingang {arg -164}"
+        return out_desc
             
     def make_definition(self) -> bytes:
         """Return definition line as bytes."""
