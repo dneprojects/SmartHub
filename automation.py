@@ -1,7 +1,9 @@
 EventCodes = {
     6: "Merker/Logik",
     10: "Ausgangsänderung",
-    23: "IR-Befehl",
+    23: "IR-Befehl kurz",
+    24: "IR-Befehl lang",
+    25: "IR-Befehl lang Ende",
     40: "Bewegung Innenlicht",
     41: "Bewegung Außenlicht",
     50: "Sammelereignis",
@@ -20,6 +22,7 @@ EventCodes = {
     215: "Feuchte",
     221: "Klima Sensor intern",
     222: "Klima Sensor extern",
+    253: "Direktbefehl"
 }
 
 ActionCodes = {
@@ -30,6 +33,8 @@ ActionCodes = {
     9: "Zeitfunktion",
     10: "Summton",
     17: "Rollladenbefehl",
+    18: "Rollladenbefehl auf Zeit",
+    20: "Dimmwert",
     22: "Dimmcount start,",
     23: "Dimmcount stop",
     24: "Dimmen komplett",
@@ -40,6 +45,7 @@ ActionCodes = {
     55: "Alarmmeldung auslösen",
     56: "Meldung setzen",
     57: "Meldung zurücksetzen",
+    58: "Meldung auf Zeit",
     64: "Modus setzen",
     220: "Temperatursollwert",
     221: "Klimaregelung interner Sensor",
@@ -170,149 +176,219 @@ class AutomationDefinition:
 
     def event_description(self) -> str:
         """Parse event arguments and return 2 readable fields."""
-        event_trig = self.event_name()
-        event_arg = self.event_arg1
-        self.event_arg_name = f"{event_arg}"
-        event_desc = self.event_arg_name
-        if event_trig[:5] in ["Taste", "Schal", "Dimmb"]:
-            if event_trig[:5] == "Dimmb":
-                event_desc = ""
-            else:
-                event_desc = (
-                    event_trig.replace("Taste", "").replace("Schalter", "").strip()
-                )
-                event_trig = event_trig.replace(event_desc, "").strip()
-                if event_arg < 9:
-                    event_trig += f" {self.get_dict_entry('buttons', event_arg)}"
+        try:
+            event_trig = self.event_name()
+            event_arg = self.event_arg1
+            self.event_arg_name = f"{event_arg}"
+            event_desc = self.event_arg_name
+            if event_trig[:5] in ["Taste", "Schal", "Dimmb"]:
+                if event_trig[:5] == "Dimmb":
+                    event_desc = ""
                 else:
-                    event_trig += f" {self.get_dict_entry('inputs',event_arg - 8)}"
-        elif event_trig == "Merker/Logik":
-            if event_arg == 0:
-                set_str = "rückgesetzt"
+                    event_desc = (
+                        event_trig.replace("Taste", "").replace("Schalter", "").strip()
+                    )
+                    event_trig = event_trig.replace(event_desc, "").strip()
+                    if event_arg < 9:
+                        event_trig += f" {self.get_dict_entry('buttons', event_arg)}"
+                    else:
+                        event_trig += f" {self.get_dict_entry('inputs',event_arg - 8)}"
+            elif event_trig == "Merker/Logik":
+                if event_arg == 0:
+                    set_str = "rückgesetzt"
+                else:
+                    set_str = "gesetzt"
+                event_arg += self.event_arg2  # one is always zero
+                event_arg2 = ""
+                if event_arg in range(1, 17):
+                    self.event_arg_name = self.get_dict_entry("flags", event_arg)
+                    event_trig = f"Lokaler Merker {self.event_arg_name}"
+                    event_desc = set_str
+                elif event_arg in range(33, 49):
+                    event_arg -= 32
+                    self.event_arg_name = self.get_dict_entry("glob_flags", event_arg)
+                    event_trig = f"Globaler Merker {self.event_arg_name}"
+                    event_desc = set_str
+                elif event_arg in range(81, 91):
+                    event_arg -= 80
+                    self.event_arg_name = self.get_dict_entry("counters", event_arg)
+                    event_trig = f"Logikausgang {self.event_arg_name}"
+                    event_desc = set_str
+                else:
+                    for cnt_i in range(10):
+                        if event_arg in range(96 + cnt_i * 16, 96 + (cnt_i + 1) * 16):
+                            event_arg2 = event_arg - 95 - cnt_i * 16
+                            event_arg = cnt_i + 1
+                            self.event_arg_name = self.get_dict_entry("counters", event_arg)
+                            event_trig = f"Counter {self.event_arg_name}"
+                            event_desc = f"Wert {event_arg2} erreicht"
+                            break
+            elif event_trig == "Modusänderung":
+                event_trig = "Modus neu: "
+                if self.event_arg2 == 1:
+                    event_trig += "Tag"
+                elif self.event_arg2 == 2:
+                    event_trig += "Nacht"
+                elif self.event_arg2 == 4:
+                    event_trig += "Alarm"
+                elif self.event_arg2 == 16:
+                    event_trig += "Abwesend"
+                if self.event_arg2 == 32:
+                    event_trig += "Anwesend"
+                if self.event_arg2 == 48:
+                    event_trig += "Schlafen"
+                if self.event_arg2 == 80:
+                    event_trig += "Sommer"
+                if self.event_arg2 == 96:
+                    event_trig += "User1"
+                if self.event_arg2 == 112:
+                    event_trig += "User2"
+                event_desc = ""
+            elif event_trig == "Sammelereignis":
+                self.event_arg_name = self.get_dict_entry("coll_cmds", event_arg)
+                event_trig = f"Sammelereignis {self.event_arg_name}"
+                event_desc = ""
+            elif event_trig[:5] == "Klima":
+                if self.event_arg1 == 1:
+                    event_desc = "heizen"
+                else:
+                    event_desc = "kühlen"
+            elif event_trig == "Ausgangsänderung":
+                if self.event_arg1:
+                    event_desc = f"{self.get_output_desc(self.event_arg1)} an"
+                else:
+                    event_desc = f"{self.get_output_desc(self.event_arg2)} aus"
+            elif event_trig[:9] == "IR-Befehl":
+                event_trig = f"IR-Befehl: '{self.event_arg1} | {self.event_arg2}'"
+                if self.event_code == 23:
+                    event_desc = "kurz"
+                if self.event_code == 24:
+                    event_desc = "lang"
+                if self.event_code == 25:
+                    event_desc = "lang Ende"
+            elif event_trig == "Direktbefehl":
+                event_trig += f" {self.event_arg1}: '{self.get_dict_entry('dir_cmds', self.event_arg1)}'"
             else:
-                set_str = "gesetzt"
-            event_arg += self.event_arg2  # one is always zero
-            event_arg2 = ""
-            if event_arg in range(1, 17):
-                self.event_arg_name = self.get_dict_entry("flags", event_arg)
-                event_trig = f"Lokaler Merker {self.event_arg_name}"
-                event_desc = set_str
-            elif event_arg in range(33, 49):
-                event_arg -= 32
-                self.event_arg_name = self.get_dict_entry("glob_flags", event_arg)
-                event_trig = f"Globaler Merker {self.event_arg_name}"
-                event_desc = set_str
-            elif event_arg in range(81, 91):
-                event_arg -= 80
-                self.event_arg_name = self.get_dict_entry("counters", event_arg)
-                event_trig = f"Logikausgang {self.event_arg_name}"
-                event_desc = set_str
-            else:
-                for cnt_i in range(10):
-                    if event_arg in range(96 + cnt_i * 16, 96 + (cnt_i + 1) * 16):
-                        event_arg2 = event_arg - 95 - cnt_i * 16
-                        event_arg = cnt_i + 1
-                        self.event_arg_name = self.get_dict_entry("counters", event_arg)
-                        event_trig = f"Counter {self.event_arg_name}"
-                        event_desc = f"Wert {event_arg2} erreicht"
-                        break
-        elif event_trig == "Modusänderung":
-            event_trig = "Modus neu: "
-            if self.event_arg2 == 1:
-                event_trig += "Tag"
-            elif self.event_arg2 == 2:
-                event_trig += "Nacht"
-            elif self.event_arg2 == 4:
-                event_trig += "Alarm"
-            elif self.event_arg2 == 16:
-                event_trig += "Abwesend"
-            if self.event_arg2 == 32:
-                event_trig += "Anwesend"
-            if self.event_arg2 == 48:
-                event_trig += "Schlafen"
-            if self.event_arg2 == 80:
-                event_trig += "Sommer"
-            if self.event_arg2 == 96:
-                event_trig += "User1"
-            if self.event_arg2 == 112:
-                event_trig += "User2"
-            event_desc = ""
-        elif event_trig == "Sammelereignis":
-            self.event_arg_name = self.get_dict_entry("coll_cmds", event_arg)
-            event_trig = f"Sammelereignis {self.event_arg_name}"
-            event_desc = ""
-        elif event_trig[:5] == "Klima":
-            if self.event_arg1 == 1:
-                event_desc = "heizen"
-            else:
-                event_desc = "kühlen"
-        else:
+                return f"{event_trig}: {self.event_code} / {self.event_arg1} / {self.event_arg2}"
+            return event_trig + chr(32) + event_desc
+        except Exception as err_msg:
+            self.settings.logger.error(f"Could not handle event code:  {self.event_code} / {self.event_arg1} / {self.event_arg2}, Error: {err_msg}")
             return f"{event_trig}: {self.event_code} / {self.event_arg1} / {self.event_arg2}"
-        return event_trig + chr(32) + event_desc
 
     def action_description(self) -> str:
         """Parse action arguments and return description."""
-        actn_target = self.action_name()
-        actn_desc = ""
-        for actn_arg in self.action_args:
-            actn_desc += chr(actn_arg)
-        if actn_target[:7] == "Ausgang":
-            if self.action_args[0] < 17:
-                actn_desc = actn_target.replace("Ausgang", "").strip()
-                actn_target = (
-                    f"Ausgang {self.get_dict_entry('outputs', self.action_args[0])}"
-                )
-            elif self.action_args[0] < 34:
-                actn_desc = actn_target.replace("Ausgang", "").strip()
-                actn_target = (
-                    f"LED {self.get_dict_entry('leds', self.action_args[0]  -16)}"
-                )
-            elif self.action_args[0] < 117:
-                actn_desc = actn_target.replace("Ausgang", "").strip()
-                actn_target = (
-                    f"Lok. Merker {self.get_dict_entry('flags', self.action_args[0]-100)}"
-                )
-            elif self.action_args[0] < 149:
-                actn_desc = actn_target.replace("Ausgang", "").strip()
-                actn_target = (
-                    f"Glob. Merker {self.get_dict_entry('glob_flags', self.action_args[0]-132)}"
-                )
-            else:
-                actn_desc = actn_target.replace("Ausgang", "").strip()
-                actn_target = (
-                    f"Logikeingang {self.action_args[0] -164}"
-                )
-        elif actn_target[:4] == "Dimm":
-            actn_desc = actn_target.split()[1]
-            if self.settings.typ[0] == 1:
-                outp_no = self.action_args[0] + 10
-            else:
-                outp_no = self.action_args[0]
-            actn_target = (
-                f"{actn_target.split()[0]} {self.get_dict_entry('outputs',outp_no)}"
-            )
-        elif actn_target[:6] == "Sammel":
-            actn_target = f"{actn_target.split()[0]} {self.get_dict_entry('coll_cmds',self.action_args[0])}"
+        try:
+            actn_target = self.action_name()
             actn_desc = ""
-        elif actn_target[:6] == "Temper":
-            value = self.action_args[1] / 10
-            strings = TempTargetCodes[self.action_args[0]].split()
-            if self.action_args[0] in [11, 12, 13, 14]:
-                actn_target = TempTargetCodes[self.action_args[0]]
+            for actn_arg in self.action_args:
+                actn_desc += chr(actn_arg)
+            if actn_target[:7] == "Ausgang":
+                actn_desc = actn_target.replace("Ausgang", "").strip()
+                actn_target = self.get_output_desc(self.action_args[0])
+            elif actn_target == "Zeitfunktion":
+                actn_target =  self.get_output_desc(self.action_args[3])
+                if self.action_args[2] == 255:
+                    actn_desc = f"mit {self.action_args[2]} <unit> Verzögerung einschalten"
+                else:
+                    actn_target += f" {self.action_args[2]}x"
+                    if self.action_args[0] > 20:
+                        actn_desc = f"mit {self.action_args[2]} <unit> Verzögerung ausschalten"
+                        self.action_args[0] -= 20
+                    elif self.action_args[0] > 10:
+                        actn_desc = f"für {self.action_args[2]} <unit> einschalten (o.Ä.)"
+                        self.action_args[0] -= 10
+                    else:
+                        actn_desc = f"für {self.action_args[2]} <unit> einschalten"
+                if self.action_args[0] == 1:
+                    actn_desc = actn_desc.replace("<unit>", "Sek.")
+                else:
+                    actn_desc = actn_desc.replace("<unit>", "Min.")
+            elif actn_target[:4] == "Dimm":
+                if self.settings.typ[0] == 1:
+                    outp_no = self.action_args[0] + 10
+                else:
+                    outp_no = self.action_args[0]
+                out_desc = self.get_dict_entry('outputs',outp_no)
+                if actn_target == "Dimmwert":
+                    actn_desc = f"{self.action_args[1]}%"
+                else:
+                    actn_desc = actn_target.split()[1]
+                actn_target = (
+                    f"{actn_target.split()[0]} {out_desc}"
+                )
+            elif actn_target[:6] == "Sammel":
+                actn_target = f"{actn_target.split()[0]} {self.get_dict_entry('coll_cmds',self.action_args[0])}"
                 actn_desc = ""
-            elif self.action_args[0] in [2, 22]:
-                actn_target = f"{strings[0]} {strings[1]}"
-                actn_desc = f"{strings[2]} {strings[3]}"
+            elif actn_target[:4] == "Meld":
+                actn_target = f"Meldung {self.get_dict_entry('msgs',self.action_args[0])}"
+                if self.action_code == 58:
+                    actn_desc = f"für {self.action_args[1]} Min. setzen"
+                else:
+                    actn_desc = actn_target.replace("Meldung","").strip()
+            elif actn_target[:6] == "Temper":
+                value = self.action_args[1] / 10
+                strings = TempTargetCodes[self.action_args[0]].split()
+                if self.action_args[0] in [11, 12, 13, 14]:
+                    actn_target = TempTargetCodes[self.action_args[0]]
+                    actn_desc = ""
+                elif self.action_args[0] in [2, 22]:
+                    actn_target = f"{strings[0]} {strings[1]}"
+                    actn_desc = f"{strings[2]} {strings[3]}"
+                else:
+                    actn_target = f"{strings[0]} {strings[1]}"
+                    actn_desc = f"{strings[2]}"
+            elif actn_target[:5] == "Rolll":
+                cover_desc = f"Ausgang {self.get_dict_entry('covers', self.action_args[1])}"
+                if self.action_code == 18:
+                    temp_desc = f"für {self.action_args[1]} Min. "
+                else:
+                    temp_desc = ""
+                if self.action_code > 10:
+                    self.action_code -= 10
+                    actn_desc = f"{cover_desc} {temp_desc}auf {self.action_args[2]}% setzen"
+                else:
+                    actn_desc = f"{cover_desc} {temp_desc}auf {self.action_args[2]}% setzen"
+                if self.action_code == 1:
+                    actn_target = "Rollladen"
+                else:
+                    actn_target = "Lamellen"
+            elif actn_target[:5] == "Klima":
+                actn_target += f", Offset {self.action_args[0]}"
+                actn_desc = f"Ausgang {self.get_dict_entry('outputs', self.action_args[1])}"
+            elif actn_target[:4] == "Summ":
+                actn_target += f" {self.action_args[2]}x:"
+                actn_desc = f"Höhe {self.action_args[0]}, Dauer {self.action_args[1]}"
             else:
-                actn_target = f"{strings[0]} {strings[1]}"
-                actn_desc = f"{strings[2]}"
-        elif actn_target[:5] == "Klima":
-            actn_target += f", Offset {self.action_args[0]}"
-            actn_desc = f"Ausgang {self.get_dict_entry('outputs', self.action_args[1])}"
-        else:
-            return f"{actn_target}: {self.action_code} / {actn_desc}"
-        return actn_target + chr(32) + actn_desc
+                return f"{actn_target}: {self.action_code} / {actn_desc}"
+            return actn_target + chr(32) + f"{self.action_code} / {self.action_args}"
+        except Exception as err_msg:
+            self.settings.logger.error(f"Could not handle action code:  {self.action_code} / {self.action_args}, Error: {err_msg}")
+            return actn_target + chr(32) + f"{self.action_code} / {self.action_args}"
 
+
+    def get_output_desc(self, arg) -> str:
+        """Return string description for output arg."""
+        if arg < 17:
+            actn_target = (
+                f"Ausgang {self.get_dict_entry('outputs', arg)}"
+            )
+        elif arg < 34:
+            actn_target = (
+                f"LED {self.get_dict_entry('leds', arg  -16)}"
+            )
+        elif arg < 117:
+            actn_target = (
+                f"Lok. Merker {self.get_dict_entry('flags', arg-100)}"
+            )
+        elif arg < 149:
+            actn_target = (
+                f"Glob. Merker {self.get_dict_entry('glob_flags', arg-132)}"
+            )
+        else:
+            actn_target = (
+                f"Logikeingang {arg -164}"
+            )
+            
     def make_definition(self) -> bytes:
         """Return definition line as bytes."""
         def_line = (

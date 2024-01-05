@@ -158,13 +158,16 @@ class ModHdlr(HdlrBase):
             resp_cnt = self.rt_msg._resp_buffer[-2]
             resp_flg = self.rt_msg._resp_buffer[-3]
             if resp_cnt == cnt:
-                cnt += 1
+                if cnt < 255:
+                    cnt += 1
+                else:
+                    cnt = 0
                 l_cnt += l_p
             elif resp_flg == 8:
                 cnt += 1
                 l_cnt += l_p
             self.logger.debug(
-                f"List upload (SMC) returned: Count {cnt} Flag {resp_flg}"
+                f"List upload (SMC) returned: Count {resp_cnt} Flag {resp_flg}"
             )
             await asyncio.sleep(0.5)
         self.logger.info(
