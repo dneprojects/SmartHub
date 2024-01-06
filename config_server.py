@@ -739,8 +739,11 @@ def prepare_automations_list(app, step):
             src_mod = automations[at_i].src_mod
             if src_mod != curr_mod:
                 rtr = app["api_srv"].routers[0]
-                smod_name = rtr.modules[rtr.mod_addrs.index(src_mod)]._name
-                source_header = f"Von Router {automations[at_i].src_rt}, Modul {src_mod}: '{smod_name}'"
+                if src_mod in rtr.mod_addrs:
+                    smod_name = rtr.modules[rtr.mod_addrs.index(src_mod)]._name
+                    source_header = f"Von Modul {src_mod}: '{smod_name}'"
+                else:
+                    source_header = f"Von Modul {src_mod}"
                 if source_header != last_source_header:
                     last_source_header = source_header
                     tbl += (

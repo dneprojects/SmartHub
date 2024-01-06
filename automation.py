@@ -227,24 +227,7 @@ class AutomationDefinition:
                             break
             elif event_trig == "Modusänderung":
                 event_trig = "Modus neu: "
-                if self.event_arg2 == 1:
-                    event_trig += "Tag"
-                elif self.event_arg2 == 2:
-                    event_trig += "Nacht"
-                elif self.event_arg2 == 4:
-                    event_trig += "Alarm"
-                elif self.event_arg2 == 16:
-                    event_trig += "Abwesend"
-                if self.event_arg2 == 32:
-                    event_trig += "Anwesend"
-                if self.event_arg2 == 48:
-                    event_trig += "Schlafen"
-                if self.event_arg2 == 80:
-                    event_trig += "Sommer"
-                if self.event_arg2 == 96:
-                    event_trig += "User1"
-                if self.event_arg2 == 112:
-                    event_trig += "User2"
+                event_trig += self.get_mode_desc(self.event_arg1)
                 event_desc = ""
             elif event_trig == "Sammelereignis":
                 self.event_arg_name = self.get_dict_entry("coll_cmds", event_arg)
@@ -329,7 +312,10 @@ class AutomationDefinition:
                 if self.action_code == 58:
                     actn_desc = f"für {self.action_args[1]} Min. setzen"
                 else:
-                    actn_desc = actn_target.replace("Meldung","").strip()
+                    actn_desc = ""
+            elif actn_target[:5] == "Modus":
+                actn_target = f"Modus für Gruppe {self.action_args[0]}:"
+                actn_desc = self.get_mode_desc(self.action_args[1])
             elif actn_target[:6] == "Temper":
                 value = self.action_args[1] / 10
                 strings = TempTargetCodes[self.action_args[0]].split()
@@ -342,17 +328,23 @@ class AutomationDefinition:
                 else:
                     actn_target = f"{strings[0]} {strings[1]}"
                     actn_desc = f"{strings[2]}"
+                if self.action_args[0] in [1, 21, 2, 22]:
+                    actn_desc = actn_desc.replace("setzen", f"auf {value} °C setzen")
             elif actn_target[:5] == "Rolll":
-                cover_desc = f"Ausgang {self.get_dict_entry('covers', self.action_args[1])}"
+                cover_desc = f"{self.get_dict_entry('covers', self.action_args[1])}"
+                if self.action_args[2] == 255:
+                    pos_str = "inaktiv"
+                else:
+                    f"auf {self.action_args[2]}%"
                 if self.action_code == 18:
                     temp_desc = f"für {self.action_args[1]} Min. "
                 else:
                     temp_desc = ""
                 if self.action_args[0] > 10:
                     self.action_args[0] -= 10
-                    actn_desc = f"{cover_desc} {temp_desc}auf {self.action_args[2]}% setzen"
+                    actn_desc = f"{cover_desc} {temp_desc} {pos_str} setzen"
                 else:
-                    actn_desc = f"{cover_desc} {temp_desc}auf {self.action_args[2]}% setzen"
+                    actn_desc = f"{cover_desc} {temp_desc} {pos_str} setzen"
                 if self.action_args[0] == 1:
                     actn_target = "Rollladen"
                 else:
@@ -376,14 +368,60 @@ class AutomationDefinition:
         if arg < 17:
             out_desc = f"Ausgang {self.get_dict_entry('outputs', arg)}"
         elif arg < 34:
-            out_desc = f"LED {self.get_dict_entry('leds', arg  -16)}"
+            out_desc = f"LED {self.get_dict_entry('leds', arg-16)}"
         elif arg < 117:
             out_desc = f"Lok. Merker {self.get_dict_entry('flags', arg-100)}"
         elif arg < 149:
             out_desc = f"Glob. Merker {self.get_dict_entry('glob_flags', arg-132)}"
         else:
-            out_desc = f"Logikeingang {arg -164}"
+            l_inp = arg - 164
+            unit_no, inp_no, l_name = self.get_counter_inputs(l_inp)
+            if l_name == "":
+                out_desc = f"Logikeingang {inp_no} von Unit {unit_no}"
+            else:
+                if inp_no == 1:
+                    out_desc = f"Zähler '{l_name}' hoch"
+                elif inp_no == 2:
+                    out_desc = f"Zähler '{l_name}' runter"
+                else:
+                    out_desc = f"Zähler '{l_name}' ???"
         return out_desc
+
+    def get_counter_inputs(self, log_inp:int):
+        """Return counter information, if counter input found."""
+        unit_no = int(log_inp / 8)
+        inp_no = log_inp - unit_no
+        l_units = self.settings.logic
+        for lg_unit in l_units:
+            if (lg_unit.type == 5) & (lg_unit.nmbr == unit_no+1):
+                return unit_no+1, inp_no, lg_unit.name
+        return unit_no+1, inp_no, ""
+    
+    def get_mode_desc(self, md_no: int) -> str:
+        """Return description for mode number."""
+        md_desc = ""
+        if (md_no & 0x03) == 1:
+            md_desc = "Tag"
+        elif (md_no & 0x03) == 2:
+            md_desc = "Nacht"
+        if (md_no & 0x04) == 4:
+            md_desc += ", Alarm"
+        md_no = md_no & 0xF0
+        if md_no == 16:
+            md_desc += ", Abwesend"
+        if md_no == 32:
+            md_desc += ", Anwesend"
+        if md_no == 48:
+            md_desc += ", Schlafen"
+        if md_no == 80:
+            md_desc += ", Urlaub"
+        if md_no == 96:
+            md_desc += f", {self.settings.user1_name}"
+        if md_no == 112:
+            md_desc += f", {self.settings.user2_name}"
+        if md_desc[0] == ",":
+            return md_desc[2:]
+        return md_desc
             
     def make_definition(self) -> bytes:
         """Return definition line as bytes."""

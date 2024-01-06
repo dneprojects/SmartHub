@@ -110,7 +110,6 @@ class ModHdlr(HdlrBase):
             len_SMC_file = int.from_bytes(resp[3:5], "little")
             pckg_cnt = int(ceil(len_SMC_file / 31))
             while cnt < pckg_cnt:
-                await asyncio.sleep(0.2)
                 cnt += 1
                 pckg = resp[0]
                 pckg += 1
