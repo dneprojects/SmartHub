@@ -154,6 +154,7 @@ class EventServer:
         if len(rt_event) > msg_len:
             tail = rt_event[msg_len - 1 :]
             self.logger.warning(f"Second event message: {tail}")
+            self.logger.info(f"Complete message: {rt_event}")
             self.msg_appended = True
             return tail
 
@@ -178,9 +179,9 @@ class EventServer:
                         )
                     except:
                         # If something goes wrong, rtr_id and tail are without value
-                        prefix = ("\xff#" + chr(0) + chr(4)).encode("iso8859-1")
+                        prefix = ("\xff#" + chr(1) + chr(4)).encode("iso8859-1")
                 elif recvd_byte == b"\xff":
-                    # Last loop of while found first 2 bytes, reduce prefix to 2
+                    # Last loop of resync found first 2 bytes, reduce prefix to 2
                     prefix = b"\xff\x23" + await rt_rd.readexactly(2)
                     recvd_byte = b"\00"  # Turn off special condition
                 else:
@@ -197,10 +198,11 @@ class EventServer:
                             # Look for new start byte
                             recvd_byte = await rt_rd.readexactly(1)
                         resynced = await rt_rd.readexactly(1) == b"\x23"
+                        # continue with 'elif recvd_byte == b"\xff":' 
 
                 elif prefix[3] < 4:
                     self.logger.warning(
-                        f"API mode router message too short: {prefix[3]-3} bytes"
+                        f"API mode router message too short, length: {prefix[3]-3} bytes"
                     )
                 else:
                     # Read rest of message
@@ -215,11 +217,12 @@ class EventServer:
 
                     if len(tail) == 1:
                         self.logger.info(
-                            f"API mode router message too short: {tail[0]}"
+                            f"API mode router message too short, tail: {tail}"
                         )
                     elif (rt_event[4] == 133) & (rt_event[5] == 1):
                         # Response should have been received before, not in event watcher
-                        self.logger.info("Router event message: Operate mode started")
+                        self.logger.warning("Warning, router event message: Operate mode started, should have been received in Srv mode")
+                        self.logger.info(f"Complete meassage sent: {rt_event}")
                         self.api_srv._opr_mode = True
                         tail = self.extract_rest_msg(rt_event, 7)
                     elif (rt_event[4] == 133) & (rt_event[5] == 0):
