@@ -270,6 +270,8 @@ class AutomationDefinition:
             if actn_target[:7] == "Ausgang":
                 actn_desc = actn_target.replace("Ausgang", "").strip()
                 actn_target = self.get_output_desc(self.action_args[0])
+                if actn_target[:6] == "Zähler":
+                    actn_desc = "zählen"
             elif actn_target == "Zeitfunktion":
                 actn_target =  self.get_output_desc(self.action_args[3])
                 if self.action_args[2] == 255:
@@ -335,7 +337,7 @@ class AutomationDefinition:
                 if self.action_args[2] == 255:
                     pos_str = "inaktiv"
                 else:
-                    f"auf {self.action_args[2]}%"
+                    pos_str = f"auf {self.action_args[2]}%"
                 if self.action_code == 18:
                     temp_desc = f"für {self.action_args[1]} Min. "
                 else:
@@ -390,7 +392,7 @@ class AutomationDefinition:
     def get_counter_inputs(self, log_inp:int):
         """Return counter information, if counter input found."""
         unit_no = int(log_inp / 8)
-        inp_no = log_inp - unit_no
+        inp_no = log_inp - unit_no*8
         l_units = self.settings.logic
         for lg_unit in l_units:
             if (lg_unit.type == 5) & (lg_unit.nmbr == unit_no+1):
