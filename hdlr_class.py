@@ -80,7 +80,7 @@ class HdlrBase:
             await self.rt_msg.rt_recv()
         else:
             # no response possible
-            self.logger.warning(f"handle_router_cmd_resp called in Opr mode, return 0 0, msg: {self.rt_msg._buffer}")
+            self.logger.warning(f"handle_router_cmd_resp called in Opr mode, return 0 0, msg: {self.rt_msg._buffer.encode("iso8859-1")}")
         return self.rt_msg._resp_msg
 
     async def handle_router_cmd(self, rt_no: int, cmd: RT_CMDS) -> None:
