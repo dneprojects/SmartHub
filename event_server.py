@@ -154,7 +154,7 @@ class EventServer:
         if len(rt_event) > msg_len:
             tail = rt_event[msg_len - 1 :]
             self.logger.warning(f"Second event message: {tail}")
-            self.logger.info(f"Complete message: {rt_event}")
+            self.logger.info(f"     Complete message: {rt_event}")
             self.msg_appended = True
             return tail
 
@@ -222,9 +222,9 @@ class EventServer:
                     elif (rt_event[4] == 133) & (rt_event[5] == 1):
                         # Response should have been received before, not in event watcher
                         self.logger.warning("Warning, router event message: Operate mode started, should have been received in Srv mode")
-                        self.logger.info(f"Complete meassage sent: {rt_event}")
+                        self.logger.info(f"     Complete meassage sent: {rt_event}")
                         self.api_srv._opr_mode = True
-                        tail = self.extract_rest_msg(rt_event, 7)
+                        tail = self.extract_rest_msg(rt_event, 9)
                     elif (rt_event[4] == 133) & (rt_event[5] == 0):
                         # Last response in Opr mode, shut down event watcher
                         self.logger.info(
