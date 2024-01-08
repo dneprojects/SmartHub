@@ -84,22 +84,20 @@ class EventServer:
     async def open_websocket(self):
         """Opens web socket connection to home assistant."""
 
-        if (self.websck == None) | (self.websck == []):
-            if self.api_srv.is_addon:
-                self.logger.info("Open internal add-on websocket to home assistant.")
-            else:
-                self.logger.info("Open websocket to home assistant.")
-        else:
+        if (not(self.websck == None)) & (not(self.websck == [])):
+            # websocket object registered
             return
 
         if self.api_srv.is_addon:
             # SmartHub running with Home Assistant, use internal websocket
+            self.logger.info("Open internal add-on websocket to home assistant.")
             self._uri = "ws://supervisor/core/websocket"
             self.logger.debug(f"URI: {self._uri}")
             self.token = os.getenv("SUPERVISOR_TOKEN")
         else:
-            if self._client_ip == "":
-                self._client_ip = self.api_srv._client_ip
+            # Stand-alone SmartHub, use external websocket connection to host ip
+            self.logger.info("Open websocket to home assistant.")
+            self._client_ip = self.api_srv._client_ip
             self._uri = "ws://<ip>:8123/api/websocket".replace("<ip>", self._client_ip)
             self.logger.debug(f"URI: {self._uri}")
             # token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMWI1ZjgyNmUxMDg0MjFhYWFmNTZlYWQ0ZThkZGNiZSIsImlhdCI6MTY5NDUzNTczOCwiZXhwIjoyMDA5ODk1NzM4fQ.0YZWyuQn5DgbCAfEWZXbQZWaViNBsR4u__LjC4Zf2lY"
