@@ -13,6 +13,7 @@ RT_TIMEOUT = 5
 MIRROR_CYC_TIME = 1
 RD_DELAY = 0.1
 DATA_FILES_DIR = "./"
+DATA_FILES_ADDON_DIR = "/data/"
 FWD_TABLE_FILE = "ip_table.fwd"
 WEB_FILES_DIR = "./web/"
 SIDE_MENU_FILE = "side-menu.html"

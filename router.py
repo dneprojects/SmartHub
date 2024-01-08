@@ -1,7 +1,7 @@
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from os.path import isfile
 import asyncio
-from const import SYS_MODES, RT_STAT_CODES, DATA_FILES_DIR, RT_CMDS
+from const import SYS_MODES, RT_STAT_CODES, DATA_FILES_DIR, DATA_FILES_ADDON_DIR, RT_CMDS
 from router_hdlr import RtHdlr
 from module import HbtnModule
 from module_hdlr import ModHdlr
@@ -162,7 +162,10 @@ class HbtnRouter:
     def save_descriptions(self):
         """Save descriptions to file."""
         file_name = f"Rtr_{self._id}_descriptions.smb"
-        file_path = DATA_FILES_DIR
+        if self.api_srv.is_addon:
+            file_path = DATA_FILES_ADDON_DIR
+        else:
+            file_path = DATA_FILES_DIR
         fid = open(file_path + file_name, "w")
         desc_buf = self.descriptions.encode("iso8859-1")
         desc_no = int.from_bytes(desc_buf[0:2], "little")
@@ -184,7 +187,10 @@ class HbtnRouter:
         """Load descriptions from file."""
         self.descriptions = ""
         file_name = f"Rtr_{self._id}_descriptions.smb"
-        file_path = DATA_FILES_DIR
+        if self.api_srv.is_addon:
+            file_path = DATA_FILES_ADDON_DIR
+        else:
+            file_path = DATA_FILES_DIR
         if isfile(file_path + file_name):
             fid = open(file_path + file_name, "r")
             line = fid.readline().split(";")

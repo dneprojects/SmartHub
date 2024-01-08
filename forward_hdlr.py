@@ -4,7 +4,7 @@ import json
 import socket
 from pymodbus.utilities import computeCRC
 from const import API_FORWARD as spec
-from const import DATA_FILES_DIR, FWD_TABLE_FILE, SMHUB_PORT
+from const import DATA_FILES_DIR, DATA_FILES_ADDON_DIR, FWD_TABLE_FILE, SMHUB_PORT
 from hdlr_class import HdlrBase
 
 
@@ -20,7 +20,10 @@ class ForwardHdlr(HdlrBase):
 
         match self._spec:
             case spec.FWD_TABLE_DEL:
-                file_name = DATA_FILES_DIR + FWD_TABLE_FILE
+                if self.api_srv.is_addon:
+                    file_name = DATA_FILES_ADDON_DIR + FWD_TABLE_FILE
+                else:
+                    file_name = DATA_FILES_DIR + FWD_TABLE_FILE
                 if os.path.exists(file_name):
                     os.remove(file_name)
                 self.fwd_mapping = dict()
@@ -137,7 +140,10 @@ class ForwardHdlr(HdlrBase):
 
     def read_mapping(self) -> dict | None:
         """Read forward mapping from file"""
-        file_name = DATA_FILES_DIR + FWD_TABLE_FILE
+        if self.api_srv.is_addon:
+            file_name = DATA_FILES_ADDON_DIR + FWD_TABLE_FILE
+        else:
+            file_name = DATA_FILES_DIR + FWD_TABLE_FILE
         if os.path.exists(file_name):
             with open(file_name, "r") as fid:
                 self.fwd_mapping = json.load(fid)
@@ -147,7 +153,10 @@ class ForwardHdlr(HdlrBase):
 
     def save_mapping(self):
         """Save forward mapping to file"""
-        file_name = DATA_FILES_DIR + FWD_TABLE_FILE
+        if self.api_srv.is_addon:
+            file_name = DATA_FILES_ADDON_DIR + FWD_TABLE_FILE
+        else:
+            file_name = DATA_FILES_DIR + FWD_TABLE_FILE
         with open(file_name, "w") as fid:
             json.dump(self.fwd_mapping, fid)
 
