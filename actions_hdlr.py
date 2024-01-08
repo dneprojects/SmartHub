@@ -157,6 +157,33 @@ class ActionsHdlr(HdlrBase):
                     f"Router {rt}, module {mod}: collective command {self._args[2]+256*self._args[3]}"
                 )
 
+            case spec.FLAG_SET | spec.FLAG_RESET:
+                self.check_router_no(self._p4)
+                self.check_arg(
+                    self._p5, range(0, 251), "Error: module no out of range 0..250")
+                self.check_arg(
+                    self._args[0],
+                    range(17),
+                    "Error: flag out of range 1..16",
+                )
+                flg_msk = 1 << (self._args[0] - 1)
+                if self._spec == spec.FLAG_SET:
+                    if self._p5:
+                        cmd = RT_CMDS.SET_FLAG_ON
+                    else:
+                        cmd = RT_CMDS.SET_GLB_FLAG_ON
+                else:
+                    if self._p5:
+                        cmd = RT_CMDS.SET_FLAG_OFF
+                    else:
+                        cmd = RT_CMDS.SET_GLB_FLAG_OFF
+                self._rt_command = (
+                    cmd.replace("<rtr>", chr(rt))
+                    .replace("<mod>", chr(mod))
+                    .replace("<flgl>", chr(flg_msk & 0xFF))
+                    .replace("<flgh>", chr(flg_msk >> 8))
+                )
+
             case spec.LOGIC_RESET | spec.LOGIC_SET | spec.COUNTR_UP | spec.COUNTR_DOWN:
                 self.check_router_module_no(rt, mod)
                 self.check_arg(

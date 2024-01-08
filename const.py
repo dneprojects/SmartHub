@@ -346,6 +346,10 @@ class RT_CMDS:
 
     SET_OUT_ON = "\x2a<rtr>\x0c\x44<mod>\x08\x0a\x45<outl><outm><outh>\xff"
     SET_OUT_OFF = "\x2a<rtr>\x0c\x44<mod>\x08\x0b\x41<outl><outm><outh>\xff"
+    SET_FLAG_ON = "\x2a<rtr>\x0b\x44<mod>\x07\x0a\x4d<flgl><flgh>\xff"
+    SET_FLAG_OFF = "\x2a<rtr>\x0b\x44<mod>\x07\x0b\x4e<flgl><flgh>\xff"
+    SET_GLB_FLAG_ON = "\x2a<rtr>\x08\x0a\x1e<flgl><flgh>\xff"
+    SET_GLB_FLAG_OFF = "\x2a<rtr>\x08\x0b\x1f<flgl><flgh>\xff"
     SET_DIMM_VAL = "\x2a<rtr>\x0a\x44<mod>\x06\x0f<out><val>\xff"
     SET_COVER_POS = "\x2a<rtr>\x0c\x44<mod>\x08\x12\x45<sob><out><val>\xff"
     SET_TEMP = "\x2a<rtr>\x0b\x44<mod>\x07\xdc<sel><tmpl><tmph>\xff"
