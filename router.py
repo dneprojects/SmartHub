@@ -1,7 +1,13 @@
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from os.path import isfile
 import asyncio
-from const import SYS_MODES, RT_STAT_CODES, DATA_FILES_DIR, DATA_FILES_ADDON_DIR, RT_CMDS
+from const import (
+    SYS_MODES,
+    RT_STAT_CODES,
+    DATA_FILES_DIR,
+    DATA_FILES_ADDON_DIR,
+    RT_CMDS,
+)
 from router_hdlr import RtHdlr
 from module import HbtnModule
 from module_hdlr import ModHdlr
@@ -166,22 +172,27 @@ class HbtnRouter:
             file_path = DATA_FILES_ADDON_DIR
         else:
             file_path = DATA_FILES_DIR
-        fid = open(file_path + file_name, "w")
-        desc_buf = self.descriptions.encode("iso8859-1")
-        desc_no = int.from_bytes(desc_buf[0:2], "little")
-        for ptr in range(4):
-            fid.write(f"{desc_buf[ptr]};")
-        fid.write("\n")
-        ptr = 4
-        for desc_i in range(desc_no):
-            l_len = desc_buf[ptr + 8] + 9
-            line = desc_buf[ptr : ptr + l_len]
-            for li in range(l_len):
-                fid.write(f"{line[li]};")
+        try:
+            fid = open(file_path + file_name, "w")
+            desc_buf = self.descriptions.encode("iso8859-1")
+            desc_no = int.from_bytes(desc_buf[0:2], "little")
+            for ptr in range(4):
+                fid.write(f"{desc_buf[ptr]};")
             fid.write("\n")
-            ptr += l_len
-        fid.close()
-        self.logger.debug(f"Descriptions saved to {file_path + file_name}")
+            ptr = 4
+            for desc_i in range(desc_no):
+                l_len = desc_buf[ptr + 8] + 9
+                line = desc_buf[ptr : ptr + l_len]
+                for li in range(l_len):
+                    fid.write(f"{line[li]};")
+                fid.write("\n")
+                ptr += l_len
+            fid.close()
+            self.logger.info(f"Descriptions saved to {file_path + file_name}")
+        except Exception as err_msg:
+            self.logger, error(
+                f"Error saving description to file {file_path + file_name}: {err_msg}"
+            )
 
     def load_descriptions(self):
         """Load descriptions from file."""
@@ -191,20 +202,27 @@ class HbtnRouter:
             file_path = DATA_FILES_ADDON_DIR
         else:
             file_path = DATA_FILES_DIR
-        if isfile(file_path + file_name):
-            fid = open(file_path + file_name, "r")
-            line = fid.readline().split(";")
-            for ci in range(len(line) - 1):
-                self.descriptions += chr(int(line[ci]))
-            desc_no = int(line[0]) + 256 * int(line[1])
-            for li in range(desc_no):
+        try:
+            if isfile(file_path + file_name):
+                fid = open(file_path + file_name, "r")
                 line = fid.readline().split(";")
                 for ci in range(len(line) - 1):
                     self.descriptions += chr(int(line[ci]))
-            fid.close()
-            self.logger.debug(f"Descriptions loaded from {file_path + file_name}")
-        else:
-            self.logger.info(f"Descriptions file {file_path + file_name} not found")
+                desc_no = int(line[0]) + 256 * int(line[1])
+                for li in range(desc_no):
+                    line = fid.readline().split(";")
+                    for ci in range(len(line) - 1):
+                        self.descriptions += chr(int(line[ci]))
+                fid.close()
+                self.logger.info(f"Descriptions loaded from {file_path + file_name}")
+            else:
+                self.logger.warning(
+                    f"Descriptions file {file_path + file_name} not found"
+                )
+        except Exception as err_msg:
+            self.logger, error(
+                f"Error saving description to file {file_path + file_name}: {err_msg}"
+            )
 
     def save_firmware(self, bin_data):
         "Save firmware binary to file and fw_data buffer."
