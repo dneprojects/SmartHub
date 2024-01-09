@@ -91,7 +91,7 @@ class HbtnRouter:
 
     async def get_status(self) -> str:
         """Returns router channel status"""
-        await self.api_srv.stop_opr_mode(self._id)
+        opr_off = await self.api_srv.stop_opr_mode(self._id)
         self.chan_status = await self.hdlr.get_rt_status()
         return self.chan_status
 

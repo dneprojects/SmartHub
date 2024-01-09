@@ -118,7 +118,7 @@ class SettingsHdlr(HdlrBase):
                     )
 
                 else:
-                    await self.api_srv.stop_opr_mode(rt)
+                    # await self.api_srv.stop_opr_mode(rt)
                     self.response = await self.api_srv.routers[rt - 1].hdlr.set_mode(
                         self._p5, self._args[2]
                     )

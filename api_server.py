@@ -180,7 +180,7 @@ class ApiServer:
         if self._opr_mode:
             if self._ev_srv_task != []:
                 if self._ev_srv_task._state != "FINISHED":
-                    return
+                    return True
         if self._opr_mode:
             print("\n")
             self.logger.info("Already in Opr mode, recovering event server")
@@ -209,11 +209,12 @@ class ApiServer:
                 self._ev_srv_task = self.loop.create_task(
                     self.evnt_srv.watch_rt_events(self._rt_serial[0])
                 )
+        return self._opr_mode
 
     async def stop_opr_mode(self, rt_no):
         """Turn on server mode: disable router events"""
         if not (self._opr_mode):
-            return
+            return True
 
         # Disable mirror first, then stop event handler
         # Serial reader still used by event server
@@ -231,15 +232,13 @@ class ApiServer:
             self._ev_srv_task.cancel()
             self.logger.info("EventSrv cancelled after 1 sec")
         self._ev_srv_task = []
+        
         self._opr_mode = False
-
-        # await asyncio.sleep(0.2)
-        # await self.hdlr.handle_router_cmd_resp(
-        #     rt_no, RT_CMDS.SET_GLOB_MODE.replace("<md>", chr(75))
-        # )
+        await asyncio.sleep(0.01)
 
         print("\n")
         self.logger.info("Switched from Opr to Srv mode")
+        return not self._opr_mode
 
     async def set_initial_srv_mode(self, rt_no):
         """Turn on config mode: disable router events"""

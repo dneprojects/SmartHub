@@ -46,7 +46,6 @@ class RtHdlr(HdlrBase):
             rt_cmd = RT_CMDS.SET_GLOB_MODE
             rt_cmd = rt_cmd.replace("<md>", chr(new_mode))
             await self.handle_router_cmd_resp(self.rt_id, rt_cmd)
-            self.rtr._in_config_mode = new_mode == SYS_MODES.Config
             return self.rt_msg._resp_buffer[-2:-1]
         if group == 255:
             # All groups but 0
