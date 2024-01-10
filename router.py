@@ -1,5 +1,5 @@
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
-from os.path import isdir, isfile
+from os.path import isfile
 import asyncio
 from const import (
     SYS_MODES,
@@ -64,7 +64,6 @@ class HbtnRouter:
         self.chan_status = await self.hdlr.get_rt_status()
         self.build_smr()
         self.logger.info("Router status initialized")
-        self.load_descriptions()
         modules = await self.hdlr.get_rt_modules()
         return modules
 
@@ -94,6 +93,7 @@ class HbtnRouter:
                 self.logger.warning(f"Module {mod_addr} removed")
         for mod_addr in mods_to_remove:
             self.mod_addrs.remove(mod_addr)
+        self.load_descriptions()
 
     async def get_status(self) -> str:
         """Returns router channel status"""

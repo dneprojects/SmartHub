@@ -182,7 +182,7 @@ class ApiServer:
                 if self._ev_srv_task._state != "FINISHED":
                     return True
         if self._opr_mode:
-            print("\n")
+            print("")
             self.logger.info("Already in Opr mode, recovering event server")
             if self._ev_srv_task == []:
                 self.logger.warning("No EventSrv registered, start event server task")
@@ -200,7 +200,7 @@ class ApiServer:
             e_chr = chr(int(self.event_mode_enabled))
             cmd = RT_CMDS.SET_OPR_MODE.replace("<mirr>", m_chr).replace("<evnt>", e_chr)
             await self.hdlr.handle_router_cmd_resp(rt_no, cmd)
-            print("\n")
+            print("")
             self.logger.info("Switched from Srv to Opr mode")
             self._opr_mode = True
             # Start event handler
@@ -236,7 +236,7 @@ class ApiServer:
         self._opr_mode = False
         await asyncio.sleep(0.01)
 
-        print("\n")
+        print("")
         self.logger.info("Switched from Opr to Srv mode")
         return not self._opr_mode
 
