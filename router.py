@@ -1,5 +1,5 @@
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
-from os.path import isfile
+from os.path import isdir, isfile
 import asyncio
 from const import (
     SYS_MODES,
@@ -198,32 +198,25 @@ class HbtnRouter:
         """Load descriptions from file."""
         self.descriptions = ""
         file_name = f"Rtr_{self._id}_descriptions.smb"
-        if isfile(DATA_FILES_ADDON_DIR):
-            file_path = DATA_FILES_ADDON_DIR
-            self.logger.info(f"Add-on config path {file_path} found")
-        else:
+        file_path = DATA_FILES_ADDON_DIR
+        if not isfile(file_path + file_name):
             file_path = DATA_FILES_DIR
             self.logger.info(f"Add-on config path not found, using {file_path}")
-        try:
-            if isfile(file_path + file_name):
-                fid = open(file_path + file_name, "r")
+        if isfile(file_path + file_name):
+            fid = open(file_path + file_name, "r")
+            line = fid.readline().split(";")
+            for ci in range(len(line) - 1):
+                self.descriptions += chr(int(line[ci]))
+            desc_no = int(line[0]) + 256 * int(line[1])
+            for li in range(desc_no):
                 line = fid.readline().split(";")
                 for ci in range(len(line) - 1):
                     self.descriptions += chr(int(line[ci]))
-                desc_no = int(line[0]) + 256 * int(line[1])
-                for li in range(desc_no):
-                    line = fid.readline().split(";")
-                    for ci in range(len(line) - 1):
-                        self.descriptions += chr(int(line[ci]))
-                fid.close()
-                self.logger.info(f"Descriptions loaded from {file_path + file_name}")
-            else:
-                self.logger.warning(
-                    f"Descriptions file {file_path + file_name} not found"
-                )
-        except Exception as err_msg:
-            self.logger, error(
-                f"Error loading description from file {file_path + file_name}: {err_msg}"
+            fid.close()
+            self.logger.info(f"Descriptions loaded from {file_path + file_name}")
+        else:
+            self.logger.warning(
+                f"Descriptions file {file_path + file_name} not found"
             )
 
     def save_firmware(self, bin_data):
