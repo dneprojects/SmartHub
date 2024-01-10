@@ -190,7 +190,7 @@ class HbtnRouter:
             fid.close()
             self.logger.info(f"Descriptions saved to {file_path + file_name}")
         except Exception as err_msg:
-            self.logger, error(
+            self.logger.error(
                 f"Error saving description to file {file_path + file_name}: {err_msg}"
             )
 
@@ -198,10 +198,12 @@ class HbtnRouter:
         """Load descriptions from file."""
         self.descriptions = ""
         file_name = f"Rtr_{self._id}_descriptions.smb"
-        if self.api_srv.is_addon:
+        if isfile(DATA_FILES_ADDON_DIR):
             file_path = DATA_FILES_ADDON_DIR
+            self.logger.info(f"Add-on config path {file_path} found")
         else:
             file_path = DATA_FILES_DIR
+            self.logger.info(f"Add-on config path not found, using {file_path}")
         try:
             if isfile(file_path + file_name):
                 fid = open(file_path + file_name, "r")
@@ -221,7 +223,7 @@ class HbtnRouter:
                 )
         except Exception as err_msg:
             self.logger, error(
-                f"Error saving description to file {file_path + file_name}: {err_msg}"
+                f"Error loading description from file {file_path + file_name}: {err_msg}"
             )
 
     def save_firmware(self, bin_data):
