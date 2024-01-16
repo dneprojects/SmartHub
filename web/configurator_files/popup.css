@@ -107,19 +107,16 @@
 #chg_buttons,
 #new_buttons {
     display: flow;
+    text-align: center;
 }
 
 #close_del_popup,
-#del_automtn,
-#close_change_popup,
-#close_new_popup,
-#chg_automtn_next,
-#chg_automtn_prev {
+#del_automtn {
     height: 22px;
     width: 100px;
     margin-top: 50px;
     margin-left: auto;
-    margin-right: auto;
+    margin-right: 20px;
     font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
     font: 11px arial, helvetica, clean, sans-serif;
 }

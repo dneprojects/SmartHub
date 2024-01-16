@@ -14,6 +14,7 @@ from const import (
     CONFIG_TEMPLATE_FILE,
     SETTINGS_TEMPLATE_FILE,
     AUTOMATIONS_TEMPLATE_FILE,
+    AUTOMATIONEDIT_TEMPLATE_FILE,
     CONF_PORT,
     SYS_MODES,
     FingerNames,
@@ -230,20 +231,48 @@ class ConfigServer:
         else:
             # delete selected automation
             settings = request.app["settings"]
-            sel_automtn = int(form_data["atmn_tbl"][0])
-            request.app["automations_def"].selected = sel_automtn
+            automtn_selctn = int(form_data["atmn_tbl"][0])
+            request.app["automations_def"].selected = automtn_selctn
             # request.app["logger"].warning(
             #     f"Delete of automation {sel_automtn} not yet implemented"
             # )
-            if request.app["step"] == 0:
-                del request.app["automations_def"].local[sel_automtn]
-            else:
-                l_ext = len(request.app["automations_def"].external)
-                if sel_automtn < l_ext:
-                    del request.app["automations_def"].external[sel_automtn]
+            if 'EditAutomtn' in form_data.keys():
+                mode = form_data['EditAutomtn'][0]
+                if request.app["step"] == 0:
+                    sel_atmtn = request.app["automations_def"].local[automtn_selctn]
                 else:
-                    del request.app["automations_def"].forward[sel_automtn - l_ext]
+                    l_ext = len(request.app["automations_def"].external)
+                    if automtn_selctn < l_ext:
+                        sel_atmtn = request.app["automations_def"].external[automtn_selctn]
+                    else:
+                        sel_atmtn = request.app["automations_def"].forward[automtn_selctn - l_ext]
+                return show_edit_automation(request.app, sel_atmtn, automtn_selctn, mode, request.app["step"])
+            else:
+                if request.app["step"] == 0:
+                    del request.app["automations_def"].local[automtn_selctn]
+                else:
+                    l_ext = len(request.app["automations_def"].external)
+                    if automtn_selctn < l_ext:
+                        del request.app["automations_def"].external[automtn_selctn]
+                    else:
+                        del request.app["automations_def"].forward[automtn_selctn - l_ext]
             return show_automations(request.app, request.app["step"])
+        
+    @routes.post("/automtn_def")
+    async def root(request: web.Request) -> web.Response:
+        resp = await request.text()
+        form_data = parse_qs(resp)
+        if "EditAutomtn" in form_data.keys():
+            if form_data["EditAutomtn"][0] == "ok":
+                # Get all settings from form
+                return show_automations(request.app, request.app["step"])
+            else:
+                # Cancel
+                return show_automations(request.app, request.app["step"])
+        elif "trigger_sel" in form_data.keys():
+            return web.HTTPNoContent()
+        elif "action_sel" in form_data.keys():
+            return web.HTTPNoContent()
 
     @routes.get(path="/{key:.*}")
     async def _(request):
@@ -525,6 +554,26 @@ def show_automations(app, step) -> web.Response:
     page = fill_automations_template(app, title_str, subtitle, step)
     return web.Response(text=page, content_type="text/html")
 
+def show_edit_automation(app, automtn, sel, mode, step) -> web.Response:
+    """Prepare automations page of module."""
+    title_str = f"Modul '{app['settings'].name}'"
+    if mode == "new":
+        subtitle = "Neue Automatisierung anlegen"
+    else:
+        subtitle = "Automatisierung ändern"
+    with open(WEB_FILES_DIR + AUTOMATIONEDIT_TEMPLATE_FILE, mode="r") as tplf_id:
+        page = tplf_id.read()
+    mod_image, mod_type = get_module_image(app["settings"].typ)
+    page = (
+        page.replace("ContentTitle", title_str)
+        .replace("ContentSubtitle", subtitle)
+        .replace("controller.jpg", mod_image)
+        .replace("ModAddress", f'{app["settings"].id}-{step}')
+    )
+    page = prepare_trigger_list(app, page, step)
+    page = prepare_condition_lists(app, page, step)
+    page = prepare_action_list(app, page, step)
+    return web.Response(text=page, content_type="text/html")
 
 def show_setting_step(app, mod_addr, step) -> web.Response:
     """Prepare overview page of module."""
@@ -715,6 +764,75 @@ def fill_automations_template(app, title, subtitle, step) -> str:
     return page
 
 
+def prepare_trigger_list(app, page: str, step: int) -> str:
+    """Replace options part of select box for new automation."""
+    triggers_lst, sensors_lst = app["settings"].get_triggers(step==0)
+    opt_str = '<option value="">-- Auslösendes Ereignis wählen --</option>\n'
+    for opt in triggers_lst:
+        opt_str += f'<option value="{opt}">{opt}</option>\n'
+    page = page.replace('<option value="">-- Auslösendes Ereignis wählen --</option>', opt_str)
+    opt_str = '<option value="">-- Sensor wählen --</option>\n'
+    for opt in sensors_lst:
+        opt_str += f'<option value="{opt}">{opt}</option>\n'
+    page = page.replace('<option value="">-- Sensor wählen --</option>', opt_str)
+    opt_str = '<option value="">-- Taster wählen --</option>'
+    for butt in app["settings"].buttons:
+        if (len(butt.name.strip()) > 0):
+            opt_str += f'<option value="{butt.nmbr}">{butt.name}</option>\n'
+    for inp in app["settings"].inputs:
+        if (inp.type == 1) & (len(inp.name.strip()) > 0):
+            opt_str += f'<option value="{inp.nmbr}">{inp.name}</option>\n'
+    page = page.replace('<option value="">-- Taster wählen --</option>', opt_str)
+    opt_str = '<option value="">-- Schalter wählen --</option>'
+    for inp in app["settings"].inputs:
+        if (inp.type > 1) & (len(inp.name.strip()) > 0):
+            opt_str += f'<option value="{inp.nmbr}">{inp.name}</option>\n'
+    page = page.replace('<option value="">-- Schalter wählen --</option>', opt_str)
+    opt_str = '<option value="">-- Ausgang wählen --</option>'
+    for outp in app["settings"].outputs:
+        if (len(outp.name.strip()) > 0):
+            opt_str += f'<option value="{outp.nmbr}">{outp.name}</option>\n'
+    page = page.replace('<option value="">-- Ausgang wählen --</option>', opt_str)
+    opt_str = '<option value="">-- Kommando wählen --</option>'
+    for cmd in app["settings"].vis_cmds:
+        opt_str += f'<option value="{cmd.nmbr}">{cmd.name}</option>\n'
+    page = page.replace('<option value="">-- VKommando wählen --</option>', opt_str)
+    opt_str = '<option value="">-- Kommando wählen --</option>'
+    for cmd in app["settings"].coll_cmds:
+        opt_str += f'<option value="{cmd.nmbr}">{cmd.name}</option>\n'
+    page = page.replace('<option value="">-- CKommando wählen --</option>', opt_str)
+    return page
+
+def prepare_condition_lists(app, page: str, step: int) -> str:
+    """Replace options part of select box for new automation."""
+    opt_str = '<option value="">-- Bedingung wählen --</option>\n'
+    cond_lst, mode2_lst = app["settings"].get_conditions(step==0)
+    for opt in cond_lst:
+        opt_str += f'<option value="{opt}">{opt}</option>\n'
+    page = page.replace('<option value="">-- Bedingung wählen --</option>', opt_str)
+    opt_str = '<option value="">-- Modus wählen --</option>'
+    for opt in mode2_lst:
+        opt_str += f'<option value="{opt}">{opt}</option>\n'
+    page = page.replace('<option value="">-- cond_2_sel --</option>', opt_str)
+    opt_str = '<option value="">-- Zeitspanne wählen --</option>'
+    for hour in range(24):
+        opt_str += f'<option value="{hour}">von {hour} bis {hour+1} Uhr</option>\n'
+    page = page.replace('<option value="">-- cond_time_sel --</option>', opt_str)
+    opt_str = '<option value="">-- Merker wählen --</option>'
+    for flag in app["settings"].flags:
+        opt_str += f'<option value="{flag.nmbr}">{flag.name}</option>\n'
+    for flag in app["settings"].glob_flags:
+        opt_str += f'<option value="{flag.nmbr+32}">{flag.name}</option>\n'
+    page = page.replace('<option value="">-- cond_flag_sel --</option>', opt_str)
+    return page
+
+def prepare_action_list(app, page: str, step: int) -> str:
+    """Replace options part of select box for new automation."""
+    opt_str = '<option value="">-- Aktion wählen --</option>\n'
+    for opt in app["settings"].get_actions(step==0):
+        opt_str += f'<option value="{opt}">{opt}</option>\n'
+    return page.replace('<option value="">-- Aktion wählen --</option>', opt_str)
+ 
 def indent(level):
     """Return sequence of tabs according to level."""
     return "\t" * level
@@ -751,7 +869,7 @@ def prepare_automations_list(app, step):
                         + f"<tr><td><b>{source_header}</b></td></tr>\n"
                     )
         tbl += indent(6) + "<tr>\n"
-        evnt_desc = automations[at_i].event_description()
+        evnt_desc = automations[at_i].trigger.description()
         actn_desc = automations[at_i].action_description()
         id_name = f"atmn_tbl"
         sel_chkd = ""

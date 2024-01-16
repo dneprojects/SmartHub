@@ -1,29 +1,4 @@
-EventCodes = {
-    6: "Merker/Logik",
-    10: "Ausgangsänderung",
-    23: "IR-Befehl kurz",
-    24: "IR-Befehl lang",
-    25: "IR-Befehl lang Ende",
-    40: "Bewegung Innenlicht",
-    41: "Bewegung Außenlicht",
-    50: "Sammelereignis",
-    137: "Modusänderung",
-    149: "Dimmbefehl",
-    150: "Taste kurz",
-    151: "Taste lang",
-    152: "Schalter ein",
-    153: "Schalter aus",
-    154: "Taste lang Ende",
-    169: "Ekey",
-    170: "Timer",
-    203: "Außenhelligkeit",
-    204: "Wind",
-    205: "Regen",
-    215: "Feuchte",
-    221: "Klima Sensor intern",
-    222: "Klima Sensor extern",
-    253: "Direktbefehl"
-}
+from automtn_trigger import AutomationTrigger
 
 ActionCodes = {
     1: "Ausgang ein",
@@ -144,6 +119,7 @@ class AutomationDefinition:
             self.settings = settings
             self.src_rt = int(atm_def[0])
             self.src_mod = int(atm_def[1])
+            self.trigger = AutomationTrigger(self, atm_def, autmn_dict)
             self.event_code = int(atm_def[2])
             self.event_arg1 = int(atm_def[3])
             self.event_arg2 = int(atm_def[4])
@@ -155,11 +131,7 @@ class AutomationDefinition:
 
     def event_name(self) -> str:
         """Return event name."""
-        try:
-            evnt_name = EventCodes[self.event_code]
-        except:
-            evnt_name = "Unknown event"
-        return evnt_name
+        return self.trigger.name
 
     def action_name(self) -> str:
         """Return action name."""
@@ -175,90 +147,6 @@ class AutomationDefinition:
             if arg in self.autmn_dict[key].keys():
                 return self.autmn_dict[key][arg]
         return f"{arg}"
-
-    def event_description(self) -> str:
-        """Parse event arguments and return 2 readable fields."""
-        try:
-            event_trig = self.event_name()
-            event_arg = self.event_arg1
-            self.event_arg_name = f"{event_arg}"
-            event_desc = self.event_arg_name
-            if event_trig[:5] in ["Taste", "Schal", "Dimmb"]:
-                if event_trig[:5] == "Dimmb":
-                    event_desc = ""
-                else:
-                    event_desc = (
-                        event_trig.replace("Taste", "").replace("Schalter", "").strip()
-                    )
-                    event_trig = event_trig.replace(event_desc, "").strip()
-                    if event_arg < 9:
-                        event_trig += f" {self.get_dict_entry('buttons', event_arg)}"
-                    else:
-                        event_trig += f" {self.get_dict_entry('inputs',event_arg - 8)}"
-            elif event_trig == "Merker/Logik":
-                if event_arg == 0:
-                    set_str = "rückgesetzt"
-                else:
-                    set_str = "gesetzt"
-                event_arg += self.event_arg2  # one is always zero
-                event_arg2 = ""
-                if event_arg in range(1, 17):
-                    self.event_arg_name = self.get_dict_entry("flags", event_arg)
-                    event_trig = f"Lokaler Merker {self.event_arg_name}"
-                    event_desc = set_str
-                elif event_arg in range(33, 49):
-                    event_arg -= 32
-                    self.event_arg_name = self.get_dict_entry("glob_flags", event_arg)
-                    event_trig = f"Globaler Merker {self.event_arg_name}"
-                    event_desc = set_str
-                elif event_arg in range(81, 91):
-                    event_arg -= 80
-                    self.event_arg_name = self.get_dict_entry("logic", event_arg)
-                    event_trig = f"Logikausgang {self.event_arg_name}"
-                    event_desc = set_str
-                else:
-                    for cnt_i in range(10):
-                        if event_arg in range(96 + cnt_i * 16, 96 + (cnt_i + 1) * 16):
-                            event_arg2 = event_arg - 95 - cnt_i * 16
-                            event_arg = cnt_i + 1
-                            self.event_arg_name = self.get_dict_entry("logic", event_arg)
-                            event_trig = f"Counter {self.event_arg_name}"
-                            event_desc = f"Wert {event_arg2} erreicht"
-                            break
-            elif event_trig == "Modusänderung":
-                event_trig = "Modus neu: "
-                event_trig += self.get_mode_desc(self.event_arg1)
-                event_desc = ""
-            elif event_trig == "Sammelereignis":
-                self.event_arg_name = self.get_dict_entry("coll_cmds", event_arg)
-                event_trig = f"Sammelereignis {self.event_arg_name}"
-                event_desc = ""
-            elif event_trig[:5] == "Klima":
-                if self.event_arg1 == 1:
-                    event_desc = "heizen"
-                else:
-                    event_desc = "kühlen"
-            elif event_trig == "Ausgangsänderung":
-                if self.event_arg1:
-                    event_desc = f"{self.get_output_desc(self.event_arg1)} an"
-                else:
-                    event_desc = f"{self.get_output_desc(self.event_arg2)} aus"
-            elif event_trig[:9] == "IR-Befehl":
-                event_trig = f"IR-Befehl: '{self.event_arg1} | {self.event_arg2}'"
-                if self.event_code == 23:
-                    event_desc = "kurz"
-                if self.event_code == 24:
-                    event_desc = "lang"
-                if self.event_code == 25:
-                    event_desc = "lang Ende"
-            elif event_trig == "Direktbefehl":
-                event_trig += f" {self.event_arg1}: '{self.get_dict_entry('dir_cmds', self.event_arg1)}'"
-            else:
-                return f"{event_trig}: {self.event_code} / {self.event_arg1} / {self.event_arg2}"
-            return event_trig + chr(32) + event_desc
-        except Exception as err_msg:
-            self.settings.logger.error(f"Could not handle event code:  {self.event_code} / {self.event_arg1} / {self.event_arg2}, Error: {err_msg}")
-            return f"{event_trig}: {self.event_code} / {self.event_arg1} / {self.event_arg2}"
 
     def action_description(self) -> str:
         """Parse action arguments and return description."""

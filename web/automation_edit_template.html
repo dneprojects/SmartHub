@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- saved from url=(0042)http://habitron.de/sortiment-habitron.html -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!--
+
+	This website is powered by Contao Open Source CMS :: Licensed under GNU/LGPL
+	Copyright ©2005-2023 by Leo Feyer :: Extensions are copyright of their respective owners
+	Visit the project website at http://www.contao.org for more information
+
+//-->
+    <!--<base href="http://habitron.de/">-->
+    <base href=".">
+
+    <title>habitron - Hausautomation und Gebäudesteuerung - Sortiment habitron</title>
+    <link rel="shortcut icon" href="http://habitron.de/tl_files/habitron/design/favicon.ico" type="image/x-icon">
+
+    <meta http-equiv="Content-Style-Type" content="text/css">
+    <meta http-equiv="Content-Script-Type" content="text/javascript">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <link href="./configurator_files/style.css" rel="stylesheet" type="text/css" media="screen">
+    <link href="./configurator_files/nav.css" rel="stylesheet" type="text/css" media="screen">
+    <link href="./configurator_files/popup.css" rel="stylesheet" type="text/css" media="screen">
+    <!--[if IE]>
+<link href="tl_files/habitron/style_ie.css" rel="stylesheet" type="text/css" media="screen"  />
+<![endif]-->
+
+    <meta name="robots" content="index,follow">
+    <style type="text/css" media="screen">
+        <!--/*
+        -->
+    <![CDATA[/*><!--*/
+/*]]>*/-->
+    </style>
+    <link rel="stylesheet" href="./configurator_files/contao.css" type="text/css" media="screen">
+    <!--[if lte IE 7]><link rel="stylesheet" href="system/iefixes.css" type="text/css" media="screen" /><![endif]-->
+    <link rel="stylesheet" href="./configurator_files/tinymce.css" type="text/css" media="screen">
+    <script type="text/javascript" async="" src="./configurator_files/ga.js.Download"></script>
+    <script type="text/javascript" src="./configurator_files/mootools-yui-compressed.js.Download"></script>
+    <script type="text/javascript" src="./configurator_files/mootools-more.js.Download"></script>
+</head>
+
+<body id="top" class="modules">
+    <div id="container">
+        <div id="content">
+            <div id="header">
+                <div class="inside">
+                    <div style="height:20px; text-align: right; padding-top: 35px; padding-right: 60px;">
+                        <a href="http://habitron.de/habitron.html"><img id="logo_habitron"
+                                src="./configurator_files/logo.png" width="267" height="47"></a>
+                        <a href="/">
+                            <div>
+                                <h0>Smart Configurator</h0>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="mod_article block" id="pic">
+
+
+                        <div class="ce_image block">
+
+                            <div class="image_container">
+                                <img src="./configurator_files/configuration.jpg" width="980" height="200"
+                                    alt="Habitron GmbH">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+            <div id="inhalt">
+                <div id="left">
+                    <div class="inside">
+                        <div class="mod_article block" id="bild-links">
+                            <div class="ce_image block">
+                                <div class="image_container">
+                                    <img id="hbtn_module_left" src="./configurator_files/controller.jpg"
+                                        alt="Habitron GmbH">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="right">
+                    <div class="inside">
+                    </div>
+                </div>
+                <div id="mitte">
+                    <div class="inside">
+                        <div class="mod_article block" id="text-231">
+
+                            <div class="ce_text block">
+                                <!-- MainContentStart -->
+                                <form id="automation_def" action="automtn_def" method="post">
+                                    <h1>ContentTitle</h1>
+                                    <h2>ContentSubtitle</h2>
+                                    <h3>Auslöser</h3>
+                                    <div id="trigger_frame" style="height: 100px;">
+                                        <select name="trigger_sel" id="trigger-select"">
+                                            <option value="">-- Auslösendes Ereignis wählen --</option>
+                                        </select><br><br>
+                                        <select name=" trigger_button" style="visibility: hidden; position: absolute"
+                                            id="button-select">
+                                            <option value="">-- Taster wählen --</option>
+                                        </select>
+                                        <select name="trigger_switch" style="visibility: hidden; position: absolute"
+                                            id="switch-select">
+                                            <option value="">-- Schalter wählen --</option>
+                                        </select>
+                                        <select name="trigger_output" style="visibility: hidden; position: absolute"
+                                            id="output-select">
+                                            <option value="">-- Ausgang wählen --</option>
+                                        </select>
+                                        <select name="trigger_sensor" style="visibility: hidden; position: absolute"
+                                            id="sensor-select">
+                                            <option value="">-- Sensor wählen --</option>
+                                        </select>
+                                        <select name="trigger_collcmd" style="visibility: hidden; position: absolute"
+                                            id="collcmd-select">
+                                            <option value="">-- CKommando wählen --</option>
+                                        </select>
+                                        <select name="trigger_opt2" style="visibility: hidden; position: absolute"
+                                            id="viscmd-select">
+                                            <option value="">-- VKommando wählen --</option>
+                                        </select><br><br>
+                                        <select name="trigger_onoff" style="visibility: hidden; position: absolute"
+                                            id="onoff-select">
+                                            <option value="">-- Zustand wählen --</option>\n
+                                            <option value="1">an</option>\n
+                                            <option value="2">aus</option>\n
+                                        </select>
+                                        <select name="trigger_shortlong" style="visibility: hidden; position: absolute"
+                                            id="shortlong-select">
+                                            <option value="">-- Zustand wählen --</option>\n
+                                            <option value="1">kurzer Tastendruck</option>\n
+                                            <option value="2">langer Tastendruck</option>\n
+                                        </select>
+                                    </div>
+                                    <hr class="solid_line">
+                                    <h2>Bedingung</h2>
+                                    <div id="condition_frame" style="height: 70px;">
+                                        <select name="condition_sel" id="condition-select">
+                                            <option value="">-- Bedingung wählen --</option>
+                                        </select><br><br>
+                                        <select name="condition_mode2" style="visibility: hidden; position: absolute"
+                                            id="condition_2">
+                                            <option value="">-- cond_2_sel --</option>
+                                        </select>
+                                        <select name="condition_time" style="visibility: hidden; position: absolute"
+                                            id="condition_time">
+                                            <option value="">-- cond_time_sel --</option>
+                                        </select>
+                                        <select name="condition_flag" style="visibility: hidden; position: absolute"
+                                            id="condition_flag">
+                                            <option value="">-- cond_flag_sel --</option>
+                                        </select>
+                                    </div>
+                                    <hr class="solid_line">
+                                    <h2>Aktion</h2>
+                                    <div id="action_frame" style="height: 100px;">
+                                        <select name="action_sel" id="action-select" onchange="this.form.submit()">
+                                            <option value="">-- Aktion wählen --</option>
+                                        </select><br><br>
+                                        <p>ContentTextAction</p>
+                                    </div>
+                            </div>
+                            </form>
+                            <!-- MainContentEnd -->
+
+                        </div>
+                        <br><br>
+                        <div id="autmnbuttons">
+                            <button name="EditAutomtn" class="config_button" id="cancel_button" type="submit"
+                                form="automation_def" value="cancel">Abbruch</button>
+                            <button name="EditAutomtn" class="config_button" id="ok_button" type="submit"
+                                form="automation_def" value="ok">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="clear"></div>
+        </div>
+        <div id="footer">
+            <div class="inside">
+                <div id="confbuttons">
+                    <form action="settings_step">
+                        <button name="ModSettings" class="config_button" id="config_button" type="submit"
+                            form="automations_table" value="back-ModAddress">zurück</button>
+                        <button name="ModSettings" class="config_button" id="config_button" type="submit"
+                            value="cancel-ModAddress">Abbruch</button>
+                        <button name="ModSettings" class="config_button" id="config_button" type="submit"
+                            form="automations_table" value="save-ModAddress">Speichern</button>
+                        <button name="ModSettings" class="config_button" id="config_button" type="submit"
+                            form="automations_table" value="next-ModAddress">weiter</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </div>
+    <div id="automtn_del_popup" class="popup">
+        <div class="popup-content">
+            <h1>ContentTitle</h1>
+            <h2>Löschen der ausgewählten Automatisierung</h2>
+            <h3>Sind Sie sicher?</h3>
+            <div id="del_buttons">
+                <button id="close_del_popup">Abbruch</button>
+                <button id="del_automtn" type="submit" form="automations_table">Löschen</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
+
+<script type="text/javascript">
+    const trig_sel = document.getElementById("trigger-select");
+    trig_sel.addEventListener("change", function () {
+        set_trigger_sels();
+    });
+    const cond_sel = document.getElementById("condition-select");
+    cond_sel.addEventListener("change", function () {
+        set_condition_sels();
+    });
+    close_del_popup.addEventListener("click", function () {
+        automtn_del_popup.classList.remove("show");
+    });
+    function set_trigger_sels() {
+        var idx = trig_sel.selectedIndex
+        var selectn = trig_sel[idx].text
+        document.getElementById("button-select").style.visibility = "hidden";
+        document.getElementById("switch-select").style.visibility = "hidden";
+        document.getElementById("output-select").style.visibility = "hidden";
+        document.getElementById("viscmd-select").style.visibility = "hidden";
+        document.getElementById("collcmd-select").style.visibility = "hidden";
+        document.getElementById("sensor-select").style.visibility = "hidden";
+        document.getElementById("shortlong-select").style.visibility = "hidden";
+        document.getElementById("onoff-select").style.visibility = "hidden";
+        if (selectn == "Taster") {
+            document.getElementById("button-select").style.visibility = "visible";
+            document.getElementById("shortlong-select").style.visibility = "visible";
+        }
+        if (selectn == "Schalter") {
+            document.getElementById("switch-select").style.visibility = "visible";
+            document.getElementById("onoff-select").style.visibility = "visible";
+        }
+        if (selectn == "Dimmen") {
+            document.getElementById("button-select").style.visibility = "visible";
+        }
+        if (selectn == "Ausgangsänderung") {
+            document.getElementById("output-select").style.visibility = "visible";
+            document.getElementById("onoff-select").style.visibility = "visible";
+        }
+        if (selectn == "Sammelbefehl") {
+            document.getElementById("collcmd-select").style.visibility = "visible";
+        }
+        if (selectn == "Visualisierungsbefehl") {
+            document.getElementById("viscmd-select").style.visibility = "visible";
+        }
+        if (selectn == "Sensor") {
+            document.getElementById("sensor-select").style.visibility = "visible";
+        }
+    }
+    function set_condition_sels() {
+        var idx = cond_sel.selectedIndex
+        document.getElementById("condition_2").style.visibility = "hidden";
+        document.getElementById("condition_time").style.visibility = "hidden";
+        document.getElementById("condition_flag").style.visibility = "hidden";
+        if ((idx == 2) || (idx == 3)) {
+            document.getElementById("condition_flag").style.visibility = "visible";
+        }
+        if (idx == 4) {
+            document.getElementById("condition_time").style.visibility = "visible";
+        }
+        if (idx > 4) {
+            document.getElementById("condition_2").style.visibility = "visible";
+        }
+    }
+
+    function open_del_popup() {
+        var sel = 0
+        for (let l = 0; l < frm.length; l++) {
+            if (frm[l].checked) {
+                sel = l;
+            }
+        }
+        del_automtn.value = "del_automtn-" + sel;
+        automtn_del_popup.classList.add("show");
+    };
+
+
+</script>

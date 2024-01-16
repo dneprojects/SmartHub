@@ -425,6 +425,39 @@ class ModuleSettings:
             self.properties["no_keys"] += 1
             self.prop_keys.append("users")
 
+    def get_triggers(self, internal):
+        """Return available triggers for given module settings."""
+        if (self.typ[0] == 1) | (self.typ == b"\x32\x01"):
+            triggers_list = ["Taster", "Schalter", "Dimmen", "Ausgangsänderung", "Bewegung", 
+                             "Direktbefehl", "Sammelbefehl", "Visualisierungsbefehl", 
+                             "Merker", "Modusänderung", "Sensor", "Zeit"]
+            sensors_list = ["A/D-Kanal 1", "A/D-Kanal 2", "Feuchte außen", "Feuchte innen", 
+                            "Helligkeit außen", "Helligkeit innen", "Temperatur außen", 
+                            "Temperatur innen", "Regen", "Wind"]
+        if (self.typ[0] == 10):
+            triggers_list = ["Ausgangsänderung", "Sammelbefehl", "Visualisierungsbefehl", 
+                             "Merker", "Modusänderung", "Sensor", "Zeit"]
+            sensors_list = ["Feuchte außen", "Helligkeit außen", "Temperatur außen", "Regen", "Wind"]
+        elif len(self.fingers) > 0:
+            triggers_list.append("Fingerprint")
+        return triggers_list, sensors_list
+    
+    def get_conditions(self, internal):
+        """Return available triggers for given module settings."""
+        conditions_list1 = ["Immer", "Merker gesetzt", "Merker rückgesetzt", "Uhrzeit", 
+                            "Modus 'Abwesend'", "Modus 'Anwesend'", "Modus 'Schlafen'", 
+                            "Modus 'Sommer'", 
+                            f"Modus '{self.module.rt.user_modes[1:11].decode('iso8859-1').strip()}'", 
+                            f"Modus '{self.module.rt.user_modes[12:].decode('iso8859-1').strip()}'", 
+                            "Modus 'Tag'/'Nacht'/'Alarm'"]
+        conditions_list2 = ["Immer", "Modus 'Tag'", "Modus 'Nacht'", "Modus 'Alarm'"]
+        return conditions_list1, conditions_list2
+    
+    def get_actions(self, internal):
+        """Return available triggers for given module settings."""
+        actions_list = ["Ausgang", "Dimmen", "Counter", "Rollladen/Jalousie", "Klima", "Sammelbefehl", "Summer"]
+        return actions_list
+
     def format_smc(self, buf: bytes) -> str:
         """Parse line structure and add ';' and linefeeds."""
         no_lines = int.from_bytes(buf[:2], "little")

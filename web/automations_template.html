@@ -102,8 +102,10 @@
                 <!-- MainContentEnd -->
               </div>
               <div id="autmnbuttons">
-                <button name="NewAutomtn" class="config_button" id="new_button" value="new">Neu</button>
-                <button name="ChangeAutomtn" class="config_button" id="change_button" value="change">Ändern</button>
+                <button name="EditAutomtn" class="config_button" id="new_button" type="submit" form="automations_table"
+                  value="new">Neu</button>
+                <button name="EditAutomtn" class="config_button" id="change_button" type="submit"
+                  form="automations_table" value="change">Ändern</button>
                 <button name="DelAutomtn" class="config_button" id="del_button" value="del">Löschen</button>
               </div>
             </div>
@@ -141,46 +143,12 @@
       </div>
     </div>
   </div>
-  <div id="automtn_change_popup" class="popup">
-    <div class="popup-content">
-      <h1>ContentTitle</h1>
-      <h2>Ändern der ausgewählten Automatisierung</h2>
-      <h3>Ereignisteil der Automatisierung</h3>
-      <div id="chg_buttons">
-        <button id="close_change_popup">Abbruch</button>
-        <button id="chg_automtn_next">Weiter</button>
-      </div>
-    </div>
-  </div>
-  <div id="automtn_new_popup" class="popup">
-    <div class="popup-content">
-      <h1>ContentTitle</h1>
-      <h2>Neue Automatisierung anlegen</h2>
-      <h3>Ereignisteil der Automatisierung</h3>
-      <div id="new_buttons">
-        <button id="close_new_popup">Abbruch</button>
-        <button id="chg_automtn_next">Weiter</button>
-      </div>
-    </div>
-  </div>
 </body>
 
 </html>
 
 <script type="text/javascript">
   const frm = document.getElementById("automations_table");
-  new_button.addEventListener("click", function () {
-    automtn_new_popup.classList.add("show");
-  });
-  close_new_popup.addEventListener("click", function () {
-    automtn_new_popup.classList.remove("show");
-  });
-  change_button.addEventListener("click", function () {
-    automtn_change_popup.classList.add("show");
-  });
-  close_change_popup.addEventListener("click", function () {
-    automtn_change_popup.classList.remove("show");
-  });
   del_button.addEventListener("click", function () {
     open_del_popup();
   });
