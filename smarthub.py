@@ -12,6 +12,7 @@ import os
 import psutil
 import cpuinfo
 from const import (
+    LOGGING_DEF_FILE,
     OWN_IP,
     SMHUB_PORT,
     QUERY_PORT,
@@ -287,7 +288,7 @@ class SmartHub:
 def setup_logging():
     """Initialze logging settings."""
 
-    with open("./smhub_logging.yaml", "r") as stream:
+    with open(f"./{LOGGING_DEF_FILE}", "r") as stream:
         config = yaml.load(stream, Loader=yaml.FullLoader)
     if logging.root.handlers == []:
         logging.config.dictConfig(config)
