@@ -1,4 +1,0 @@
-sudo cp ~/SmartHub/install/smarthub.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable smarthub
-sudo systemctl start smarthub
