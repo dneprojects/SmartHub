@@ -148,29 +148,45 @@ class ConfigServer:
     async def root(request: web.Request) -> web.Response:
         file_name = request.query["file"]
         file_name = file_name.split(".")[0]
-        addr_str = request.query["ModDownload"]
-        if addr_str == "ModAddress":
-            mod_addr = 0
-        else:
-            mod_addr = int(addr_str)
-        if mod_addr > 0:
-            # module
-            settings = (
-                request.app["api_srv"]
-                .routers[0]
-                .get_module(mod_addr)
-                .get_module_settings()
-            )
-            file_name = file_name + ".smm"
-            str_data = format_smm(settings.smg, settings.list)
-        else:
-            # router
-            settings = request.app["api_srv"].routers[0].get_router_settings()
+        rtr = request.app["api_srv"].routers[0]
+        separator = "---\n"
+        if "SysDownload" in request.query.keys():
+            # System backup
+            file_name += ".hcf"
+            settings = rtr.get_router_settings()
             file_content = settings.smr
-            file_name = file_name + ".smr"
             str_data = ""
             for byt in file_content:
                 str_data += f"{byt};"
+            str_data += "\n"
+            str_data += rtr.pack_descriptions()
+            str_data += separator
+            for mod in rtr.modules:
+                settings = mod.get_module_settings()
+                str_data += format_hmd(settings.smg, settings.list)
+                str_data += separator
+        else:
+            # Module download
+            addr_str = request.query["ModDownload"]
+            if addr_str == "ModAddress":
+                mod_addr = 0
+            else:
+                mod_addr = int(addr_str)
+            if mod_addr > 0:
+                # module
+                settings = (rtr.get_module(mod_addr).get_module_settings())
+                file_name += ".hmd"
+                str_data = format_hmd(settings.smg, settings.list)
+            else:
+                # router
+                settings = rtr.get_router_settings()
+                file_content = settings.smr
+                file_name += ".hrt"
+                str_data = ""
+                for byt in file_content:
+                    str_data += f"{byt};"
+                str_data += "\n"
+                str_data += rtr.pack_descriptions()
         return web.Response(
             headers=MultiDict(
                 {"Content-Disposition": f"Attachment; filename = {file_name}"}
@@ -189,7 +205,17 @@ class ConfigServer:
         config_file = data["file"].file
         content = config_file.read()
         content_str = content.decode()
-        if data["ModUpload"] == "ModAddress":
+        if "SysUpload" in data.keys():
+            content_parts = content_str.split("---\n")
+            request.app["logger"].info(f"Router configuration file uploaded")
+            await send_to_router(request.app, content_parts[0])
+            for cont_part in content_parts[2:]:
+                mod_addr = cont_part.split(";")[0]
+                await send_to_module(request.app, content_str, mod_addr)
+                request.app["logger"].info(
+                    f"Module configuration file for module {mod_addr} uploaded"
+                )
+        elif data["ModUpload"] == "ModAddress":
             # router upload
             request.app["logger"].info(f"Router configuration file uploaded")
             await send_to_router(request.app, content_str)
@@ -474,7 +500,7 @@ def show_router_overview(app) -> web.Response:
     else:
         props += f"Events:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inaktiv<br>"
 
-    def_filename = f"router.smr"
+    def_filename = f"router.hrt"
     page = fill_page_template(
         f"Router '{rtr._name}'", type_desc, props, side_menu, "router.jpg", def_filename
     )
@@ -1485,7 +1511,7 @@ def format_smg(buf: bytes) -> str:
     return str_data
 
 
-def format_smm(status, list: bytes) -> str:
+def format_hmd(status, list: bytes) -> str:
     """Generate single module data file."""
     smg_str = format_smg(status)
     smc_str = format_smc(list)
@@ -1512,10 +1538,12 @@ async def send_to_router(app, content: str):
     rtr = app["api_srv"].routers[0]
     await rtr.api_srv.block_network_if(rtr._id, True)
     try:
+        rtr.smr_upload = content.split("\n")[0].encode("iso8859-1")
         await rtr.hdlr.send_rt_full_status()
-        # Routerstatus neu lesen
-        # Weiterleitung neu starten
         rtr.smr_upload = b""
+        desc_lines = content.split("\n")[1:]
+        if len(desc_lines) > 0:
+            rtr.unpack_descriptions(desc_lines)
     except Exception as err_msg:
         app["logger"].error(f"Error while uploading router settings: {err_msg}")
     await rtr.api_srv.block_network_if(rtr._id, False)

@@ -165,6 +165,24 @@ class HbtnRouter:
         await self.hdlr.send_rt_mod_group(mod, grp)
         await self.set_config_mode(False)
 
+    def pack_descriptions(self) -> str:
+        """Pack descriptions to string with lines."""
+        out_buf = ""
+        desc_buf = self.descriptions.encode("iso8859-1")
+        desc_no = int.from_bytes(desc_buf[0:2], "little")
+        for ptr in range(4):
+            out_buf += f"{desc_buf[ptr]};"
+        out_buf += "\n"
+        ptr = 4
+        for desc_i in range(desc_no):
+            l_len = desc_buf[ptr + 8] + 9
+            line = desc_buf[ptr : ptr + l_len]
+            for li in range(l_len):
+                out_buf += f"{line[li]};"
+            out_buf += "\n"
+            ptr += l_len
+        return out_buf
+
     def save_descriptions(self):
         """Save descriptions to file."""
         file_name = f"Rtr_{self._id}_descriptions.smb"
@@ -174,19 +192,8 @@ class HbtnRouter:
             file_path = DATA_FILES_DIR
         try:
             fid = open(file_path + file_name, "w")
-            desc_buf = self.descriptions.encode("iso8859-1")
-            desc_no = int.from_bytes(desc_buf[0:2], "little")
-            for ptr in range(4):
-                fid.write(f"{desc_buf[ptr]};")
-            fid.write("\n")
-            ptr = 4
-            for desc_i in range(desc_no):
-                l_len = desc_buf[ptr + 8] + 9
-                line = desc_buf[ptr : ptr + l_len]
-                for li in range(l_len):
-                    fid.write(f"{line[li]};")
-                fid.write("\n")
-                ptr += l_len
+            desc_buf = self.pack_descriptions()
+            fid.write(desc_buf)
             fid.close()
             self.logger.info(f"Descriptions saved to {file_path + file_name}")
         except Exception as err_msg:
@@ -218,6 +225,18 @@ class HbtnRouter:
             self.logger.warning(
                 f"Descriptions file {file_path + file_name} not found"
             )
+
+    def unpack_descriptions(self, lines: str):
+        """Load descriptions from string."""
+        line = lines[0].split(";")
+        for ci in range(len(line) - 1):
+            self.descriptions += chr(int(line[ci]))
+        desc_no = int(line[0]) + 256 * int(line[1])
+        for li in range(desc_no):
+            line = lines[li + 1].split(";")
+            for ci in range(len(line) - 1):
+                self.descriptions += chr(int(line[ci]))
+        self.logger.info(f"Descriptions restored")
 
     def save_firmware(self, bin_data):
         "Save firmware binary to file and fw_data buffer."
