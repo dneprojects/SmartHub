@@ -1,3 +1,4 @@
+import logging
 from automtn_trigger import AutomationTrigger
 from automtn_condition import AutomationCondition
 from automtn_action import AutomationAction
@@ -11,6 +12,7 @@ class AutomationsSet:
         self.local: list(AutomationDefinition) = []
         self.external: list(AutomationDefinition) = []
         self.forward: list(AutomationDefinition) = []
+        self.logger = logging.getLogger(__name__)
         self.settings = settings
         self.get_autmn_dict(settings)
         self.get_automations(settings)
@@ -18,6 +20,8 @@ class AutomationsSet:
 
     def get_autmn_dict(self, settings):
         """Build dict structure for automation names."""
+
+        self.logger.debug("Building automation dictionary")
         self.autmn_dict = {}
         self.autmn_dict["inputs"] = {}
         self.autmn_dict["outputs"] = {}
@@ -52,6 +56,7 @@ class AutomationsSet:
     def get_automations(self, settings):
         """Get automations of Habitron module."""
 
+        self.logger.debug("Gettings automation from list")
         list = settings.list
         no_lines = int.from_bytes(list[:2], "little")
         list = list[4 : len(list)]  # Strip 4 header bytes

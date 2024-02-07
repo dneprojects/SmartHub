@@ -6,10 +6,6 @@ from const import (
     IfDescriptor,
     MirrIdx,
     MirrIdx,
-    SMGIdx,
-    MODULE_CODES,
-    CStatBlkIdx,
-    RtStatIIdx,
     FingerNames,
 )
 from automation import AutomationDefinition, AutomationsSet
@@ -21,6 +17,8 @@ class ModuleSettings:
     def __init__(self, module, rtr):
         """Fill all properties with module's values."""
         self.id = module._id
+        self.logger = logging.getLogger(__name__)
+        self.logger.debug("Initialzing module settings object")
         self.module = module
         self.rtr = rtr
         self.name = dpcopy(module._name)
@@ -30,7 +28,6 @@ class ModuleSettings:
         self.status = dpcopy(module.status)
         self.smg = dpcopy(module.build_smg())
         self.desc = dpcopy(rtr.descriptions)
-        self.logger = logging.getLogger(__name__)
         self.properties: dict = module.io_properties
         self.prop_keys = module.io_prop_keys
         self.cover_times = [0, 0, 0, 0, 0]
@@ -75,6 +72,8 @@ class ModuleSettings:
 
     def get_settings(self) -> bool:
         """Get settings of Habitron module."""
+
+        self.logger.debug("Getting module settings from module status")
         conf = self.status
         if conf == "":
             return False
@@ -142,6 +141,7 @@ class ModuleSettings:
 
     def set_module_settings(self, status: bytes) -> bytes:
         """Restore settings to module."""
+
         status = replace_bytes(
             status,
             (self.name + " " * (32 - len(self.name))).encode("iso8859-1"),
@@ -262,6 +262,7 @@ class ModuleSettings:
     def get_names(self) -> bool:
         """Get summary of Habitron module."""
 
+        self.logger.debug("Getting module names from list")
         self.all_fingers = {}
         list = self.list
         no_lines = int.from_bytes(list[:2], "little")
@@ -379,8 +380,9 @@ class ModuleSettings:
 
     def get_descriptions(self) -> str | None:
         """Get descriptions of commands, etc."""
-        resp = self.desc.encode("iso8859-1")
 
+        self.logger.debug("Getting module descriptions")
+        resp = self.desc.encode("iso8859-1")
         no_lines = int.from_bytes(resp[:2], "little")
         resp = resp[4:]
         for _ in range(no_lines):
@@ -599,9 +601,9 @@ class ModuleSettings:
         no_chars = 0
         for line in new_list:
             no_chars += len(line)
-        new_list[
-            0
-        ] = f"{chr(no_lines & 0xFF)}{chr(no_lines >> 8)}{chr(no_chars & 0xFF)}{chr(no_chars >> 8)}"
+        new_list[0] = (
+            f"{chr(no_lines & 0xFF)}{chr(no_lines >> 8)}{chr(no_chars & 0xFF)}{chr(no_chars >> 8)}"
+        )
         list_bytes = ""
         for line in new_list:
             list_bytes += line
@@ -631,6 +633,7 @@ class RouterSettings:
         self.smr = rtr.smr
         self.desc = rtr.descriptions
         self.logger = logging.getLogger(__name__)
+        self.logger.debug("Initialzing router settings object")
         self.channels = rtr.channels
         self.timeout = rtr.timeout
         # self.groups = rtr.groups
