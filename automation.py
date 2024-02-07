@@ -56,7 +56,7 @@ class AutomationsSet:
     def get_automations(self, settings):
         """Get automations of Habitron module."""
 
-        self.logger.debug("Gettings automation from list")
+        self.logger.debug("Getting automations from list")
         list = settings.list
         no_lines = int.from_bytes(list[:2], "little")
         list = list[4 : len(list)]  # Strip 4 header bytes
@@ -158,6 +158,7 @@ class AutomationDefinition:
         self.mod_addr = settings.id
         self.autmn_dict = autmn_dict
         self.settings = settings
+        self.logger = logging.getLogger(__name__)
         if atm_def == None:
             self.src_rt = 0
             self.src_mod = 0
@@ -168,9 +169,12 @@ class AutomationDefinition:
             self.src_mod = int(atm_def[1])
             self.event_code = int(atm_def[2])
             self.action_code = int(atm_def[7])
+        self.logger.debug(f"Initializing trigger for automation {atm_def}")
         self.trigger = AutomationTrigger(self, settings, atm_def)
         self.condition = AutomationCondition(self, atm_def)
+        self.logger.debug(f"Initializing action for automation {atm_def}")
         self.action = AutomationAction(self, atm_def)
+        self.logger.debug(f"Initializing of automation done")
 
     def event_name(self) -> str:
         """Return event name."""
