@@ -420,6 +420,7 @@ async def main(init_flag, ev_loop):
         sm_hub.api_srv = ApiServer(ev_loop, sm_hub, rt_serial)
         if init_flag:
             await sm_hub.api_srv.get_initial_status()
+            sm_hub.api_srv.is_offline = False
         else:
             logger.warning("Initialization of router and modules skipped")
         startup_ok = True
