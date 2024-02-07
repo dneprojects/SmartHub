@@ -103,7 +103,10 @@ class HbtnRouter:
 
     def get_module(self, mod_id):
         """Return module object."""
-        return self.modules[self.mod_addrs.index(mod_id)]
+        md_idx = self.mod_addrs.index(mod_id)
+        if md_idx >= len(self.modules):
+            return None
+        return self.modules[md_idx]
 
     def get_modules(self) -> str:
         """Return id, type, and name of all modules."""
@@ -222,9 +225,7 @@ class HbtnRouter:
             fid.close()
             self.logger.info(f"Descriptions loaded from {file_path + file_name}")
         else:
-            self.logger.warning(
-                f"Descriptions file {file_path + file_name} not found"
-            )
+            self.logger.warning(f"Descriptions file {file_path + file_name} not found")
 
     def unpack_descriptions(self, lines: str):
         """Load descriptions from string."""
@@ -276,14 +277,24 @@ class HbtnRouter:
     async def set_settings(self, settings: RouterSettings):
         """Store settings into router."""
         self.settings = settings
-        await self.api_srv.block_network_if(self._id, True)
-        await self.hdlr.send_rt_name(settings.name)
-        await self.hdlr.send_mode_names(settings.user1_name, settings.user2_name)
-        await self.hdlr.send_rt_group_deps(settings.mode_dependencies[1:])
-        # await self.hdlr.rt_reboot()
-        # await asyncio.sleep(6)
-        await self.get_full_status()
-        await self.api_srv.block_network_if(self._id, False)
+        if self.api_srv.is_offline:
+            self._name = settings.name
+            self.user_modes = (
+                b"\n"
+                + settings.user1_name.encode("iso8859-1")
+                + b"\n"
+                + settings.user2_name.encode("iso8859-1")
+            )
+            self.mode_dependencies = settings.mode_dependencies
+        else:
+            await self.api_srv.block_network_if(self._id, True)
+            await self.hdlr.send_rt_name(settings.name)
+            await self.hdlr.send_mode_names(settings.user1_name, settings.user2_name)
+            await self.hdlr.send_rt_group_deps(settings.mode_dependencies[1:])
+            # await self.hdlr.rt_reboot()
+            # await asyncio.sleep(6)
+            await self.get_full_status()
+            await self.api_srv.block_network_if(self._id, False)
 
     def set_descriptions(self, settings: RouterSettings):
         """Store names into router descriptions."""

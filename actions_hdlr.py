@@ -160,7 +160,8 @@ class ActionsHdlr(HdlrBase):
             case spec.FLAG_SET | spec.FLAG_RESET:
                 self.check_router_no(self._p4)
                 self.check_arg(
-                    self._p5, range(0, 251), "Error: module no out of range 0..250")
+                    self._p5, range(0, 251), "Error: module no out of range 0..250"
+                )
                 self.check_arg(
                     self._args[0],
                     range(17),
@@ -246,9 +247,9 @@ class ActionsHdlr(HdlrBase):
                 if self.args_err:
                     return
                 if self._spec == spec.OUTP_RBG_OFF:
-                    task = 0x41
+                    task = 0x02
                 else:
-                    task = 0x45
+                    task = 0x01
                 self._rt_command = (
                     RT_CMDS.SWITCH_RGB_LED.replace("<rtr>", chr(rt))
                     .replace("<mod>", chr(mod))
@@ -279,7 +280,7 @@ class ActionsHdlr(HdlrBase):
                 )
                 if self.args_err:
                     return
-                task = 0x45
+                task = 0x01
                 inp_code = self._args[0]
                 self._rt_command = (
                     RT_CMDS.SET_RGB_LED.replace("<rtr>", chr(rt))

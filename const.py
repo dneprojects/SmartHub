@@ -1,4 +1,5 @@
 """Constants for SmartIP2"""
+
 from typing import Final
 
 OWN_IP = "192.168.178.110"
@@ -16,7 +17,10 @@ DATA_FILES_DIR = "./"
 DATA_FILES_ADDON_DIR = "/config/"
 FWD_TABLE_FILE = "ip_table.fwd"
 WEB_FILES_DIR = "./web/"
-LOGGING_DEF_FILE = "smhub_logging.yaml"
+LOGGING_DEF_FILE = "smconf_logging.yaml"
+HOMEPAGE = "configurator.html"
+HUB_HOMEPAGE = "hub.html"
+CONF_HOMEPAGE = "home.html"
 SIDE_MENU_FILE = "side-menu.html"
 CONFIG_TEMPLATE_FILE = "config_template.html"
 SETTINGS_TEMPLATE_FILE = "settings_template.html"
@@ -25,7 +29,7 @@ AUTOMATIONEDIT_TEMPLATE_FILE = "automation_edit_template.html"
 
 
 class API_CATEGS:
-    "Categries of PAI handlers"
+    "Categries of API handlers"
     DATA = 10
     SETTINGS = 20
     ACTIONS = 30

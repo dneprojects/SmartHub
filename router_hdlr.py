@@ -378,6 +378,44 @@ class RtHdlr(HdlrBase):
         self.logger.debug("SMR data transferred into router")
         await self.rt_reboot()
 
+    def set_rt_full_status(self):
+        """Set full router status locally from uploaded smr."""
+        self.logger.debug("Setting SMR data to local router data")
+        smr_ptr = 1
+        mod_cnt = []
+        mod_cnt.append(self.rtr.smr_upload[1])
+        mod_cnt.append(self.rtr.smr_upload[1])
+        self.rtr.smr = self.rtr.smr_upload
+        rt_channels = b""
+        self.rtr.modules = []
+        self.rtr.mod_addrs = []
+        for ch in range(4):
+            ch_count = self.rtr.smr_upload[smr_ptr]
+            rt_channels += (
+                int.to_bytes(ch + 1)
+                + int.to_bytes(ch_count)
+                + self.rtr.smr_upload[smr_ptr + 1 : smr_ptr + 1 + ch_count]
+            )
+            for md_i in range(ch_count):
+                self.rtr.mod_addrs.append(self.rtr.smr_upload[smr_ptr + 1 + md_i])
+            smr_ptr += 1 + ch_count
+        self.rtr.mod_addrs.sort()
+        self.rtr.channels = rt_channels
+        self.rtr.timeout = self.rtr.smr_upload[smr_ptr]
+        smr_ptr += 1
+        self.rtr.groups, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        self.rtr.mode_dependencies, smr_ptr = self.get_smr_item(
+            self.rtr.smr_upload, smr_ptr
+        )
+        self.rtr.name, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        self.rtr._name = self.rtr.name.decode("iso8859-1").strip()
+        umd_name1, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        umd_name2, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        self.rtr.user_modes = b"\n" + umd_name1 + b"\n" + umd_name2
+        self.rtr.serial, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        self.rtr.daynight, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+        self.rtr.version, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
+
     def get_smr_item(self, smr_bytes: bytes, smr_ptr: int) -> (bytes, int):
         """Get one item from smr bytes."""
         item_len = smr_bytes[smr_ptr]

@@ -22,6 +22,7 @@ class ModuleSettings:
         """Fill all properties with module's values."""
         self.id = module._id
         self.module = module
+        self.rtr = rtr
         self.name = dpcopy(module._name)
         self.typ = module._typ
         self.type = module._type
@@ -34,6 +35,8 @@ class ModuleSettings:
         self.prop_keys = module.io_prop_keys
         self.cover_times = [0, 0, 0, 0, 0]
         self.blade_times = [0, 0, 0, 0, 0]
+        self.user1_name = rtr.user_modes[1:11].decode("iso8859-1").strip()
+        self.user2_name = rtr.user_modes[12:].decode("iso8859-1").strip()
         self.get_io_interfaces()
         self.get_names()
         self.get_settings()
@@ -356,6 +359,15 @@ class ModuleSettings:
             self.outputs[10].type = 2
             self.outputs[11].type = 2
             return True
+        if self.type[:10] == "Smart Dimm":
+            self.dimmers[0].name = self.outputs[0].name
+            self.dimmers[1].name = self.outputs[1].name
+            self.dimmers[2].name = self.outputs[2].name
+            self.dimmers[3].name = self.outputs[3].name
+            self.outputs[0].type = 2
+            self.outputs[1].type = 2
+            self.outputs[2].type = 2
+            self.outputs[3].type = 2
         if self.type == "Fanekey":
             self.users_sel = 0
             self.module.org_fingers = dpcopy(
@@ -425,38 +437,20 @@ class ModuleSettings:
             self.properties["no_keys"] += 1
             self.prop_keys.append("users")
 
-    def get_triggers(self, internal):
-        """Return available triggers for given module settings."""
-        if (self.typ[0] == 1) | (self.typ == b"\x32\x01"):
-            triggers_list = ["Taster", "Schalter", "Dimmen", "Ausgangsänderung", "Bewegung", 
-                             "Direktbefehl", "Sammelbefehl", "Visualisierungsbefehl", 
-                             "Merker", "Modusänderung", "Sensor", "Zeit"]
-            sensors_list = ["A/D-Kanal 1", "A/D-Kanal 2", "Feuchte außen", "Feuchte innen", 
-                            "Helligkeit außen", "Helligkeit innen", "Temperatur außen", 
-                            "Temperatur innen", "Regen", "Wind"]
-        if (self.typ[0] == 10):
-            triggers_list = ["Ausgangsänderung", "Sammelbefehl", "Visualisierungsbefehl", 
-                             "Merker", "Modusänderung", "Sensor", "Zeit"]
-            sensors_list = ["Feuchte außen", "Helligkeit außen", "Temperatur außen", "Regen", "Wind"]
-        elif len(self.fingers) > 0:
-            triggers_list.append("Fingerprint")
-        return triggers_list, sensors_list
-    
-    def get_conditions(self, internal):
-        """Return available triggers for given module settings."""
-        conditions_list1 = ["Immer", "Merker gesetzt", "Merker rückgesetzt", "Uhrzeit", 
-                            "Modus 'Abwesend'", "Modus 'Anwesend'", "Modus 'Schlafen'", 
-                            "Modus 'Sommer'", 
-                            f"Modus '{self.module.rt.user_modes[1:11].decode('iso8859-1').strip()}'", 
-                            f"Modus '{self.module.rt.user_modes[12:].decode('iso8859-1').strip()}'", 
-                            "Modus 'Tag'/'Nacht'/'Alarm'"]
-        conditions_list2 = ["Immer", "Modus 'Tag'", "Modus 'Nacht'", "Modus 'Alarm'"]
-        return conditions_list1, conditions_list2
-    
-    def get_actions(self, internal):
-        """Return available triggers for given module settings."""
-        actions_list = ["Ausgang", "Dimmen", "Counter", "Rollladen/Jalousie", "Klima", "Sammelbefehl", "Summer"]
-        return actions_list
+    def get_modes(self):
+        """Return all mode strings as list."""
+        modes_list1 = [
+            "Immer",
+            "Abwesend",
+            "Anwesend",
+            "Schlafen",
+            f"{self.module.rt.user_modes[1:11].decode('iso8859-1').strip()}",
+            f"{self.module.rt.user_modes[12:].decode('iso8859-1').strip()}",
+            "Urlaub",
+            "'Tag'/'Nacht'/'Alarm'",
+        ]
+        mode_list2 = ["Immer", "Tag", "Nacht", "Alarm"]
+        return modes_list1, mode_list2
 
     def format_smc(self, buf: bytes) -> str:
         """Parse line structure and add ';' and linefeeds."""
@@ -506,6 +500,36 @@ class ModuleSettings:
                 f_msk = f_msk | 1 << (fngr.nmbr - 1)
             self.users[usr_nmbrs.index(usr_id)].type = f_msk
 
+    async def set_automations(self):
+        """Store automation entries to list and send to module."""
+        list_lines = self.format_smc(self.list).split("\n")
+
+        new_list = []
+        new_line = ""
+        for lchr in list_lines[0].split(";")[:-1]:
+            new_line += chr(int(lchr))
+        new_list.append(new_line)
+
+        # insert automations
+        automations = self.automtns_def
+        for atmn in automations.local:
+            new_list.append(atmn.make_definition())
+        for atmn in automations.external:
+            new_list.append(atmn.make_definition())
+        for atmn in automations.forward:
+            new_list.append(atmn.make_definition())
+
+        # copy rest of list
+        for line in list_lines[1:]:
+            if len(line) > 0:
+                tok = line.split(";")
+                if (tok[0] == "252") | (tok[0] == "253") | (tok[0] == "255"):
+                    new_line = ""
+                    for lchr in line.split(";")[:-1]:
+                        new_line += chr(int(lchr))
+                    new_list.append(new_line)
+        return self.adapt_list_header(new_list)
+
     async def set_list(self):
         """Store config entries to list and send to module."""
         list_lines = self.format_smc(self.list).split("\n")
@@ -517,6 +541,7 @@ class ModuleSettings:
         for lchr in list_lines[0].split(";")[:-1]:
             new_line += chr(int(lchr))
         new_list.append(new_line)
+
         for line in list_lines[1:]:
             if len(line) > 0:
                 tok = line.split(";")
@@ -566,6 +591,10 @@ class ModuleSettings:
             new_list.append(
                 f"\xfc{chr(uid.nmbr)}\xeb{chr(fgr_low)}{chr(fgr_high)}\x23\0\xeb" + desc
             )
+        return self.adapt_list_header(new_list)
+
+    def adapt_list_header(seslf, new_list: str) -> bytes:
+        """Adapt line and char numbers in header, return as byte."""
         no_lines = len(new_list) - 1
         no_chars = 0
         for line in new_list:
@@ -610,6 +639,8 @@ class RouterSettings:
         self.serial = rtr.serial
         self.day_night = rtr.day_night
         self.version = rtr.version
+        self.user1_name = rtr.user_modes[1:11].decode("iso8859-1").strip()
+        self.user2_name = rtr.user_modes[12:].decode("iso8859-1").strip()
         self.glob_flags: list[IfDescriptor] = []
         self.groups: list[IfDescriptor] = []
         self.coll_cmds: list[IfDescriptor] = []

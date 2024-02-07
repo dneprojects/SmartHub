@@ -1,15 +1,24 @@
 from math import copysign
+from copy import deepcopy as dpcopy
 from aiohttp import web
 from urllib.parse import parse_qs
 from multidict import MultiDict
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
-from configuration import RouterSettings
+from automation import AutomationDefinition, AutomationsSet
+from automtn_trigger import AutomationTrigger
+from configuration import RouterSettings, ModuleSettings
+from module import HbtnModule
+from module_hdlr import ModHdlr
 import asyncio
 import logging
 import pathlib
 import re
 from const import (
+    MODULE_CODES,
     WEB_FILES_DIR,
+    HOMEPAGE,
+    CONF_HOMEPAGE,
+    HUB_HOMEPAGE,
     SIDE_MENU_FILE,
     CONFIG_TEMPLATE_FILE,
     SETTINGS_TEMPLATE_FILE,
@@ -22,9 +31,14 @@ from const import (
     IfDescriptor,
 )
 
+try:
+    import pyi_splash  # needed for splash screen in exe-mode
+except:
+    pass
+
 routes = web.RouteTableDef()
 root_path = pathlib.Path(__file__).parent
-routes.static("/configurator_files", root_path.joinpath("web/configurator_files"))
+routes.static("/configurator_files", "./web/configurator_files")
 
 
 class HubSettings:
@@ -51,22 +65,50 @@ class ConfigServer:
         """Initialize config server."""
         self.app = web.Application()
         self.app["smhub"] = self.sm_hub
+        self.app["conf_srv"] = self
         self.app.add_routes(routes)
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
         self.site = web.TCPSite(self.runner, self._ip, self._port)
         self.app["logger"] = self.logger
+        try:
+            pyi_splash.close()
+        except:
+            pass
 
     async def prepare(self):
         """Second initialization after api_srv is initialized."""
         self.api_srv = self.sm_hub.api_srv
-        self.side_menu = adjust_side_menu(self.api_srv.routers[0].modules)
         self.app["api_srv"] = self.api_srv
+        self.app["is_offline"] = self.api_srv.is_offline
+        self.init_side_menu()
+
+    def init_side_menu(self):
+        """Setup side menu."""
+        self.side_menu = adjust_side_menu(
+            self.api_srv.routers[0].modules, self.app["is_offline"]
+        )
         self.app["side_menu"] = self.side_menu
 
     @routes.get("/")
     async def root(request: web.Request) -> web.Response:
-        return html_response("configurator.html")
+        page = get_html(HOMEPAGE)
+        if request.app["is_offline"]:
+            page = page.replace(">Hub<", ">Home<")
+        return web.Response(text=page, content_type="text/html", charset="utf-8")
+
+    @routes.get("/exit")
+    async def root(request: web.Request) -> web.Response:
+        page = get_html(HOMEPAGE)
+        if request.app["is_offline"]:
+            page = page.replace(">Hub<", ">Home<")
+            page = page.replace(
+                "Passen Sie hier die Grundeinstellungen des Systems an.", "Beendet."
+            )
+        api_srv = request.app["api_srv"]
+        # async with api_srv.sm_hub.tg:
+        api_srv.sm_hub.tg.create_task(terminate_delayed(api_srv))
+        return web.Response(text=page, content_type="text/html", charset="utf-8")
 
     @routes.get("/router")
     async def root(request: web.Request) -> web.Response:
@@ -78,24 +120,33 @@ class ConfigServer:
         smhub = api_srv.sm_hub
         smhub_info = smhub.info
         hub_name = smhub._host
-        if api_srv.is_addon:
+        if api_srv.is_offline:
+            pic_file, subtitle = get_module_image(b"\xc9\x00")
+            html_str = get_html(CONF_HOMEPAGE)
+        elif api_srv.is_addon:
             pic_file, subtitle = get_module_image(b"\xca\x00")
-            html_str = get_html("hub.html").replace("HubTitle", f"Smart Center '{hub_name}'")
-            smhub_info = smhub_info.replace("type: Smart Hub", "type:  Smart Hub Add-on")
+            html_str = get_html(HUB_HOMEPAGE).replace(
+                "HubTitle", f"Smart Center '{hub_name}'"
+            )
+            smhub_info = smhub_info.replace(
+                "type: Smart Hub", "type:  Smart Hub Add-on"
+            )
         else:
             pic_file, subtitle = get_module_image(b"\xc9\x00")
-            html_str = get_html("hub.html").replace("HubTitle", f"Smart Hub '{hub_name}'")
+            html_str = get_html(HUB_HOMEPAGE).replace(
+                "HubTitle", f"Smart Hub '{hub_name}'"
+            )
         html_str = html_str.replace("Overview", subtitle)
         html_str = html_str.replace("smart-Ip.jpg", pic_file)
         html_str = html_str.replace(
             "ContentText",
             "<h3>Eigenschaften</h3>\n<p>"
-            + smhub_info.replace("  ", "&nbsp;&nbsp;&nbsp;&nbsp;").replace(": ", ":&nbsp;&nbsp;").replace(
-                "\n", "</p>\n<p>"
-            )
+            + smhub_info.replace("  ", "&nbsp;&nbsp;&nbsp;&nbsp;")
+            .replace(": ", ":&nbsp;&nbsp;")
+            .replace("\n", "</p>\n<p>")
             + "</p>",
         )
-        return web.Response(text=html_str, content_type="text/html")
+        return web.Response(text=html_str, content_type="text/html", charset="utf-8")
 
     @routes.get("/modules")
     async def root(request: web.Request) -> web.Response:
@@ -174,7 +225,7 @@ class ConfigServer:
                 mod_addr = int(addr_str)
             if mod_addr > 0:
                 # module
-                settings = (rtr.get_module(mod_addr).get_module_settings())
+                settings = rtr.get_module(mod_addr).get_module_settings()
                 file_name += ".hmd"
                 str_data = format_hmd(settings.smg, settings.list)
             else:
@@ -209,12 +260,16 @@ class ConfigServer:
             content_parts = content_str.split("---\n")
             request.app["logger"].info(f"Router configuration file uploaded")
             await send_to_router(request.app, content_parts[0])
-            for cont_part in content_parts[2:]:
-                mod_addr = cont_part.split(";")[0]
-                await send_to_module(request.app, content_str, mod_addr)
+            for mod_addr in request.app["api_srv"].routers[0].mod_addrs:
+                for cont_part in content_parts[1:]:
+                    if mod_addr == int(cont_part.split(";")[0]):
+                        break
+                await send_to_module(request.app, cont_part, mod_addr)
                 request.app["logger"].info(
                     f"Module configuration file for module {mod_addr} uploaded"
                 )
+            request.app["conf_srv"].init_side_menu()
+            return show_modules(request.app)
         elif data["ModUpload"] == "ModAddress":
             # router upload
             request.app["logger"].info(f"Router configuration file uploaded")
@@ -244,9 +299,16 @@ class ConfigServer:
             step = int(args[2])
             match action:
                 case "save":
-                    request.app["logger"].warning(
-                        "Save of automations not yet implemented"
-                    )
+                    settings = request.app["settings"]
+                    module = settings.module
+                    await request.app["api_srv"].block_network_if(module.rt._id, True)
+                    try:
+                        await module.set_automations(settings)
+                    except Exception as err_msg:
+                        request.app["logger"].error(
+                            f"Error while saving module automations: {err_msg}"
+                        )
+                    await request.app["api_srv"].block_network_if(module.rt._id, False)
                     return show_module_overview(request.app, mod_addr)
                 case "next":
                     step += 1
@@ -255,46 +317,108 @@ class ConfigServer:
             request.app["step"] = step
             return show_automations(request.app, step)
         else:
-            # delete selected automation
             settings = request.app["settings"]
-            automtn_selctn = int(form_data["atmn_tbl"][0])
-            request.app["automations_def"].selected = automtn_selctn
-            # request.app["logger"].warning(
-            #     f"Delete of automation {sel_automtn} not yet implemented"
-            # )
-            if 'EditAutomtn' in form_data.keys():
-                mode = form_data['EditAutomtn'][0]
-                if request.app["step"] == 0:
-                    sel_atmtn = request.app["automations_def"].local[automtn_selctn]
-                else:
-                    l_ext = len(request.app["automations_def"].external)
-                    if automtn_selctn < l_ext:
-                        sel_atmtn = request.app["automations_def"].external[automtn_selctn]
-                    else:
-                        sel_atmtn = request.app["automations_def"].forward[automtn_selctn - l_ext]
-                return show_edit_automation(request.app, sel_atmtn, automtn_selctn, mode, request.app["step"])
+            if "EditAutomtn" in form_data.keys():
+                atm_mode = form_data["EditAutomtn"][0]
+            elif "NewAutomtn" in form_data.keys():
+                atm_mode = form_data["NewAutomtn"][0]
+            elif "src_module" in form_data.keys():
+                atm_mode = "new"
             else:
-                if request.app["step"] == 0:
-                    del request.app["automations_def"].local[automtn_selctn]
+                atm_mode = "delete"
+            if "atmn_tbl" in form_data.keys():
+                automtn_selctn = int(form_data["atmn_tbl"][0])
+            elif "sel_automtn" in form_data.keys():
+                automtn_selctn = int(form_data["sel_automtn"][0].split("-")[1])
+            else:
+                automtn_selctn = None
+            request.app["automations_def"].selected = automtn_selctn
+            request.app["atm_mode"] = atm_mode
+
+            if atm_mode == "delete":
+                if automtn_selctn != None:
+                    if request.app["step"] == 0:
+                        del request.app["automations_def"].local[automtn_selctn]
+                    else:
+                        l_ext = len(request.app["automations_def"].external)
+                        if automtn_selctn < l_ext:
+                            del request.app["automations_def"].external[automtn_selctn]
+                        else:
+                            del request.app["automations_def"].forward[
+                                automtn_selctn - l_ext
+                            ]
+                return show_automations(request.app, request.app["step"])
+
+            if automtn_selctn == None:
+                if atm_mode == "change":
+                    return show_automations(request.app, request.app["step"])
+                else:
+                    sel_atmtn = AutomationDefinition(
+                        None, request.app["automations_def"].autmn_dict, settings
+                    )
+            elif request.app["step"] == 0:
+                if len(request.app["automations_def"].local) > 0:
+                    sel_atmtn = request.app["automations_def"].local[automtn_selctn]
+                    if atm_mode == "new":
+                        sel_atmtn = sel_atmtn.make_automtn_copy()
+            else:
+                if (
+                    (request.app["step"] == 1)
+                    & (len(request.app["automations_def"].external) == 0)
+                ) | (
+                    (request.app["step"] == 2)
+                    & (len(request.app["automations_def"].forward) == 0)
+                ):
+                    sel_atmtn = AutomationDefinition(
+                        None, request.app["automations_def"].autmn_dict, settings
+                    )
                 else:
                     l_ext = len(request.app["automations_def"].external)
                     if automtn_selctn < l_ext:
-                        del request.app["automations_def"].external[automtn_selctn]
+                        sel_atmtn = request.app["automations_def"].external[
+                            automtn_selctn
+                        ]
                     else:
-                        del request.app["automations_def"].forward[automtn_selctn - l_ext]
-            return show_automations(request.app, request.app["step"])
-        
+                        sel_atmtn = request.app["automations_def"].forward[
+                            automtn_selctn - l_ext
+                        ]
+                if "src_module" in form_data.keys():
+                    src_mod = int(form_data["src_module"][0].split("-")[1])
+                    if sel_atmtn.src_rt == 0:
+                        # first automation
+                        sel_atmtn.src_rt = 1
+                else:
+                    src_mod = sel_atmtn.src_mod
+                sel_atmtn = sel_atmtn.make_automtn_copy()
+                if atm_mode == "new":
+                    src_rt = sel_atmtn.src_rt
+                    rtr = request.app["api_srv"].routers[src_rt - 1]
+                    sel_atmtn = prepare_src_mod_trigger(sel_atmtn, rtr, src_mod)
+
+            request.app["base_automation"] = sel_atmtn
+            return show_edit_automation(
+                request.app,
+                sel_atmtn,
+                automtn_selctn,
+                atm_mode,
+                request.app["step"],
+            )
+
     @routes.post("/automtn_def")
     async def root(request: web.Request) -> web.Response:
         resp = await request.text()
         form_data = parse_qs(resp)
-        if "EditAutomtn" in form_data.keys():
-            if form_data["EditAutomtn"][0] == "ok":
-                # Get all settings from form
+        if "cancel_atm_edit" in form_data.keys():
+            # Cancel
+            return show_automations(request.app, request.app["step"])
+        elif "ok_result" in form_data.keys():
+            if form_data["ok_result"][0] == "ok":
+                request.app["automations_def"].save_changed_automation(
+                    request.app, form_data, request.app["step"]
+                )
                 return show_automations(request.app, request.app["step"])
             else:
-                # Cancel
-                return show_automations(request.app, request.app["step"])
+                return web.HTTPNoContent()
         elif "trigger_sel" in form_data.keys():
             return web.HTTPNoContent()
         elif "action_sel" in form_data.keys():
@@ -306,10 +430,15 @@ class ConfigServer:
         request.app["logger"].warning(warning_txt)
         mod_image, type_desc = get_module_image(request.app["settings"].typ)
         page = fill_page_template(
-            f"Modul '{request.app['settings'].name}'", type_desc, warning_txt, request.app["side_menu"], mod_image, ""
+            f"Modul '{request.app['settings'].name}'",
+            type_desc,
+            warning_txt,
+            request.app["side_menu"],
+            mod_image,
+            "",
         )
         page = adjust_settings_button(page, "", f"{0}")
-        return web.Response(text=page, content_type="text/html")
+        return web.Response(text=page, content_type="text/html", charset="utf-8")
 
     @routes.post(path="/{key:.*}")
     async def _(request):
@@ -317,27 +446,32 @@ class ConfigServer:
         request.app["logger"].warning(warning_txt)
         mod_image, type_desc = get_module_image(request.app["settings"].typ)
         page = fill_page_template(
-            f"Modul '{request.app['settings'].name}'", type_desc, warning_txt, request.app["side_menu"], mod_image, ""
+            f"Modul '{request.app['settings'].name}'",
+            type_desc,
+            warning_txt,
+            request.app["side_menu"],
+            mod_image,
+            "",
         )
         page = adjust_settings_button(page, "", f"{0}")
-        return web.Response(text=page, content_type="text/html")
+        return web.Response(text=page, content_type="text/html", charset="utf-8")
 
 
 def get_html(html_file) -> str:
-    with open(WEB_FILES_DIR + html_file, mode="r") as pg_id:
+    with open(WEB_FILES_DIR + html_file, mode="r", encoding="utf-8") as pg_id:
         return pg_id.read()
 
 
 def html_response(html_file) -> web.Response:
-    with open(WEB_FILES_DIR + html_file, mode="r") as pg_id:
+    with open(WEB_FILES_DIR + html_file, mode="r", encoding="utf-8") as pg_id:
         text = pg_id.read()
-    return web.Response(text=text, content_type="text/html")
+    return web.Response(text=text, content_type="text/html", charset="utf-8")
 
 
-def adjust_side_menu(modules) -> str:
+def adjust_side_menu(modules, is_offline) -> str:
     """Load side_menu and adjust module entries."""
     mod_lines: list(str) = []
-    with open(WEB_FILES_DIR + SIDE_MENU_FILE, mode="r") as smf_id:
+    with open(WEB_FILES_DIR + SIDE_MENU_FILE, mode="r", encoding="utf-8") as smf_id:
         side_menu = smf_id.read().splitlines(keepends=True)
     for sub_line in side_menu:
         if sub_line.find("modules sub") > 0:
@@ -351,7 +485,13 @@ def adjust_side_menu(modules) -> str:
                 "ModuleName", module._name
             )
         )
-    return "".join(first_lines) + "".join(mod_lines) + "".join(last_lines)
+    page = "".join(first_lines) + "".join(mod_lines) + "".join(last_lines)
+    if is_offline:
+        page = page.replace(
+            '<a href="hub" title="Hub" class="submenu modules">Hub</a>',
+            '<a href="hub" title="Hub" class="submenu modules">Home</a>',
+        )
+    return page
 
 
 async def show_next_prev(request, args):
@@ -383,7 +523,9 @@ async def show_next_prev(request, args):
             await request.app["api_srv"].block_network_if(module.rt._id, True)
             try:
                 await module.set_settings(settings)
-                request.app["side_menu"] = adjust_side_menu(router.modules)
+                request.app["side_menu"] = adjust_side_menu(
+                    router.modules, request.app["is_offline"]
+                )
                 if settings.group != int(settings.group_member):
                     # group membership changed, update in router
                     router = request.app["api_srv"].routers[0]
@@ -400,7 +542,7 @@ async def show_next_prev(request, args):
                 await router.set_settings(settings)
                 router.set_descriptions(settings)
                 request.app["side_menu"] = adjust_side_menu(
-                    request.app["api_srv"].routers[0].modules
+                    request.app["api_srv"].routers[0].modules, request.app["is_offline"]
                 )
             except Exception as err_msg:
                 logger.error(f"Error while saving router settings: {err_msg}")
@@ -430,7 +572,7 @@ def show_modules(app) -> web.Response:
         pic_file, title = get_module_image(module._typ)
         images += f'<div class="figd_grid"><a href="module-{module._id}"><div class="fig_grid"><img src="configurator_files/{pic_file}" alt="{module._name}"><p>{module._name}</p></div></a></div>\n'
     page = page.replace("<!-- ImageGrid -->", images)
-    return web.Response(text=page, content_type="text/html")
+    return web.Response(text=page, content_type="text/html", charset="utf-8")
 
 
 def show_router_overview(app) -> web.Response:
@@ -460,6 +602,8 @@ def show_router_overview(app) -> web.Response:
     mode_str = ""
     if config_mode:
         mode_str = "Konfig"
+    elif mode0 == 0:
+        mode_str = "Undefined (0)"
     elif mode0 == 112:
         mode_str = "Urlaub"
     elif mode0 == 96:
@@ -500,7 +644,7 @@ def show_router_overview(app) -> web.Response:
     else:
         props += f"Events:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inaktiv<br>"
 
-    def_filename = f"router.hrt"
+    def_filename = f"my_router.hrt"
     page = fill_page_template(
         f"Router '{rtr._name}'", type_desc, props, side_menu, "router.jpg", def_filename
     )
@@ -516,7 +660,7 @@ def show_module_overview(app, mod_addr) -> web.Response:
     side_menu = activate_side_menu(side_menu, f"module-{module._id}")
     mod_image, type_desc = get_module_image(module._typ)
     mod_description = get_module_properties(module)
-    def_filename = f"module_{mod_addr}.smm"
+    def_filename = f"module_{mod_addr}.hmd"
     page = fill_page_template(
         f"Modul '{module._name}'",
         type_desc,
@@ -535,7 +679,9 @@ def fill_page_template(
     title, subtitle, content, menu, image, download_file: str
 ) -> str:
     """Prepare config web page with content, image, and menu."""
-    with open(WEB_FILES_DIR + CONFIG_TEMPLATE_FILE, mode="r") as tplf_id:
+    with open(
+        WEB_FILES_DIR + CONFIG_TEMPLATE_FILE, mode="r", encoding="utf-8"
+    ) as tplf_id:
         page = tplf_id.read()
     page = (
         page.replace("ContentTitle", title)
@@ -543,7 +689,7 @@ def fill_page_template(
         .replace("ContentText", content)
         .replace("<!-- SideMenu -->", menu)
         .replace("controller.jpg", image)
-        .replace("my_module.smm", download_file)
+        .replace("my_module.hmd", download_file)
     )
     return page
 
@@ -575,19 +721,24 @@ def show_automations(app, step) -> web.Response:
     title_str = f"Modul '{app['settings'].name}'"
     if step == 0:
         subtitle = "Lokale Automatisierungen"
-    else:
+    elif step == 1:
         subtitle = "Externe Automatisierungen"
+    else:
+        subtitle = "Weiterleitungsautomatisierungen"
     page = fill_automations_template(app, title_str, subtitle, step)
     return web.Response(text=page, content_type="text/html")
 
-def show_edit_automation(app, automtn, sel, mode, step) -> web.Response:
+
+def show_edit_automation(app, sel_automtn, sel, mode, step) -> web.Response:
     """Prepare automations page of module."""
     title_str = f"Modul '{app['settings'].name}'"
     if mode == "new":
         subtitle = "Neue Automatisierung anlegen"
     else:
         subtitle = "Automatisierung ändern"
-    with open(WEB_FILES_DIR + AUTOMATIONEDIT_TEMPLATE_FILE, mode="r") as tplf_id:
+    with open(
+        WEB_FILES_DIR + AUTOMATIONEDIT_TEMPLATE_FILE, mode="r", encoding="utf-8"
+    ) as tplf_id:
         page = tplf_id.read()
     mod_image, mod_type = get_module_image(app["settings"].typ)
     page = (
@@ -596,10 +747,30 @@ def show_edit_automation(app, automtn, sel, mode, step) -> web.Response:
         .replace("controller.jpg", mod_image)
         .replace("ModAddress", f'{app["settings"].id}-{step}')
     )
-    page = prepare_trigger_list(app, page, step)
-    page = prepare_condition_lists(app, page, step)
-    page = prepare_action_list(app, page, step)
+    if step > 0:
+        src_mod = sel_automtn.src_mod
+        if src_mod in app["api_srv"].routers[sel_automtn.src_rt - 1].mod_addrs:
+            src_mod_name = sel_automtn.trigger.settings.name
+            page = page.replace(
+                "<h3>Auslöser</h3>",
+                f"<h3>Auslöser von Modul {src_mod}: '{src_mod_name}'</h3>",
+            )
+        else:
+            page = page.replace(
+                "<h3>Auslöser</h3>",
+                f"<h3>Fehler: Modul {src_mod} unbekannt!<br>Abbruch.<br><br><br></h3>",
+            )
+            page = page.replace('<div id="trigger_frame"', '<!--div id="trigger_frame"')
+            page = page.replace("<!-- MainContentEnd -->", "<-- MainContentEnd -->")
+
+            page = page.replace('id="ok_button"', 'disabled id="ok_button"')
+            return web.Response(text=page, content_type="text/html")
+
+    page = sel_automtn.trigger.prepare_trigger_lists(app, page, step)
+    page = sel_automtn.condition.prepare_condition_lists(app, page)
+    page = sel_automtn.action.prepare_action_lists(app, page)
     return web.Response(text=page, content_type="text/html")
+
 
 def show_setting_step(app, mod_addr, step) -> web.Response:
     """Prepare overview page of module."""
@@ -647,8 +818,8 @@ def adjust_settings_button(page, type, addr: str) -> str:
     elif type.lower() == "rtr":
         page = page.replace("ModSettings", "RtrSettings")
     elif type == "":
-        page = page.replace(">Einstellungen"," disabled >Einstellungen")
-        page = page.replace(">Konfigurationsdatei"," disabled >Konfigurationsdatei")
+        page = page.replace(">Einstellungen", " disabled >Einstellungen")
+        page = page.replace(">Konfigurationsdatei", " disabled >Konfigurationsdatei")
     else:
         page = page.replace("ModAddress", addr)
     return page
@@ -735,7 +906,9 @@ def get_module_properties(mod) -> str:
 
 def fill_settings_template(app, title, subtitle, step, settings, key: str) -> str:
     """Return settings page."""
-    with open(WEB_FILES_DIR + SETTINGS_TEMPLATE_FILE, mode="r") as tplf_id:
+    with open(
+        WEB_FILES_DIR + SETTINGS_TEMPLATE_FILE, mode="r", encoding="utf-8"
+    ) as tplf_id:
         page = tplf_id.read()
     if key == "fingers":
         mod_image, mod_type = get_module_image(b"\x1f")
@@ -768,7 +941,9 @@ def fill_settings_template(app, title, subtitle, step, settings, key: str) -> st
 
 def fill_automations_template(app, title, subtitle, step) -> str:
     """Return automations page."""
-    with open(WEB_FILES_DIR + AUTOMATIONS_TEMPLATE_FILE, mode="r") as tplf_id:
+    with open(
+        WEB_FILES_DIR + AUTOMATIONS_TEMPLATE_FILE, mode="r", encoding="utf-8"
+    ) as tplf_id:
         page = tplf_id.read()
     mod_image, mod_type = get_module_image(app["settings"].typ)
     page = (
@@ -779,86 +954,21 @@ def fill_automations_template(app, title, subtitle, step) -> str:
     )
     if step == 0:
         page = disable_button("zurück", page)
-        if (len(app["automations_def"].external) == 0) & (
-            len(app["automations_def"].forward) == 0
-        ):
+    if step == 1:
+        page = enable_new_popup(app["settings"], page)
+        if len(app["api_srv"].routers) < 2:
             page = disable_button("weiter", page)
-    else:
+    if step == 2:
+        # if (len(app["automations_def"].external) == 0) & (
+        #     len(app["automations_def"].forward) == 0
+        # ):
         page = disable_button("weiter", page)
     settings_form = prepare_automations_list(app, step)
+    page = disable_chg_del_button(app, step, page)
     page = page.replace("<p>ContentText</p>", settings_form)
     return page
 
 
-def prepare_trigger_list(app, page: str, step: int) -> str:
-    """Replace options part of select box for new automation."""
-    triggers_lst, sensors_lst = app["settings"].get_triggers(step==0)
-    opt_str = '<option value="">-- Auslösendes Ereignis wählen --</option>\n'
-    for opt in triggers_lst:
-        opt_str += f'<option value="{opt}">{opt}</option>\n'
-    page = page.replace('<option value="">-- Auslösendes Ereignis wählen --</option>', opt_str)
-    opt_str = '<option value="">-- Sensor wählen --</option>\n'
-    for opt in sensors_lst:
-        opt_str += f'<option value="{opt}">{opt}</option>\n'
-    page = page.replace('<option value="">-- Sensor wählen --</option>', opt_str)
-    opt_str = '<option value="">-- Taster wählen --</option>'
-    for butt in app["settings"].buttons:
-        if (len(butt.name.strip()) > 0):
-            opt_str += f'<option value="{butt.nmbr}">{butt.name}</option>\n'
-    for inp in app["settings"].inputs:
-        if (inp.type == 1) & (len(inp.name.strip()) > 0):
-            opt_str += f'<option value="{inp.nmbr}">{inp.name}</option>\n'
-    page = page.replace('<option value="">-- Taster wählen --</option>', opt_str)
-    opt_str = '<option value="">-- Schalter wählen --</option>'
-    for inp in app["settings"].inputs:
-        if (inp.type > 1) & (len(inp.name.strip()) > 0):
-            opt_str += f'<option value="{inp.nmbr}">{inp.name}</option>\n'
-    page = page.replace('<option value="">-- Schalter wählen --</option>', opt_str)
-    opt_str = '<option value="">-- Ausgang wählen --</option>'
-    for outp in app["settings"].outputs:
-        if (len(outp.name.strip()) > 0):
-            opt_str += f'<option value="{outp.nmbr}">{outp.name}</option>\n'
-    page = page.replace('<option value="">-- Ausgang wählen --</option>', opt_str)
-    opt_str = '<option value="">-- Kommando wählen --</option>'
-    for cmd in app["settings"].vis_cmds:
-        opt_str += f'<option value="{cmd.nmbr}">{cmd.name}</option>\n'
-    page = page.replace('<option value="">-- VKommando wählen --</option>', opt_str)
-    opt_str = '<option value="">-- Kommando wählen --</option>'
-    for cmd in app["settings"].coll_cmds:
-        opt_str += f'<option value="{cmd.nmbr}">{cmd.name}</option>\n'
-    page = page.replace('<option value="">-- CKommando wählen --</option>', opt_str)
-    return page
-
-def prepare_condition_lists(app, page: str, step: int) -> str:
-    """Replace options part of select box for new automation."""
-    opt_str = '<option value="">-- Bedingung wählen --</option>\n'
-    cond_lst, mode2_lst = app["settings"].get_conditions(step==0)
-    for opt in cond_lst:
-        opt_str += f'<option value="{opt}">{opt}</option>\n'
-    page = page.replace('<option value="">-- Bedingung wählen --</option>', opt_str)
-    opt_str = '<option value="">-- Modus wählen --</option>'
-    for opt in mode2_lst:
-        opt_str += f'<option value="{opt}">{opt}</option>\n'
-    page = page.replace('<option value="">-- cond_2_sel --</option>', opt_str)
-    opt_str = '<option value="">-- Zeitspanne wählen --</option>'
-    for hour in range(24):
-        opt_str += f'<option value="{hour}">von {hour} bis {hour+1} Uhr</option>\n'
-    page = page.replace('<option value="">-- cond_time_sel --</option>', opt_str)
-    opt_str = '<option value="">-- Merker wählen --</option>'
-    for flag in app["settings"].flags:
-        opt_str += f'<option value="{flag.nmbr}">{flag.name}</option>\n'
-    for flag in app["settings"].glob_flags:
-        opt_str += f'<option value="{flag.nmbr+32}">{flag.name}</option>\n'
-    page = page.replace('<option value="">-- cond_flag_sel --</option>', opt_str)
-    return page
-
-def prepare_action_list(app, page: str, step: int) -> str:
-    """Replace options part of select box for new automation."""
-    opt_str = '<option value="">-- Aktion wählen --</option>\n'
-    for opt in app["settings"].get_actions(step==0):
-        opt_str += f'<option value="{opt}">{opt}</option>\n'
-    return page.replace('<option value="">-- Aktion wählen --</option>', opt_str)
- 
 def indent(level):
     """Return sequence of tabs according to level."""
     return "\t" * level
@@ -866,6 +976,39 @@ def indent(level):
 
 def disable_button(key: str, page) -> str:
     return page.replace(f">{key}<", f" disabled>{key}<")
+
+
+def enable_new_popup(settings, page: str) -> str:
+    """Enable html code for module selection popup."""
+    page = page.replace(
+        '<!--button name="NewExtAutomtn"', '<button name="NewExtAutomtn"'
+    )
+    page = page.replace('"newext">Neu</button-->', '"newext">Neu</button>')
+    page = page.replace('<button name="NewAutomtn"', '<!--button name="NewAutomtn"')
+    page = page.replace('value="new">Neu</button>', 'value="new">Neu</button-->')
+    rtr = settings.rtr
+    opt_str = '<option value="">-- Modul wählen --</option>'
+    for mod in rtr.modules:
+        if (mod._id != settings.id) & (mod._typ[0] != 20):
+            # not self module, no Smart Nature
+            opt_str += (
+                f'<option value="modad-{mod._id}">{mod._id}: {mod._name}</option>'
+            )
+    page = page.replace('<option value="">-- Modul wählen --</option>', opt_str)
+    return page
+
+
+def disable_chg_del_button(app, step, page: str) -> str:
+    """Disable buttons 'change' 'delete' if list empty."""
+    if (step == 0) & (len(app["automations_def"].local) > 0):
+        return page
+    if (step == 1) & (len(app["automations_def"].external) > 0):
+        return page
+    if (step == 2) & (len(app["automations_def"].forward) > 0):
+        return page
+    page = page.replace('id="change_button"', 'id="change_button" disabled')
+    page = page.replace('id="del_button"', 'id="del_button" disabled')
+    return page
 
 
 def prepare_automations_list(app, step):
@@ -890,20 +1033,18 @@ def prepare_automations_list(app, step):
                     source_header = f"Von Modul {src_mod}"
                 if source_header != last_source_header:
                     last_source_header = source_header
-                    tbl += (
-                        indent(6)
-                        + f"<tr><td><b>{source_header}</b></td></tr>\n"
-                    )
+                    tbl += indent(6) + f"<tr><td><b>{source_header}</b></td></tr>\n"
         tbl += indent(6) + "<tr>\n"
-        evnt_desc = automations[at_i].trigger.description()
-        actn_desc = automations[at_i].action_description()
+        evnt_desc = automations[at_i].trigger.description
+        cond_desc = automations[at_i].condition.name
+        actn_desc = automations[at_i].action.description
         id_name = f"atmn_tbl"
         sel_chkd = ""
         if at_i == app["automations_def"].selected:
             sel_chkd = "checked"
         tbl += (
             indent(7)
-            + f"<td>{evnt_desc}</td><td align=center>&nbsp;&nbsp;&rArr;&nbsp;&nbsp;</td>\n"
+            + f"<td>{evnt_desc}</td><td>{cond_desc}</td><td align=center>&nbsp;&nbsp;&rArr;&nbsp;&nbsp;</td>\n"
         )
         tbl += indent(7) + f"<td>{actn_desc}</td>\n"
         tbl += f'<td><input type="radio" name="{id_name}" id="{id_name}" value="{at_i}" {sel_chkd}></td>'
@@ -1412,6 +1553,18 @@ def parse_response_form(app, form_data):
     return form_data["ModSettings"][0]
 
 
+def prepare_src_mod_trigger(automtn, rtr, src_mod):
+    """Init empty trigger into given automation."""
+    automtn.src_mod = src_mod
+    mod = rtr.get_module(src_mod)
+    src_settings = ModuleSettings(mod, rtr)
+    automtn.trigger = AutomationTrigger(automtn, src_settings, None)
+    automtn.event_code = 0
+    automtn.trigger.src_mod = automtn.src_mod
+    automtn.trigger.src_rt = automtn.src_rt
+    return automtn
+
+
 def get_property_kind(app, step):
     """Return header of property kind."""
     if step == 0:
@@ -1538,10 +1691,17 @@ async def send_to_router(app, content: str):
     rtr = app["api_srv"].routers[0]
     await rtr.api_srv.block_network_if(rtr._id, True)
     try:
-        rtr.smr_upload = content.split("\n")[0].encode("iso8859-1")
-        await rtr.hdlr.send_rt_full_status()
+        lines = content.split("\n")
+        buf = b""
+        for byt in lines[0].split(";")[:-1]:
+            buf += int.to_bytes(int(byt))
+        rtr.smr_upload = buf
+        if app["api_srv"].is_offline:
+            rtr.hdlr.set_rt_full_status()
+        else:
+            await rtr.hdlr.send_rt_full_status()
         rtr.smr_upload = b""
-        desc_lines = content.split("\n")[1:]
+        desc_lines = lines[1:]
         if len(desc_lines) > 0:
             rtr.unpack_descriptions(desc_lines)
     except Exception as err_msg:
@@ -1552,6 +1712,20 @@ async def send_to_router(app, content: str):
 async def send_to_module(app, content: str, mod_addr: int):
     """Send uploads to module."""
     rtr = app["api_srv"].routers[0]
+    if app["api_srv"].is_offline:
+        rtr.modules.append(HbtnModule(mod_addr, ModHdlr(mod_addr, rtr.api_srv), rtr))
+        module = rtr.modules[-1]
+        module.smg_upload, module.list = seperate_upload(content)
+        module.calc_SMG_crc(module.smg_upload)
+        module.calc_SMC_crc(module.list)
+        module._name = module.smg_upload[52 : 52 + 32].decode("iso8859-1").strip()
+        module._typ = module.smg_upload[1:3]
+        module._type = MODULE_CODES[module._typ.decode("iso8859-1")]
+        module.status = b"\0" * MirrIdx.END
+        module.build_status(module.smg_upload)
+        module.io_properties, module.io_prop_keys = module.get_io_properties()
+        return
+
     module = rtr.get_module(mod_addr)
     module.smg_upload, module.list_upload = seperate_upload(content)
     list_update = ModbusComputeCRC(module.list_upload) != module.get_smc_crc()
@@ -1586,3 +1760,10 @@ async def send_to_module(app, content: str, mod_addr: int):
         await rtr.api_srv.block_network_if(rtr._id, False)
     module.smg_upload = b""
     module.list_upload = b""
+
+
+async def terminate_delayed(api_srv):
+    """suspend for a time limit in seconds"""
+    await asyncio.sleep(0.5)
+    # execute the other coroutine
+    await api_srv.shutdown(None, False)

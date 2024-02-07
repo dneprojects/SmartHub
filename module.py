@@ -96,12 +96,8 @@ class HbtnModule:
         return self.status[MirrIdx.T_SHORT : MirrIdx.T_SHORT + 17]
 
     def has_automations(self) -> bool:
-        """Return True if local automations available."""
-        if len(self.list) > 5:
-            # atms = self.settings.automtns_def
-            # return len(atms.local) + len(atms.external) + len(atms.forward) > 0
-            return (self.list[4] == 0) | (self.list[4] == 1)
-        return False
+        """Return True if automations are allowed."""
+        return (self._typ[0] in [1, 10]) | (self._typ == b"\x32\x01")
 
     def swap_mirr_cover_idx(self, mirr_idx: int) -> int:
         """Return cover index from mirror index (0..2 -> 2..4)."""
@@ -258,6 +254,44 @@ class HbtnModule:
             smg_data += self.status[si : si + 1]
         return smg_data
 
+    def build_status(self, smg: bytes):
+        """Insert SMG values into status"""
+        for idx in range(len(SMGIdx)):
+            self.status = (
+                self.status[: SMGIdx[idx]]
+                + smg[idx : idx + 1]
+                + self.status[SMGIdx[idx] + 1 :]
+            )
+        polarity = 0
+        for c_i in range(8):
+            ta, tb, interp = self.encode_cover_settings(
+                smg[4 + 2 * c_i], smg[4 + 2 * c_i + 1]
+            )
+            if ta > tb:
+                polarity = polarity | (1 << (2 * c_i))
+            else:
+                polarity = polarity | (1 << (2 * c_i + 1))
+            self.status = (
+                self.status[: MirrIdx.COVER_T]
+                + int.to_bytes(ta + tb)
+                + self.status[MirrIdx.COVER_T + 1 :]
+            )
+            self.status = (
+                self.status[: MirrIdx.BLAD_T]
+                + int.to_bytes(smg[20 + 2 * c_i] + smg[20 + 2 * c_i + 1])
+                + self.status[MirrIdx.BLAD_T + 1 :]
+            )
+            self.status = (
+                self.status[: MirrIdx.COVER_INTERP]
+                + int.to_bytes(interp)
+                + self.status[MirrIdx.COVER_INTERP + 1 :]
+            )
+        self.status = (
+            self.status[: MirrIdx.COVER_POL]
+            + int.to_bytes(polarity, 2, "little")
+            + self.status[MirrIdx.COVER_POL + 2 :]
+        )
+
     def different_smg_crcs(self) -> bool:
         """Performs comparison, equals lengths of smg buffers."""
         # Replace "______" strings in SW_VERSION and PWR_VERSION
@@ -367,6 +401,16 @@ class HbtnModule:
             .decode("iso8859-1")
             .strip()
         )
+        # self.list = await self.hdlr.get_module_list(self._id)
+        self.calc_SMC_crc(self.list)
+
+    async def set_automations(self, settings: ModuleSettings):
+        """Restore changed automations from config server into module."""
+        self.settings = settings
+        self.list = await settings.set_automations()
+        self.list_upload = self.list
+        await self.hdlr.send_module_list(self._id)
+        self.comp_status = self.get_status(False)
         # self.list = await self.hdlr.get_module_list(self._id)
         self.calc_SMC_crc(self.list)
 

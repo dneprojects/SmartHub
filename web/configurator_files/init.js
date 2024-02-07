@@ -1,0 +1,96 @@
+const trig_sel = document.getElementById("trigger-select");
+trig_sel.addEventListener("change", function () {
+    setTriggerSels();
+});
+const cond_sel = document.getElementById("condition-select");
+cond_sel.addEventListener("change", function () {
+    setConditionSels();
+});
+const act_sel = document.getElementById("action-select");
+act_sel.addEventListener("change", function () {
+    setActionSels();
+});
+const counter_sel = document.getElementById("counter-select");
+counter_sel.addEventListener("change", function () {
+    setMaxCount();
+});
+const act_counter_sel = document.getElementById("counter-act");
+act_counter_sel.addEventListener("change", function () {
+    setMaxCountAct();
+});
+const mov_sel = document.getElementById("mov-select");
+    mov_sel.addEventListener("change", function () {
+        setMovLight();
+    });
+const sens_sel = document.getElementById("sensor-select");
+sens_sel.addEventListener("change", function () {
+    setSensorNums();
+});
+const out_actopt = document.getElementById("outopt-act")
+out_actopt.addEventListener("change", function () {
+        setActTimeinterval();
+    });
+const cnt_actopt = document.getElementById("countopt-act")
+cnt_actopt.addEventListener("change", function () {
+    setActCntval();
+});
+const dim_actopt = document.getElementById("dimmopt-act")
+dim_actopt.addEventListener("change", function () {
+    setActDPercval();
+});
+const clim_actopt = document.getElementById("climopt-act")
+    clim_actopt.addEventListener("change", function () {
+        setActClimate();
+    });
+const tset_actopt = document.getElementById("tsetopt-act")
+tset_actopt.addEventListener("change", function () {
+    setActTsetval();
+});
+const ekey_sel = document.getElementById("ekey-select")
+ekey_sel.addEventListener("change", function () {
+    setEkeyUsrFingers();
+});
+const ok_butt = document.getElementById("ok_button")
+ok_butt.addEventListener("click", function () {
+    checkFormEntries();
+});
+
+close_err_popup.addEventListener("click", function () {
+automtn_err_popup.classList.remove("show");
+});
+function initUiElements(trg_code, trg_arg1, trg_arg2, cnd_code, act_code, act_args, trg_time) {
+    initTrigElements(trg_code, trg_arg1, trg_arg2, trg_time)
+    initCondElements(cnd_code)
+    initActElements(act_code, act_args)
+}
+
+function setElement(id, valueToSet) {    
+    let selector = document.getElementById(id);
+    selector.value = valueToSet;
+}
+
+function checkFormEntries() {
+    const def_form = document.getElementById("automation_def");
+    var success = true;
+    if (def_form.elements["trigger-select"].value == "")
+        success = false
+    if (def_form.elements["condition-select"].value == "")
+        success = false
+    if (def_form.elements["action-select"].value == "")
+        success = false
+    for (var i = 0; i < def_form.length; i++) {
+        if (def_form[i].style.visibility == "visible") {
+            var sel_val = def_form[i].value;
+            if (sel_val == "") {
+                success = false
+                break
+            }
+        }
+    }
+    if (success) {
+        def_form.elements["ok_result"].value = "ok";
+        def_form.submit()
+    }
+    else
+        automtn_err_popup.classList.add("show");
+}

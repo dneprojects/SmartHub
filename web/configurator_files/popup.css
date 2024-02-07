@@ -90,8 +90,18 @@
     font-size: 11px;
     line-height: 16px;
 }
-
-#file_button {
+#automtn_err_popup .popup-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888888;
+    width: 400px;
+    color: #6b6c6e;
+    font-size: 11px;
+    line-height: 16px;
+}
+#file_button,
+#close_file_popup {
     height: 22px;
     width: 100px;
     top: 0;
@@ -106,12 +116,16 @@
 #del_buttons,
 #chg_buttons,
 #new_buttons {
-    display: flow;
+    display: block;
+    margin-top: 20px;
     text-align: center;
 }
 
 #close_del_popup,
-#del_automtn {
+#close_new_popup,
+#close_err_popup,
+#del_automtn,
+#ext_automtn {
     height: 22px;
     width: 100px;
     margin-top: 50px;

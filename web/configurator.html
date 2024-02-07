@@ -23,6 +23,7 @@
   <meta name="keywords" content="">
   <link href="./configurator_files/style.css" rel="stylesheet" type="text/css" media="screen">
   <link href="./configurator_files/nav.css" rel="stylesheet" type="text/css" media="screen">
+  <link href="./configurator_files/popup.css" rel="stylesheet" type="text/css" media="screen">
   <!--[if IE]>
 <link href="tl_files/habitron/style_ie.css" rel="stylesheet" type="text/css" media="screen"  />
 <![endif]-->
@@ -88,7 +89,7 @@
                 überspringen</a>
 
               <ul class="level_1">
-                <li class="submenu modules first"><a href="hub" title="Hub" class="submenu modules first">Hub</a></li>
+                <li class="submenu modules first"><a href="hub" title="Hub" class="submenu modules">Hub</a></li>
               </ul>
               <ul class="level_1">
                 <li class="submenu modules"><a href="router" title="Router" class="submenu modules">Router</a></li>
@@ -144,14 +145,78 @@
         </div>
         <div id="clear"></div>
       </div>
-      <div id="footer">
-        <div class="inside">
+      <div id="footer"><div class="inside">
+        <div id="confbutton" style="position: relative;">
+          <!--button name="ConfigFiles" id="files_button"
+            style="float: right; position: absolute; top: 0; left: 560px;">Systemkonfiguration</button-->
         </div>
       </div>
-
-    </div>
-  </div>
-
-</body>
-
-</html>
+      </div>
+      
+      </div>
+      
+      <div id="file_popup" class="popup">
+        <div class="popup-content">
+          <h1>Systemkonfiguration</h1>
+          <h2>Upload und Download der Konfiguration</h2>
+          <h3>Vollständige Konfiguration sichern (Backup)</h3>
+          <div>
+            <form id="file_download" action="download">
+              <div style="position: relative;">
+                <input id="file_updwnload" name="file" type="text" value="my_system.hcf" />
+                <button name="SysDownload" id="file_button" type="submit" value="Sys">Download</button>
+              </div>
+            </form>
+            <h3>Konfiguration laden (Wiederherstellung)</h3>
+            <form id="file_upload" action="upload" enctype="multipart/form-data" method="post">
+              <div style="position: relative;">
+                <input id="file_updwnload" name="file" type="file" value="my_system.hcf" />
+                <button name="SysUpload" id="file_button" type="submit" value="Sys">Upload</button>
+              </div>
+            </form>
+          </div>
+          <div id="close_file_popup_box">
+            <button id="close_file_popup">
+              schließen
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div id="msg_popup" class="popup">
+        <div class="popup-content">
+          <h1 id="msg_popup_txt">ContentTitle</h1>
+          <h3 id="msg_popup_txt">Upload</h3>
+          <div id="image_container_wait">
+            <img src="./configurator_files/wait_red.gif" alt="Please wait" id="msg_popup_img">
+          </div>
+        </div>
+      </div>
+      
+      </div>
+      
+      <script>
+        const form_upload = document.getElementById("file_upload");
+        const form_download = document.getElementById("file_download");
+        files_button.addEventListener("click", function () {
+          file_popup.classList.add("show");
+        });
+        close_file_popup.addEventListener("click", function () {
+          file_popup.classList.remove("show");
+        });
+        form_upload.addEventListener("submit", function () {
+          openMsgPopup();
+        });
+        window.addEventListener("click", function (event) {
+          if (event.target == myPopup) {
+            openMsgPopup();
+          };
+        });
+        function openMsgPopup() {
+          file_popup.classList.remove("show");
+          msg_popup.classList.add("show");
+        };
+      </script>
+      </body>
+      
+      </html>

@@ -277,6 +277,10 @@ div.tableform label {
    float: left;
 }
 
+form#automations_table {
+   min-height: 300px;
+}
+
 form input,
 form select {
    display: block;
@@ -590,11 +594,12 @@ a:hover {
    background: #FFF;
 }
 
-#mitte {
+#mitte, #mitte_automtn {
    z-index: 400;
    position: relative;
    background: #FFF;
 }
+
 
 #left {
    position: relative;
@@ -635,6 +640,14 @@ a:hover {
    padding-top: 40px;
 }
 
+#mitte_automtn {
+   width: 750px;
+   padding-bottom: 20px;
+   padding-left: 10px;
+   padding-right: 10px;
+   padding-top: 40px;
+}
+
 /* ---------------------------------------------------------Rechte Spalte---------------------------- */
 
 #right img {
@@ -652,7 +665,7 @@ a:hover {
    padding-top: 0px;
    padding-bottom: 0px;
    padding-left: 10px;
-   max-width: 100%;
+   max-width: 90%;
    height: auto;
 }
 
@@ -770,6 +783,14 @@ body.produkte.sub #right .ce_text a {
    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
    font: 11px arial, helvetica, clean, sans-serif;
 }
+#exit_button {
+   height: 22px;
+   width: 140px;
+   margin-left: 300px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
 
 /* ---------------------------------------------------------Design Startseite---------------------------- */
 body.start h1 {
@@ -792,7 +813,8 @@ body.start #pic {
    height: 258px;
 }
 
-body.start #mitte {
+body.start #mitte, 
+body.start #mitte_automtn {
    padding-bottom: 25px;
    padding-top: 10px;
    padding-left: 20px;
@@ -868,10 +890,12 @@ table.schnellzugriff td.even {
 
 /* ---------------------------------------------------------Design Fullwidth---------------------------- */
 
-body.fullwidth #content,
-body.fullwidth #mitte,
+body.fullwidth #content, 
+body.fullwidth #mitte, 
+body.fullwidth #mitte_automtn,
 body.start #content,
-body.start #mitte {
+body.start #mitte,
+body.start #mitte_automtn {
    background: url(design/dehn_fullwidth.png) repeat-y center top;
 }
 
@@ -880,7 +904,8 @@ body.fullwidth #right {
    top: 0px;
 }
 
-body.fullwidth #mitte {
+body.fullwidth #mitte, 
+body.fullwidth #mitte_automtn {
    margin-right: 189px;
    margin-left: 189px;
    padding-right: 50px;
@@ -889,7 +914,8 @@ body.fullwidth #mitte {
 /* ---------------------------------------------------------Design Accordion_Seiten---------------------------- */
 
 body.acc #content,
-body.acc #mitte {
+body.acc #mitte,
+body.acc #mitte_automtn {
    background: url(design/dehn_fullwidth.png) repeat-y center top;
 }
 
@@ -902,7 +928,8 @@ body.acc #right {
    padding-top: 45px;
 }
 
-body.acc #mitte {
+body.acc #mitte,
+body.acc #mitte_automtn {
    margin-right: 189px;
    margin-left: 189px;
    padding-right: 50px;
@@ -991,7 +1018,7 @@ select {
    background: url(design/input_shadow.gif) no-repeat left top;
    width: 180px;
    padding-top: 2px;
-   padding-bottom: 2px;
+   padding-bottom: 1px;
    color: #333;
    border: 1px solid #C0372D;
 }
@@ -1045,6 +1072,15 @@ select {
    padding-top: 2px;
    margin-top: 0px;
    margin-right: 0px;
+}
+
+input#time-vals {
+   background: url(design/input_shadow.gif) no-repeat left top;
+   height: 20px;
+   border: 1px solid #C0372D;
+   margin-left: 10px;
+   padding-left: 1px;
+   padding-right: 1px;
 }
 
 input#file_updwnload {
@@ -1352,4 +1388,24 @@ table.linetopbottom {
 .linetopbottom tr:first-child {
    font-size: 14px;
    font-weight: bold !important;
+}
+select option[disabled] {
+   display: none;
+}
+
+input.sens_no {
+   width: 44px; 
+   height: 16px;
+   margin-left: 0px; 
+   margin-right: 12px; 
+   text-align: center;
+}
+div.sens_lims {
+   display: flex;
+}
+div.sens_lbl {
+   margin-left: 4px; 
+   padding-top: 4px; 
+   height: 22px;
+   width: 138px;
 }

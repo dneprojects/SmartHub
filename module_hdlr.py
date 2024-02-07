@@ -5,6 +5,7 @@ from const import MirrIdx, SMGIdx, RT_CMDS, MODULE_CODES, API_RESPONSE
 from hdlr_class import HdlrBase
 from messages import RtResponse
 from module import HbtnModule
+from configuration import ModuleSettings
 
 
 class ModHdlr(HdlrBase):
@@ -14,7 +15,10 @@ class ModHdlr(HdlrBase):
         """Creates module handler object with serial interface"""
         self.mod_id = mod_id
         self.api_srv = api_srv
-        self.msg = api_srv.hdlr.msg
+        if api_srv.hdlr == []:
+            self.msg = None
+        else:
+            self.msg = api_srv.hdlr.msg
         self.ser_if = self.api_srv._rt_serial
         self.logger = logging.getLogger(__name__)
         self.mod: HbtnModule = []
@@ -83,6 +87,71 @@ class ModHdlr(HdlrBase):
             await self.set_pin()
             await self.set_logic_units()
         await self.set_config_mode(False)
+
+    def set_module_smg(self, mod_addr: int):
+        """Set SMG data to module properties."""
+        md_setting = ModuleSettings(self.mod, self.mod.rt)
+        status = b"\0" * MirrIdx.END
+        # set name
+        base_idx = SMGIdx.index(MirrIdx.MOD_NAME)
+        md_name = self.mod.smg_upload[base_idx : base_idx + 32]
+        self.mod._name = md_name.decode("iso8859-1").strip()
+        status = md_setting.replace_bytes(
+            status,
+            (self.mod._name + " " * (32 - len(self.mod._name))).encode("iso8859-1"),
+            MirrIdx.MOD_NAME,
+        )
+        # set buttons times
+        base_idx = SMGIdx.index(SMGIdx.T_SHORT)
+        md_setting.t_short = self.mod.smg_upload[base_idx]
+        base_idx = SMGIdx.index(MirrIdx.T_LONG)
+        md_setting.t_long = self.mod.smg_upload[base_idx]
+        if int(self.mod._typ[0]) in [1, 0x32, 0x0B]:
+            # input related settings
+            # set inputs mode
+            base_idx = SMGIdx.index(MirrIdx.SWMOD_1_8)
+            i1 = self.mod.smg_upload[base_idx]
+            i9 = self.mod.smg_upload[base_idx + 1]
+            i17 = self.mod.smg_upload[base_idx + 2]
+            # set analog inputs
+            base_idx = SMGIdx.index(MirrIdx.STAT_AD24_ACTIVE)
+            val = self.mod.smg_upload[base_idx]
+        if int(self.mod._typ[0]) in [1, 0x0A]:
+            # output related settings
+            self.set_logic_units()
+            if self.mod._typ == "\x0a\x16":
+                # dimm module specific settings
+                self.set_dimm_speed()
+                self.set_dimm_modes()
+            else:
+                self.set_covers_settings()
+                self.set_covers_times()
+                self.set_blinds_times()
+        if int(self.mod._typ[0]) in [1, 0x32, 0x50]:
+            # motion related settings
+            self.set_motion_detection()
+        if int(self.mod._typ[0]) in [1, 0x32]:
+            # Smart Controller specific settings
+            self.set_module_language()
+            self.set_target_values()
+            self.set_climate_settings()
+            self.set_display_constrast()
+            self.set_temp_control()
+        if int(self.mod._typ[0]) in [1]:
+            # Smart Controller XL specific settings
+            self.set_dimm_speed()
+            self.set_dimm_modes()
+            self.set_supply_prio()
+            self.set_module_light()
+            self.set_limit_temperature()
+        if self.mod._typ == b"\x1e\x01":
+            # Ekey specific settings
+            self.set_ekey_version()
+        if self.mod._typ == b"\x1e\x03":
+            # GSM specific settings
+            self.set_pin()
+            self.set_logic_units()
+        self.mod.status = status
 
     async def get_module_list(self, mod_addr: int) -> bytes:
         """Get the module description and command list."""

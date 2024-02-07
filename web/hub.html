@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
 
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="UTF-8">
   <!--
 
 	This website is powered by Contao Open Source CMS :: Licensed under GNU/LGPL
@@ -176,13 +176,13 @@
           <h3>Konfiguration laden (Wiederherstellung)</h3>
           <form id="file_upload" action="upload" enctype="multipart/form-data" method="post">
             <div style="position: relative;">
-              <input id="file_updwnload" name="file" type="file" value="my_module.hcf" />
+              <input id="file_updwnload" name="file" type="file" value="my_system.hcf" />
               <button name="SysUpload" id="file_button" type="submit" value="Sys">Upload</button>
             </div>
           </form>
         </div>
         <div id="close_file_popup_box">
-          <button id="close_popup">
+          <button id="close_file_popup">
             schließen
           </button>
         </div>
@@ -207,7 +207,7 @@
     files_button.addEventListener("click", function () {
       file_popup.classList.add("show");
     });
-    close_popup.addEventListener("click", function () {
+    close_file_popup.addEventListener("click", function () {
       file_popup.classList.remove("show");
     });
     form_upload.addEventListener("submit", function () {

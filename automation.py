@@ -1,46 +1,6 @@
 from automtn_trigger import AutomationTrigger
-
-ActionCodes = {
-    1: "Ausgang ein",
-    2: "Ausgang aus",
-    3: "Ausgang wechseln",
-    6: "Counter",
-    7: "Rollladenbefehl",
-    9: "Zeitfunktion",
-    10: "Summton",
-    17: "Rollladenbefehl",
-    18: "Rollladenbefehl auf Zeit",
-    20: "Dimmwert",
-    22: "Dimmcount start,",
-    23: "Dimmcount stop",
-    24: "Dimmen komplett",
-    30: "Prozentwert anzeigen",
-    31: "Prozentwert in Register",
-    35: "RGB-LED",
-    50: "Sammelbefehl",
-    55: "Alarmmeldung auslösen",
-    56: "Meldung setzen",
-    57: "Meldung zurücksetzen",
-    58: "Meldung auf Zeit",
-    64: "Modus setzen",
-    220: "Temperatursollwert",
-    221: "Klimaregelung interner Sensor",
-    222: "Klimaregelung externer Sensor",
-    240: "Modulbeleuchtung",
-}
-
-TempTargetCodes = {
-    1: "Temperatursollwert 1 setzen",
-    21: "Temperatursollwert 2 setzen",
-    2: "Temperatursollwert 1 temporär setzen",
-    22: "Temperatursollwert 2 temporär setzen",
-    3: "Temperatursollwert 1 rücksetzen",
-    23: "Temperatursollwert 2 rücksetzen",
-    11: "Heizmodus setzen",
-    12: "Kühlmodus setzen",
-    13: "Heiz-/Kühlmodus setzen",
-    14: "Regelung auschalten",
-}
+from automtn_condition import AutomationCondition
+from automtn_action import AutomationAction
 
 
 class AutomationsSet:
@@ -51,6 +11,7 @@ class AutomationsSet:
         self.local: list(AutomationDefinition) = []
         self.external: list(AutomationDefinition) = []
         self.forward: list(AutomationDefinition) = []
+        self.settings = settings
         self.get_autmn_dict(settings)
         self.get_automations(settings)
         self.selected = 0
@@ -75,9 +36,18 @@ class AutomationsSet:
         self.autmn_dict["coll_cmds"] = {}
         for a_key in self.autmn_dict.keys():
             for if_desc in getattr(settings, a_key):
-                self.autmn_dict[a_key][if_desc.nmbr] = f"{if_desc.nmbr}"
+                self.autmn_dict[a_key][if_desc.nmbr] = ""
                 if len(if_desc.name) > 0:
-                    self.autmn_dict[a_key][if_desc.nmbr] += f": '{if_desc.name}'"
+                    self.autmn_dict[a_key][if_desc.nmbr] += f"{if_desc.name}"
+        self.autmn_dict["user_modes"] = {1: "User1", 2: "User2"}
+        if len(settings.module.rt.user_modes[1:11].strip()) > 0:
+            self.autmn_dict["user_modes"][1] = (
+                settings.module.rt.user_modes[1:11].strip().decode("iso8859-1")
+            )
+        if len(settings.module.rt.user_modes[12:].strip()) > 0:
+            self.autmn_dict["user_modes"][2] = (
+                settings.module.rt.user_modes[12:].strip().decode("iso8859-1")
+            )
 
     def get_automations(self, settings):
         """Get automations of Habitron module."""
@@ -98,14 +68,81 @@ class AutomationsSet:
                 self.local.append(AutomationDefinition(line, self.autmn_dict, settings))
             elif (src_rt == settings.module.rt._id) | (src_rt == 250):
                 self.external.append(
-                    AutomationDefinition(line, self.autmn_dict, settings)
+                    ExtAutomationDefinition(line, self.autmn_dict, settings)
                 )
             elif src_rt < 65:
                 self.forward.append(
-                    AutomationDefinition(line, self.autmn_dict, settings)
+                    ExtAutomationDefinition(line, self.autmn_dict, settings)
                 )
             list = list[line_len : len(list)]  # Strip processed line
+        self.local, i = self.sort_automation_list(self.local, 0)
+        self.external, i = self.sort_automation_list(self.external, 0)
+        self.forward, i = self.sort_automation_list(self.forward, 0)
         return True
+
+    def save_changed_automation(self, app, form_data, step):
+        """Save edited automation, add new or replace changed one."""
+        tmp_automtn = AutomationDefinition(None, self.autmn_dict, self.settings)
+        src_trigger = app["base_automation"].trigger
+        tmp_automtn.trigger.src_rt = src_trigger.src_rt
+        tmp_automtn.trigger.src_mod = src_trigger.src_mod
+        tmp_automtn.trigger.settings = src_trigger.settings
+        tmp_automtn.trigger.autmn_dict = src_trigger.autmn_dict
+        tmp_automtn.trigger.save_changed_automation(app, form_data, step)
+        tmp_automtn.condition.save_changed_automation(app, form_data, step)
+        tmp_automtn.action.save_changed_automation(app, form_data, step)
+        if step == 0:
+            if app["atm_mode"] == "change":
+                self.local[self.selected] = tmp_automtn
+            else:
+                self.local.append(tmp_automtn)
+                self.selected = len(self.local) - 1
+            self.local, self.selected = self.sort_automation_list(
+                self.local, self.selected
+            )
+        if step == 1:
+            if app["atm_mode"] == "change":
+                self.external[self.selected] = tmp_automtn
+            else:
+                self.external.append(tmp_automtn)
+                self.selected = len(self.external) - 1
+            self.external, self.selected = self.sort_automation_list(
+                self.external, self.selected
+            )
+        if step == 2:
+            if app["atm_mode"] == "change":
+                self.forward[self.selected] = tmp_automtn
+            else:
+                self.forward.append(tmp_automtn)
+                self.selected = len(self.forward) - 1
+            self.forward, self.selected = self.sort_automation_list(
+                self.forward, self.selected
+            )
+        return
+
+    def sort_automation_list(self, atm_list, sel_idx):
+        """Sort all automations based on codes."""
+        sort_strings = list()
+        for atm in atm_list:
+            sort_str = [
+                atm.src_rt,
+                atm.src_mod,
+                atm.event_code,
+                atm.trigger.event_arg1,
+                atm.trigger.event_arg2,
+                atm.condition.cond_code,
+                atm.action_code,
+            ] + atm.action.action_args
+            sort_strings.append(sort_str)
+        sorted_list_idx = sorted(range(len(sort_strings)), key=sort_strings.__getitem__)
+        new_list = []
+        for idx in sorted_list_idx:
+            new_list.append(atm_list[idx])
+        if len(atm_list) > 0:
+            sel_idx_srtd = sorted_list_idx.index(sel_idx)
+        else:
+            sel_idx_srtd = sel_idx
+        return new_list, sel_idx_srtd
 
 
 class AutomationDefinition:
@@ -113,21 +150,22 @@ class AutomationDefinition:
 
     def __init__(self, atm_def, autmn_dict, settings):
         """Fill all properties with automation's values."""
-        if isinstance(atm_def, bytes):
-            self.mod_addr = settings.id
-            self.autmn_dict = autmn_dict
-            self.settings = settings
+        self.mod_addr = settings.id
+        self.autmn_dict = autmn_dict
+        self.settings = settings
+        if atm_def == None:
+            self.src_rt = 0
+            self.src_mod = 0
+            self.event_code = 0
+            self.action_code = 0
+        else:
             self.src_rt = int(atm_def[0])
             self.src_mod = int(atm_def[1])
-            self.trigger = AutomationTrigger(self, atm_def, autmn_dict)
             self.event_code = int(atm_def[2])
-            self.event_arg1 = int(atm_def[3])
-            self.event_arg2 = int(atm_def[4])
-            self.condition = int(atm_def[6])
             self.action_code = int(atm_def[7])
-            self.action_args = []
-            for a in atm_def[8:]:
-                self.action_args.append(int(a))
+        self.trigger = AutomationTrigger(self, settings, atm_def)
+        self.condition = AutomationCondition(self, atm_def)
+        self.action = AutomationAction(self, atm_def)
 
     def event_name(self) -> str:
         """Return event name."""
@@ -135,196 +173,178 @@ class AutomationDefinition:
 
     def action_name(self) -> str:
         """Return action name."""
-        try:
-            actn_name = ActionCodes[self.action_code]
-        except:
-            actn_name = "Unknown action"
-        return actn_name
+        return self.action.name
 
     def get_dict_entry(self, key, arg) -> str:
         """Lookup dict and return value, if found."""
         if key in self.autmn_dict.keys():
             if arg in self.autmn_dict[key].keys():
-                return self.autmn_dict[key][arg]
+                return f"{arg}: '{self.autmn_dict[key][arg]}'"
+            else:
+                return f"'{arg}'"
         return f"{arg}"
 
-    def action_description(self) -> str:
-        """Parse action arguments and return description."""
-        try:
-            actn_target = self.action_name()
-            actn_desc = ""
-            for actn_arg in self.action_args:
-                actn_desc += chr(actn_arg)
-            if actn_target[:7] == "Ausgang":
-                actn_desc = actn_target.replace("Ausgang", "").strip()
-                actn_target = self.get_output_desc(self.action_args[0])
-                if actn_target[:6] == "Zähler":
-                    actn_desc = "zählen"
-            elif actn_target == "Zeitfunktion":
-                actn_target =  self.get_output_desc(self.action_args[3])
-                if self.action_args[2] == 255:
-                    actn_desc = f"mit {self.action_args[2]} <unit> Verzögerung einschalten"
-                else:
-                    actn_target += f" {self.action_args[2]}x"
-                    if self.action_args[0] > 20:
-                        actn_desc = f"mit {self.action_args[2]} <unit> Verzögerung ausschalten"
-                        self.action_args[0] -= 20
-                    elif self.action_args[0] > 10:
-                        actn_desc = f"für {self.action_args[2]} <unit> einschalten (o.Ä.)"
-                        self.action_args[0] -= 10
-                    else:
-                        actn_desc = f"für {self.action_args[2]} <unit> einschalten"
-                if self.action_args[0] == 1:
-                    actn_desc = actn_desc.replace("<unit>", "Sek.")
-                else:
-                    actn_desc = actn_desc.replace("<unit>", "Min.")
-            elif actn_target[:4] == "Dimm":
-                if self.settings.typ[0] == 1:
-                    outp_no = self.action_args[0] + 10
-                else:
-                    outp_no = self.action_args[0]
-                out_desc = self.get_dict_entry('outputs',outp_no)
-                if actn_target == "Dimmwert":
-                    actn_desc = f"{self.action_args[1]}%"
-                else:
-                    actn_desc = actn_target.split()[1]
-                actn_target = (
-                    f"{actn_target.split()[0]} {out_desc}"
-                )
-            elif actn_target == "Counter":
-                actn_target = f"Zähler {self.get_dict_entry('logic', self.action_args[0])}"
-                actn_desc = f"auf {self.action_args[2]} setzen"
-            elif actn_target[:6] == "Sammel":
-                actn_target = f"{actn_target.split()[0]} {self.get_dict_entry('coll_cmds',self.action_args[0])}"
-                actn_desc = ""
-            elif actn_target[:4] == "Meld":
-                actn_target = f"Meldung {self.get_dict_entry('messages',self.action_args[0])}"
-                if self.action_code == 58:
-                    actn_desc = f"für {self.action_args[1]} Min. setzen"
-                else:
-                    actn_desc = ""
-            elif actn_target[:5] == "Modus":
-                actn_target = f"Modus für Gruppe {self.action_args[0]}:"
-                actn_desc = self.get_mode_desc(self.action_args[1])
-            elif actn_target[:6] == "Temper":
-                value = self.action_args[1] / 10
-                strings = TempTargetCodes[self.action_args[0]].split()
-                if self.action_args[0] in [11, 12, 13, 14]:
-                    actn_target = TempTargetCodes[self.action_args[0]]
-                    actn_desc = ""
-                elif self.action_args[0] in [2, 22]:
-                    actn_target = f"{strings[0]} {strings[1]}"
-                    actn_desc = f"{strings[2]} {strings[3]}"
-                else:
-                    actn_target = f"{strings[0]} {strings[1]}"
-                    actn_desc = f"{strings[2]}"
-                if self.action_args[0] in [1, 21, 2, 22]:
-                    actn_desc = actn_desc.replace("setzen", f"auf {value} °C setzen")
-            elif actn_target[:5] == "Rolll":
-                cover_desc = f"{self.get_dict_entry('covers', self.action_args[1])}"
-                if self.action_args[2] == 255:
-                    pos_str = "inaktiv"
-                else:
-                    pos_str = f"auf {self.action_args[2]}%"
-                if self.action_code == 18:
-                    temp_desc = f"für {self.action_args[1]} Min. "
-                else:
-                    temp_desc = ""
-                if self.action_args[0] > 10:
-                    self.action_args[0] -= 10
-                    actn_desc = f"{cover_desc} {temp_desc} {pos_str} setzen"
-                else:
-                    actn_desc = f"{cover_desc} {temp_desc} {pos_str} setzen"
-                if self.action_args[0] == 1:
-                    actn_target = "Rollladen"
-                else:
-                    actn_target = "Lamellen"
-            elif actn_target[:5] == "Klima":
-                actn_target += f", Offset {self.action_args[0]}"
-                actn_desc = f"Ausgang {self.get_dict_entry('outputs', self.action_args[1])}"
-            elif actn_target[:4] == "Summ":
-                actn_target += f" {self.action_args[2]}x:"
-                actn_desc = f"Höhe {self.action_args[0]}, Dauer {self.action_args[1]}"
-            else:
-                return f"{actn_target}: {self.action_code} / {self.action_args}"
-            return actn_target + chr(32) + actn_desc
-        except Exception as err_msg:
-            self.settings.logger.error(f"Could not handle action code:  {self.action_code} / {self.action_args}, Error: {err_msg}")
-            return actn_target + chr(32) + f"{self.action_code} / {self.action_args}"
+    def make_automtn_copy(self):
+        """Create new instance from self."""
+        new_automtn = AutomationDefinition(None, self.autmn_dict, self.settings)
+        new_automtn.trigger = self.trigger
+        new_automtn.condition = self.condition
+        new_automtn.action = self.action
+        new_automtn.action_code = self.action_code
+        new_automtn.event_code = self.event_code
+        new_automtn.src_rt = self.src_rt
+        new_automtn.src_mod = self.src_mod
+        return new_automtn
 
-
-    def get_output_desc(self, arg) -> str:
+    def get_output_desc(self, arg: int, time_function: bool) -> str:
         """Return string description for output arg."""
         if arg < 17:
-            out_desc = f"Ausgang {self.get_dict_entry('outputs', arg)}"
-        elif arg < 34:
-            out_desc = f"LED {self.get_dict_entry('leds', arg-16)}"
-        elif arg < 117:
-            out_desc = f"Lok. Merker {self.get_dict_entry('flags', arg-100)}"
-        elif arg < 149:
-            out_desc = f"Glob. Merker {self.get_dict_entry('glob_flags', arg-132)}"
-        else:
-            l_inp = arg - 164
-            unit_no, inp_no, l_name = self.get_counter_inputs(l_inp)
-            if l_name == "":
-                out_desc = f"Logikeingang {inp_no} von Unit {unit_no}"
+            unit_no = arg
+            out_desc = f"Ausgang {self.get_dict_entry('outputs', unit_no)}"
+            return out_desc
+        if arg < 25:
+            unit_no = arg - 16
+            out_desc = f"LED {self.get_dict_entry('leds', unit_no)}"
+            return out_desc
+        if time_function:
+            if arg < 32:
+                unit_no = arg - 24
+                out_desc = f"Lok. Merker {self.get_dict_entry('flags', unit_no)}"
+            elif arg < 41:
+                unit_no = arg - 32
+                out_desc = f"Glob. Merker {self.get_dict_entry('glob_flags', unit_no)}"
             else:
-                if inp_no == 1:
-                    out_desc = f"Zähler '{l_name}' hoch"
-                elif inp_no == 2:
-                    out_desc = f"Zähler '{l_name}' runter"
+                l_inp = arg - 41
+                unit_no = int(l_inp / 2) + 1
+                inp_no = l_inp - (unit_no - 1) * 2 + 1
+                unit_no, inp_no, l_name = self.get_counter_inputs(l_inp)
+                out_desc = f"Logikeingang {inp_no} von Unit {unit_no}"
+            return out_desc
+        else:
+            if arg < 117:
+                unit_no = arg - 100
+                out_desc = f"Lok. Merker {self.get_dict_entry('flags', unit_no)}"
+            elif arg < 149:
+                unit_no = arg - 132
+                out_desc = f"Glob. Merker {self.get_dict_entry('glob_flags', unit_no)}"
+            else:
+                l_inp = arg - 164
+                unit_no, inp_no, l_name = self.get_counter_inputs(l_inp)
+                if l_name == "":
+                    out_desc = f"Logikeingang {inp_no} von Unit {unit_no}"
                 else:
-                    out_desc = f"Zähler '{l_name}' ???"
-        return out_desc
+                    if inp_no == 1:
+                        out_desc = f"Zähler '{l_name}' hoch"
+                    elif inp_no == 2:
+                        out_desc = f"Zähler '{l_name}' runter"
+                    else:
+                        out_desc = f"Zähler '{l_name}' ???"
+            return out_desc
 
-    def get_counter_inputs(self, log_inp:int):
+    def get_counter_inputs(self, log_inp: int):
         """Return counter information, if counter input found."""
         unit_no = int(log_inp / 8)
-        inp_no = log_inp - unit_no*8
+        inp_no = log_inp - unit_no * 8
         l_units = self.settings.logic
         for lg_unit in l_units:
-            if (lg_unit.type == 5) & (lg_unit.nmbr == unit_no+1):
-                return unit_no+1, inp_no, lg_unit.name
-        return unit_no+1, inp_no, ""
-    
+            if (lg_unit.type == 5) & (lg_unit.nmbr == unit_no + 1):
+                return unit_no + 1, inp_no, lg_unit.name
+        return unit_no + 1, inp_no, ""
+
     def get_mode_desc(self, md_no: int) -> str:
         """Return description for mode number."""
         md_desc = ""
+        if md_no == 0:
+            md_desc = "Immer"
+        md_no1 = md_no & 0xF0
+        if md_no1 == 16:
+            md_desc = "Abwesend"
+        if md_no1 == 32:
+            md_desc = "Anwesend"
+        if md_no1 == 48:
+            md_desc = "Schlafen"
+        if md_no1 == 80:
+            md_desc = self.settings.user1_name
+        if md_no1 == 96:
+            md_desc = self.settings.user2_name
+        if md_no1 == 112:
+            md_desc = "Urlaub"
         if (md_no & 0x03) == 1:
-            md_desc = "Tag"
+            md_desc += ", Tag"
         elif (md_no & 0x03) == 2:
-            md_desc = "Nacht"
+            md_desc += ", Nacht"
         if (md_no & 0x04) == 4:
             md_desc += ", Alarm"
-        md_no = md_no & 0xF0
-        if md_no == 16:
-            md_desc += ", Abwesend"
-        if md_no == 32:
-            md_desc += ", Anwesend"
-        if md_no == 48:
-            md_desc += ", Schlafen"
-        if md_no == 80:
-            md_desc += ", Urlaub"
-        if md_no == 96:
-            md_desc += f", {self.settings.user1_name}"
-        if md_no == 112:
-            md_desc += f", {self.settings.user2_name}"
         if md_desc[0] == ",":
             return md_desc[2:]
         return md_desc
-            
+
     def make_definition(self) -> bytes:
         """Return definition line as bytes."""
+
+        actn_arg_len = len(self.action.action_args)
         def_line = (
             chr(self.src_rt)
             + chr(self.src_mod)
-            + chr(self.event_code)
-            + chr(self.event_arg1)
-            + chr(self.event_arg2)
-            + chr(len(self.action_args) + 8)
-            + chr(self.condition)
-            + chr(self.action_code)
+            + chr(self.trigger.event_code)
+            + chr(self.trigger.event_arg1)
+            + chr(self.trigger.event_arg2)
+            + chr(actn_arg_len + 3)
+            + chr(self.condition.cond_code)
+            + chr(self.action.action_code)
         )
-        for actn_arg in self.action_args:
+        for actn_arg in self.action.action_args:
             def_line += chr(actn_arg)
-        return def_line.encode("iso8859-1")
+        return def_line
+
+    def set_visible(self, page, select_str: str) -> str:
+        """Replace 'hidden' attribute of html element by 'visible'."""
+        return page.replace(select_str + "hidden", select_str + "visible")
+
+    def set_option(self, page, select_val, select_str: str) -> str:
+        """Search line by value and/or string (use None to choose) and add 'selected'."""
+        if select_val == None:
+            search_str = ""
+        else:
+            search_str = f'<option value="{select_val}"'
+        repl_str = search_str + " selected"
+        if select_str != None:
+            search_str += f">{select_str}<"
+            repl_str += f">{select_str}<"
+        return page.replace(search_str, repl_str)
+
+    def replace_default_value(self, page, select_str: str, def_val, new_val) -> str:
+        """Search string and default value by new value."""
+        new_str = select_str.replace(f'value="{def_val}"', f'value="{new_val}"')
+        return page.replace(select_str, new_str)
+
+    def get_sel(self, form, key):
+        """Pick selector number from form based on key, strip prefix."""
+        form_entry = form[key][0]
+        if form_entry.find("-") > 0:
+            return int(form_entry.split("-")[1])
+        return int(form_entry)
+
+    def get_val(self, form, key):
+        """Pick selector number from form based on key, strip prefix."""
+        form_entry = form[key][0]
+        if form_entry.find("-") > 0:
+            return float(form_entry.split("-")[1])
+        return float(form_entry)
+
+
+class ExtAutomationDefinition(AutomationDefinition):
+    """Object with automation data and methods, etras for ext. trigger."""
+
+    def __init__(self, atm_def, autmn_dict, settings):
+        super().__init__(atm_def, autmn_dict, settings)
+        rtr = settings.rtr.api_srv.routers[self.src_rt - 1]
+        if self.src_mod in rtr.mod_addrs:
+            mod = rtr.get_module(self.src_mod)
+            src_settings = mod.get_module_settings()
+            self.trigger = AutomationTrigger(self, src_settings, atm_def)
+        else:
+            settings.logger.warning(
+                f"Automation reference to module {self.src_mod}, module not found."
+            )
+            self.trigger = AutomationTrigger(self, settings, atm_def)

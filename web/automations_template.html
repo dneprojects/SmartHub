@@ -84,11 +84,7 @@
             </div>
           </div>
         </div>
-        <div id="right">
-          <div class="inside">
-          </div>
-        </div>
-        <div id="mitte">
+        <div id="mitte_automtn">
           <div class="inside">
             <div class="mod_article block" id="text-231">
 
@@ -102,8 +98,9 @@
                 <!-- MainContentEnd -->
               </div>
               <div id="autmnbuttons">
-                <button name="EditAutomtn" class="config_button" id="new_button" type="submit" form="automations_table"
-                  value="new">Neu</button>
+                <button name="NewAutomtn" class="config_button" form="automations_table" 
+                  type="submit" id="new_button" value="new">Neu</button>
+                <!--button name="NewExtAutomtn" class="config_button" id="new_ext_button" value="newext">Neu</button-->
                 <button name="EditAutomtn" class="config_button" id="change_button" type="submit"
                   form="automations_table" value="change">Ändern</button>
                 <button name="DelAutomtn" class="config_button" id="del_button" value="del">Löschen</button>
@@ -143,18 +140,46 @@
       </div>
     </div>
   </div>
+  <div id="automtn_new_popup" class="popup">
+    <div class="popup-content" style="height: 200px;">
+      <h1>ContentTitle</h1>
+      <h2>Neue externe Automatisierung</h2>
+      <h3>Auslösendes Modul auswählen</h3>
+      <form id="sel-src-module" action="/automtns" method="post">
+        <select name="src_module" style="position: absolute; width: 385px" id="src-module">
+          <option value="">-- Modul wählen --</option>
+        </select>
+        <input id="sel-automtn" name="sel_automtn" style="position: absolute; visibility: hidden">
+        <div id="new_buttons">
+          <button id="close_new_popup">Abbruch</button>
+          <button id="ext_automtn" >Weiter</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </body>
 
 </html>
 
 <script type="text/javascript">
   const frm = document.getElementById("automations_table");
+  const mod_sel = document.getElementById("src-module");
+  const src_frm = document.getElementById("sel-src-module");
   del_button.addEventListener("click", function () {
     open_del_popup();
   });
   close_del_popup.addEventListener("click", function () {
     automtn_del_popup.classList.remove("show");
   });
+  new_ext_button.addEventListener("click", function () {
+    open_new_popup();
+  });
+  close_new_popup.addEventListener("click", function () {
+    automtn_new_popup.classList.remove("show");
+  });
+  ext_automtn.addEventListener("click", function () {
+    continue_with_module();
+    });
   function open_del_popup() {
     var sel = 0
     for (let l = 0; l < frm.length; l++) {
@@ -165,6 +190,19 @@
     del_automtn.value = "del_automtn-" + sel;
     automtn_del_popup.classList.add("show");
   };
-
+  function open_new_popup() {
+      var sel = 0
+      for (let l = 0; l < frm.length; l++) {
+        if (frm[l].checked) {
+          sel = l;
+        }
+      }
+      ext_automtn.value = "new_automtn-" + sel;
+      automtn_new_popup.classList.add("show");
+    };
+    function continue_with_module() {
+      src_frm[1].value = ext_automtn.value
+      src_frm.submit()
+    }
 
 </script>

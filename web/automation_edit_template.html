@@ -38,12 +38,19 @@
     <link rel="stylesheet" href="./configurator_files/contao.css" type="text/css" media="screen">
     <!--[if lte IE 7]><link rel="stylesheet" href="system/iefixes.css" type="text/css" media="screen" /><![endif]-->
     <link rel="stylesheet" href="./configurator_files/tinymce.css" type="text/css" media="screen">
-    <script type="text/javascript" async="" src="./configurator_files/ga.js.Download"></script>
-    <script type="text/javascript" src="./configurator_files/mootools-yui-compressed.js.Download"></script>
-    <script type="text/javascript" src="./configurator_files/mootools-more.js.Download"></script>
+    <script>
+        const trg_code = 0;
+        const trg_arg1 = 0;
+        const trg_arg2 = 0;
+        const trg_time = "";
+        const cnd_code = 0;
+        const act_code = 0;
+        const act_args = [0, 0];
+        const max_count = [16, 16, 16, 16, 16, 16, 16, 16, 16, 16];
+    </script>
 </head>
 
-<body id="top" class="modules">
+<body id="top" class="modules" onload="initUiElements(trg_code, trg_arg1, trg_arg2, cnd_code, act_code, act_args, trg_time)">
     <div id="container">
         <div id="content">
             <div id="header">
@@ -103,8 +110,11 @@
                                     <div id="trigger_frame" style="height: 100px;">
                                         <select name="trigger_sel" id="trigger-select"">
                                             <option value="">-- Auslösendes Ereignis wählen --</option>
-                                        </select><br><br>
-                                        <select name=" trigger_button" style="visibility: hidden; position: absolute"
+                                        </select>
+                                        <input type="time" name="time_vals" style="visibility: hidden;"
+                                        id="time-vals" min="00:00" max="23:59" required value="00:00"/>
+                                        <br><br>
+                                        <select name="trigger_button" style="visibility: hidden; position: absolute"
                                             id="button-select">
                                             <option value="">-- Taster wählen --</option>
                                         </select>
@@ -114,7 +124,14 @@
                                         </select>
                                         <select name="trigger_output" style="visibility: hidden; position: absolute"
                                             id="output-select">
-                                            <option value="">-- Ausgang wählen --</option>
+                                            <option value="">-- TrAusgang wählen --</option>
+                                        </select>
+                                        <select name="trigger_mov" style="visibility: hidden; position: absolute" 
+                                            id="mov-select">
+                                            <option value="">-- Lichtsensor wählen --</option>
+                                            <option value="0" selected>ohne Helligkeit</option>
+                                            <option value="1">Helligkeit innen</option>
+                                            <option value="2">Helligkeit außen</option>
                                         </select>
                                         <select name="trigger_sensor" style="visibility: hidden; position: absolute"
                                             id="sensor-select">
@@ -122,27 +139,208 @@
                                         </select>
                                         <select name="trigger_collcmd" style="visibility: hidden; position: absolute"
                                             id="collcmd-select">
-                                            <option value="">-- CKommando wählen --</option>
+                                            <option value="">-- TrCKommando wählen --</option>
                                         </select>
-                                        <select name="trigger_opt2" style="visibility: hidden; position: absolute"
+                                        <select name="trigger_viscmd" style="visibility: hidden; position: absolute"
                                             id="viscmd-select">
                                             <option value="">-- VKommando wählen --</option>
-                                        </select><br><br>
+                                        </select>
+                                        <select name="trigger_dircmd" style="visibility: hidden; position: absolute" 
+                                            id="dircmd-select">
+                                            <option value="">-- DKommando wählen --</option>
+                                        </select>
+                                        <select name="trigger_flag" style="visibility: hidden; position: absolute"
+                                            id="flag-select">
+                                            <option value="">-- TrMerker wählen --</option>
+                                        </select>
+                                        <select name="trigger_mode" style="visibility: hidden; position: absolute"
+                                            id="mode-select">
+                                            <option value="">-- TrModus wählen --</option>
+                                        </select>
+                                        <select name="trigger_counter" style="visibility: hidden; position: absolute" id="counter-select">
+                                            <option value="">-- TrZähler wählen --</option>
+                                        </select>
+                                        <select name="clim_sens_select" style="visibility: hidden; position: absolute" id="clim-sens-select">
+                                            <option value="1">interner Temperatursensor</option>
+                                            <option value="2">externer Temperatursensor</option>
+                                        </select>
+                                        <select name="day_vals" style="visibility: hidden; position: absolute" id="day-vals">
+                                            <option value="">-- Tag wählen --</option>
+                                            <option value="0">Immer</option>
+                                            <option value="50">Sonntag</option>
+                                            <option value="51">Montag</option>
+                                            <option value="52">Dienstag</option>
+                                            <option value="53">Mittwoch</option>
+                                            <option value="54">Donnerstag</option>
+                                            <option value="55">Freitag</option>
+                                            <option value="56">Samstag</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
+                                            <option value="7">7</option>
+                                            <option value="8">8</option>
+                                            <option value="9">9</option>
+                                            <option value="10">10</option>
+                                            <option value="11">11</option>
+                                            <option value="12">12</option>
+                                            <option value="13">13</option>
+                                            <option value="14">14</option>
+                                            <option value="15">15</option>
+                                            <option value="16">16</option>
+                                            <option value="17">17</option>
+                                            <option value="18">18</option>
+                                            <option value="19">19</option>
+                                            <option value="20">20</option>
+                                            <option value="21">21</option>
+                                            <option value="22">22</option>
+                                            <option value="23">23</option>
+                                            <option value="24">24</option>
+                                            <option value="25">25</option>
+                                            <option value="26">26</option>
+                                            <option value="27">27</option>
+                                            <option value="28">28</option>
+                                            <option value="29">29</option>
+                                            <option value="30">30</option>
+                                            <option value="31">31</option>
+                                        </select>
+                                        <select name="trigger_ekey" style="visibility: hidden; position: absolute" id="ekey-select">
+                                            <option value="">-- Benutzer wählen --</option>
+                                        </select>
+                                        <div name="remote_codes" class="sens_lims" style="visibility: hidden; position: absolute" id="remote-codes">
+                                            <div id="rem_high_lbl" class="sens_lbl"><label for="ir-high">IR-Code high:</label></div>
+                                            <input type="number" id="ir-high" class="sens_no" name="ir_high" min="0" max="255" step="1" value="0" />
+                                            <br><br>
+                                            <div id="rem_low_lbl" class="sens_lbl"><label for="ir-low">IR-Code low:</label></div>
+                                            <input type="number" id="ir-low" class="sens_no" name="ir_low" min="0" max="255" step="1" value="0" />
+                                        </div>
+                                        <br><br>
                                         <select name="trigger_onoff" style="visibility: hidden; position: absolute"
                                             id="onoff-select">
-                                            <option value="">-- Zustand wählen --</option>\n
-                                            <option value="1">an</option>\n
-                                            <option value="2">aus</option>\n
+                                            <option value="">-- Zustand wählen --</option>
+                                            <option value="1">an</option>
+                                            <option value="2">aus</option>
                                         </select>
                                         <select name="trigger_shortlong" style="visibility: hidden; position: absolute"
                                             id="shortlong-select">
-                                            <option value="">-- Zustand wählen --</option>\n
-                                            <option value="1">kurzer Tastendruck</option>\n
-                                            <option value="2">langer Tastendruck</option>\n
+                                            <option value="">-- Zustand wählen --</option>
+                                            <option value="1">kurzer Tastendruck</option>
+                                            <option value="2">langer Tastendruck</option>
+                                        </select>
+                                        <select name="trigger_flag2" style="visibility: hidden; position: absolute" id="flag2-select">
+                                            <option value="">-- Zustand wählen --</option>
+                                            <option value="1">gesetzt</option>
+                                            <option value="2">rückgesetzt</option>
+                                        </select>
+                                        <select name="trigger_mode2" style="visibility: hidden; position: absolute" id="mode2-select">
+                                            <option value="0">Immer</option>\n
+                                            <option value="1">Tag</option>
+                                            <option value="2">Nacht</option>
+                                            <option value="4">Alarm</option>
+                                        </select>
+                                        <select name="count_vals" style="visibility: hidden; position: absolute" id="count-vals">
+                                            <option value="">-- Wert wählen --</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
+                                            <option value="7">7</option>
+                                            <option value="8">8</option>
+                                            <option value="9">9</option>
+                                            <option value="10">10</option>
+                                            <option value="11">11</option>
+                                            <option value="12">12</option>
+                                            <option value="13">13</option>
+                                            <option value="14">14</option>
+                                            <option value="15">15</option>
+                                            <option value="16">16</option>
+                                        </select>
+                                        <select name="month_vals" style="visibility: hidden; position: absolute" id="month-vals">
+                                            <option value="">-- Monat wählen --</option>
+                                            <option value="0">Immer</option>
+                                            <option value="1">Januar</option>
+                                            <option value="2">Februar</option>
+                                            <option value="3">März</option>
+                                            <option value="4">April</option>
+                                            <option value="5">Mai</option>
+                                            <option value="6">Juni</option>
+                                            <option value="7">Juli</option>
+                                            <option value="8">August</option>
+                                            <option value="9">September</option>
+                                            <option value="10">Oktober</option>
+                                            <option value="11">November</option>
+                                            <option value="12">Dezember</option>
+                                        </select>
+                                        <select name="trigger_finger" style="visibility: hidden; position: absolute" id="finger-select">
+                                            <option value="">-- Finger wählen --</option>\n
+                                            <option value="1">Kleiner Finger links</option>
+                                            <option value="2">Ringfinger links</option>
+                                            <option value="3">Mittelfinger links</option>
+                                            <option value="4">Zeigefinger links</option>
+                                            <option value="5">Daumen links</option>
+                                            <option value="6">Daumen rechts</option>
+                                            <option value="7">Zeigefinger rechts</option>
+                                            <option value="8">Mittelfinger rechts</option>
+                                            <option value="9">Ringfinger rechts</option>
+                                            <option value="10">Kleiner Finger rechts</option>
+                                        </select>
+                                        <select name="trigger_rain" style="visibility: hidden; position: absolute" id="rain-select">
+                                            <option value="">-- Zustand wählen --</option>
+                                            <option value="74">ja</option>
+                                            <option value="78">nein</option>
+                                        </select>
+                                        <div name="sens_lims_ad" class="sens_lims" style="visibility: hidden; position: absolute" id="sens-lims-ad">
+                                            <div id="sens-lbl_low" class="sens_lbl"><label for="sens-low">Bereich unten [V]:</label></div>
+                                            <input type="number" id="sens-low-ad" class="sens_no" name="sens_low_ad" min="0" max="10.2" step="0.04" value="0"/>
+                                            <br><br>
+                                            <div id="sens-lbl_high" class="sens_lbl"><label for="sens-high">Bereich oben [V]:</label></div>
+                                            <input type="number" id="sens-high-ad" class="sens_no" name="sens_high_ad" min="0" max="10.2" step="0.04" value="10"/>
+                                        </div>
+                                        <div name="sens_lims_perc" class="sens_lims" style="visibility: hidden; position: absolute" id="sens-lims-perc">
+                                            <div id="sens-lbl_low" class="sens_lbl"><label for="sens-low">Bereich unten [%]:</label></div>
+                                            <input type="number" id="sens-low-perc" class="sens_no" name="sens_low_perc" min="0" max="100" step="1" value="0"/>
+                                            <br><br>
+                                            <div id="sens-lbl_high" class="sens_lbl"><label for="sens-high">Bereich oben [%]:</label></div>
+                                            <input type="number" id="sens-high-perc" class="sens_no" name="sens_high_perc" min="0" max="100" step="1" value="100"/>
+                                        </div>
+                                        <div name="sens_lims_lux" class="sens_lims" style="visibility: hidden; position: absolute" id="sens-lims-lux">
+                                            <div id="sens-lbl_low" class="sens_lbl"><label for="sens-low">Bereich unten [Lux]:</label></div>
+                                            <input type="number" id="sens-low-lux" class="sens_no" name="sens_low_lux" min="0" max="2550" step="10" value="0"/>
+                                            <br><br>
+                                            <div id="sens-lbl_high" class="sens_lbl"><label for="sens-high">Bereich oben [Lux]:</label></div>
+                                            <input type="number" id="sens-high-lux" class="sens_no" name="sens_high_lux" min="0" max="2550" step="10" value="2550"/>
+                                        </div>
+                                        <div name="sens_lims_wind" class="sens_lims" style="visibility: hidden; position: absolute" id="sens-lims-wind">
+                                            <div id="sens-lbl_low" class="sens_lbl"><label for="sens-low">Bereich unten [m/s]:</label></div>
+                                            <input type="number" id="sens-low-wind" class="sens_no" name="sens_low_wind" min="0" max="46" step="1" value="0"/>
+                                            <br><br>
+                                            <div id="sens-lbl_high" class="sens_lbl"><label for="sens-high">Bereich oben [m/s]:</label></div>
+                                            <input type="number" id="sens-high-wind" class="sens_no" name="sens_high_wind" min="0" max="46" step="1" value="46"/>
+                                        </div>
+                                        <div name="sens_lims_temp" class="sens_lims" style="visibility: hidden; position: absolute" id="sens-lims-temp">
+                                            <div id="sens-lbl_low" class="sens_lbl"><label for="sens-low">Bereich unten [°C]:</label></div>
+                                            <input type="number" id="sens-low-temp" class="sens_no" name="sens_low_temp" min="-60" max="60" step="1" value="-30"/>
+                                            <br><br>
+                                            <div id="sens-lbl_high" class="sens_lbl"><label for="sens-high">Bereich oben [°C]:</label></div>
+                                            <input type="number" id="sens-high-temp" class="sens_no" name="sens_high_temp" min="-60" max="60" step="1" value="30"/>
+                                        </div>
+                                        <div name="mov_params" class="sens_lims" style="visibility: hidden; position: absolute" id="mov-params">
+                                            <div id="sens-lbl_low" class="sens_lbl"><label for="sens-low">Empfindlichkeit:</label></div>
+                                            <input type="number" id="mov-intens" class="sens_no" name="sens_low_mov" min="1" max="254" step="1" value="10"/>
+                                            <div id="mov-light-lbl" class="sens_lbl"><label for="mov-light">Helligkeit [Lux]:</label></div>
+                                            <input type="number" id="mov-light" class="sens_no" name="sens_high_mvl" min="0" max="2550" step="10" value="50"/>
+                                        </div>
+                                        <select name="clim_mode_select" style="visibility: hidden; position: absolute" id="clim-mode-select">
+                                            <option value="1">Heizen</option>
+                                            <option value="2">Kühlen</option>
                                         </select>
                                     </div>
                                     <hr class="solid_line">
-                                    <h2>Bedingung</h2>
+                                    <h3>Bedingung</h3>
                                     <div id="condition_frame" style="height: 70px;">
                                         <select name="condition_sel" id="condition-select">
                                             <option value="">-- Bedingung wählen --</option>
@@ -161,12 +359,126 @@
                                         </select>
                                     </div>
                                     <hr class="solid_line">
-                                    <h2>Aktion</h2>
+                                    <h3>Aktion</h3>
                                     <div id="action_frame" style="height: 100px;">
                                         <select name="action_sel" id="action-select" onchange="this.form.submit()">
                                             <option value="">-- Aktion wählen --</option>
-                                        </select><br><br>
-                                        <p>ContentTextAction</p>
+                                        </select>
+                                        <br><br>
+                                        <select name="act_output" style="visibility: hidden; position: absolute" id="output-act">
+                                            <option value="">-- AcAusgang wählen --</option>
+                                        </select>
+                                        <select name="act_dimmout" style="visibility: hidden; position: absolute" id="dimmout-act">
+                                            <option value="">-- Dimm-Ausgang wählen --</option>
+                                        </select>
+                                        <select name="act_cover" style="visibility: hidden; position: absolute" id="cover-act">
+                                            <option value="">-- Rollladen/Jalousie wählen --</option>
+                                        </select>
+                                        <select name="act_led" style="visibility: hidden; position: absolute" id="led-act">
+                                            <option value="">-- LED wählen --</option>
+                                        </select>
+                                        <select name="act_counter" style="visibility: hidden; position: absolute" id="counter-act">
+                                            <option value="">-- AcZähler wählen --</option>
+                                        </select>
+                                        <select name="act_collcmd" style="visibility: hidden; position: absolute" id="collcmd-act">
+                                            <option value="">-- AcCKommando wählen --</option>
+                                        </select>
+                                        <select name="act_flag" style="visibility: hidden; position: absolute" id="flag-act">
+                                            <option value="">-- AcMerker wählen --</option>
+                                        </select>
+                                        <select name="act_climopt" style="visibility: hidden; position: absolute" id="climopt-act">
+                                            <option value="">-- Regelungsoption wählen --</option>
+                                            <option value="1">Temperatursollwert 1</option>
+                                            <option value="2">Temperatursollwert 2</option>
+                                            <option value="21">Regelung mit Sensor intern</option>
+                                            <option value="22">Regelung mit Sensor extern</option>
+                                            <option value="11">Regelungsmodus Heizen</option>
+                                            <option value="12">Regelungsmodus Kühlen</option>
+                                            <option value="13">Regelungsmodus Heizen/Kühlen</option>
+                                            <option value="14">Regelung ausschalten</option>
+                                        </select>
+                                        <select name="mode_high" style="visibility: hidden; position: absolute" id="mode-high">
+                                            <option value="">-- Modus wählen --</option>
+                                            <option value="0">unverändert</option>
+                                            <option value="16">Abwesend</option>
+                                            <option value="32">Anwesend</option>
+                                            <option value="48">Schlafen</option>
+                                            <option value="80">User1Mode</option>
+                                            <option value="96">User2Mode</option>
+                                            <option value="112">Urlaub</option>
+                                        </select>
+                                        <div name="modlite_pars" class="sens_lims" style="visibility: hidden; position: absolute" id="modlite-pars">
+                                            <div id="modlite-lbl" class="sens_lbl"><label for="modlite-time">Dauer [s]:</label></div>
+                                            <input type="number" id="modlite-time" class="sens_no" name="modlite_time" min="1" max="254" step="1" value="5"/>
+                                        </div>
+                                        <div name="buzz_pars" class="sens_lims" style="visibility: hidden; position: absolute" id="buzz-pars">
+                                            <div id="buzz-freq-lbl" class="sens_lbl"><label for="buzz-freq">Tonhöhe:</label></div>
+                                            <input type="number" id="buzz-freq" class="sens_no" name="buzz_freq" min="1" max="254" step="1" value="5" />
+                                            <div id="buzz-dur-lbl" class="sens_lbl"><label for="buzz-dur">Dauer:</label></div>
+                                            <input type="number" id="buzz-dur" class="sens_no" name="buzz_dur" min="1" max="254" step="1" value="5" />
+                                        </div>
+                                        <br><br>
+                                        <div name="buzz_pars2" class="sens_lims" style="visibility: hidden; position: absolute" id="buzz-pars2">
+                                            <div id="buzz-rep-lbl" class="sens_lbl"><label for="buzz-rep">Wiederholungen:</label></div>
+                                            <input type="number" id="buzz-rep" class="sens_no" name="buzz_rep" min="1" max="50" step="1" value="1" />
+                                        </div>
+                                        <select name="act_outopt" style="visibility: hidden; position: absolute" id="outopt-act">
+                                            <option value="">-- Ausgangsaktion wählen --</option>
+                                            <option value="1">einschalten</option>
+                                            <option value="2">ausschalten</option>
+                                            <option value="3">wechseln</option>
+                                            <option value="4">auf Zeit ein-, dann ausschalten</option>
+                                            <option value="5">auf Zeit ein, dann wie zuvor</option>
+                                            <option value="6">verzögert einschalten</option>
+                                            <option value="7">verzögert ausschalten</option>
+                                        </select>
+                                        <select name="act_covopt" style="visibility: hidden; position: absolute" id="covopt-act">
+                                            <option value="1" selected>Rollladenposition [%]:</option>
+                                            <option value="2">Lamellenposition [%]:</option>
+                                        </select>
+                                        <select name="act_countopt" style="visibility: hidden; position: absolute" id="countopt-act">
+                                            <option value="">-- Zähleraktion wählen --</option>
+                                            <option value="1">hoch zählen</option>
+                                            <option value="2">abwärts zählen</option>
+                                            <option value="3">Wert setzen:</option>
+                                        </select>
+                                        <select name="act_dimmopt" style="visibility: hidden; position: absolute" id="dimmopt-act">
+                                            <option value="">-- Dimmer Aktion wählen --</option>
+                                            <option value="20">Wert setzen [%]:</option>
+                                            <option value="22">Dimmen starten</option>
+                                            <option value="23">Dimmen stoppen</option>
+                                            <option value="24">Dimmen komplett</option>
+                                        </select>
+                                        <select name="mode_low" style="visibility: hidden; position: absolute" id="mode-low">
+                                            <option value="">-- Modus wählen --</option>
+                                            <option value="0">unverändert</option>
+                                            <option value="1">Alarm ein</option>
+                                            <option value="2">Alarm aus</option>
+                                            <option value="3">Tag</option>
+                                            <option value="4">Nacht</option>
+                                        </select>
+                                        <select name="act_climoutput" style="visibility: hidden; position: absolute" id="climoutput-act">
+                                            <option value="">-- ClAusgang wählen --</option>
+                                        </select>
+                                        <select name="act_tsetopt" style="visibility: hidden; position: absolute" id="tsetopt-act">
+                                            <option value="">-- Sollwertoption wählen --</option>
+                                            <option value="1">überschreiben [°C]:</option>
+                                            <option value="2">vorübergehend setzen [°C]:</option>
+                                            <option value="3">rücksetzen</option>
+                                        </select>
+                                        <input type="number" class="sens_no" id="tset-val" min="0" max="25.5" step="0.5" value="20"
+                                            name="tset_val" style="visibility: hidden; position: absolute; margin-left: 200px" />
+                                        <input type="number" class="sens_no" id="cnt-val" min="1" max="16" step="1" value="1"
+                                            name="cnt_val" style="visibility: hidden; position: absolute; margin-left: 200px" />
+                                        <input type="number" class="sens_no" id="perc-val" min="0" max="100" step="1" value="0" 
+                                            name="perc_val" style="visibility: hidden; position: absolute; margin-left: 200px"/>
+                                        <input type="number" class="sens_no" id="timeinterv-val" min="0" max="100" step="1" value="0"
+                                            name="timeinterv_val" style="visibility: hidden; position: absolute; margin-left: 200px" />
+                                        <select name="act_timeunit" style="visibility: hidden; position: absolute; margin-left: 260px; width: 80px" id="timeunit-act">
+                                            <option value="1" selected>Sekunden</option>
+                                            <option value="2">Minuten</option>
+                                        </select>
+                                        <input type="hidden" id="ok-result" name="ok_result" value="edit" />
                                     </div>
                             </div>
                             </form>
@@ -175,9 +487,9 @@
                         </div>
                         <br><br>
                         <div id="autmnbuttons">
-                            <button name="EditAutomtn" class="config_button" id="cancel_button" type="submit"
+                            <button name="cancel_atm_edit" class="config_button" id="cancel_button" type="submit"
                                 form="automation_def" value="cancel">Abbruch</button>
-                            <button name="EditAutomtn" class="config_button" id="ok_button" type="submit"
+                            <button name="ok_atm_edit" class="config_button" id="ok_button" type="button"
                                 form="automation_def" value="ok">OK</button>
                         </div>
                     </div>
@@ -188,30 +500,18 @@
         <div id="footer">
             <div class="inside">
                 <div id="confbuttons">
-                    <form action="settings_step">
-                        <button name="ModSettings" class="config_button" id="config_button" type="submit"
-                            form="automations_table" value="back-ModAddress">zurück</button>
-                        <button name="ModSettings" class="config_button" id="config_button" type="submit"
-                            value="cancel-ModAddress">Abbruch</button>
-                        <button name="ModSettings" class="config_button" id="config_button" type="submit"
-                            form="automations_table" value="save-ModAddress">Speichern</button>
-                        <button name="ModSettings" class="config_button" id="config_button" type="submit"
-                            form="automations_table" value="next-ModAddress">weiter</button>
-                    </form>
                 </div>
             </div>
         </div>
 
     </div>
-    </div>
-    <div id="automtn_del_popup" class="popup">
+    <div id="automtn_err_popup" class="popup">
         <div class="popup-content">
             <h1>ContentTitle</h1>
-            <h2>Löschen der ausgewählten Automatisierung</h2>
-            <h3>Sind Sie sicher?</h3>
+            <h2>Fehler bei der Eingabe der Automatisierung</h2>
+            <h3>Nicht alle Felder ausgefüllt</h3>
             <div id="del_buttons">
-                <button id="close_del_popup">Abbruch</button>
-                <button id="del_automtn" type="submit" form="automations_table">Löschen</button>
+                <button id="close_err_popup">OK</button>
             </div>
         </div>
     </div>
@@ -219,80 +519,8 @@
 
 </html>
 
-<script type="text/javascript">
-    const trig_sel = document.getElementById("trigger-select");
-    trig_sel.addEventListener("change", function () {
-        set_trigger_sels();
-    });
-    const cond_sel = document.getElementById("condition-select");
-    cond_sel.addEventListener("change", function () {
-        set_condition_sels();
-    });
-    close_del_popup.addEventListener("click", function () {
-        automtn_del_popup.classList.remove("show");
-    });
-    function set_trigger_sels() {
-        var idx = trig_sel.selectedIndex
-        var selectn = trig_sel[idx].text
-        document.getElementById("button-select").style.visibility = "hidden";
-        document.getElementById("switch-select").style.visibility = "hidden";
-        document.getElementById("output-select").style.visibility = "hidden";
-        document.getElementById("viscmd-select").style.visibility = "hidden";
-        document.getElementById("collcmd-select").style.visibility = "hidden";
-        document.getElementById("sensor-select").style.visibility = "hidden";
-        document.getElementById("shortlong-select").style.visibility = "hidden";
-        document.getElementById("onoff-select").style.visibility = "hidden";
-        if (selectn == "Taster") {
-            document.getElementById("button-select").style.visibility = "visible";
-            document.getElementById("shortlong-select").style.visibility = "visible";
-        }
-        if (selectn == "Schalter") {
-            document.getElementById("switch-select").style.visibility = "visible";
-            document.getElementById("onoff-select").style.visibility = "visible";
-        }
-        if (selectn == "Dimmen") {
-            document.getElementById("button-select").style.visibility = "visible";
-        }
-        if (selectn == "Ausgangsänderung") {
-            document.getElementById("output-select").style.visibility = "visible";
-            document.getElementById("onoff-select").style.visibility = "visible";
-        }
-        if (selectn == "Sammelbefehl") {
-            document.getElementById("collcmd-select").style.visibility = "visible";
-        }
-        if (selectn == "Visualisierungsbefehl") {
-            document.getElementById("viscmd-select").style.visibility = "visible";
-        }
-        if (selectn == "Sensor") {
-            document.getElementById("sensor-select").style.visibility = "visible";
-        }
-    }
-    function set_condition_sels() {
-        var idx = cond_sel.selectedIndex
-        document.getElementById("condition_2").style.visibility = "hidden";
-        document.getElementById("condition_time").style.visibility = "hidden";
-        document.getElementById("condition_flag").style.visibility = "hidden";
-        if ((idx == 2) || (idx == 3)) {
-            document.getElementById("condition_flag").style.visibility = "visible";
-        }
-        if (idx == 4) {
-            document.getElementById("condition_time").style.visibility = "visible";
-        }
-        if (idx > 4) {
-            document.getElementById("condition_2").style.visibility = "visible";
-        }
-    }
 
-    function open_del_popup() {
-        var sel = 0
-        for (let l = 0; l < frm.length; l++) {
-            if (frm[l].checked) {
-                sel = l;
-            }
-        }
-        del_automtn.value = "del_automtn-" + sel;
-        automtn_del_popup.classList.add("show");
-    };
-
-
-</script>
+<script type="text/javascript" src="./configurator_files/init.js"></script>
+<script type="text/javascript" src="./configurator_files/trigger.js"></script>
+<script type="text/javascript" src="./configurator_files/condition.js"></script>
+<script type="text/javascript" src="./configurator_files/action.js"></script>
