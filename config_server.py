@@ -53,9 +53,9 @@ class HubSettings:
 class ConfigServer:
     """Web server for basic configuration tasks."""
 
-    def __init__(self, sm_hub):
-        self.sm_hub = sm_hub
-        self._ip = sm_hub._host_ip
+    def __init__(self, api_srv):
+        self.api_srv = api_srv
+        self._ip = api_srv.sm_hub._host_ip
         self._port = CONF_PORT
         self.logger = logging.getLogger(__name__)
         self.conf_running = False
@@ -64,8 +64,6 @@ class ConfigServer:
     async def initialize(self):
         """Initialize config server."""
         self.app = web.Application()
-        self.app["smhub"] = self.sm_hub
-        # self.app["conf_srv"] = self
         self.app.add_routes(routes)
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
@@ -78,7 +76,6 @@ class ConfigServer:
 
     async def prepare(self):
         """Second initialization after api_srv is initialized."""
-        self.api_srv = self.sm_hub.api_srv
         self.app["api_srv"] = self.api_srv
         self.app["is_offline"] = self.api_srv.is_offline
         init_side_menu(self.app)

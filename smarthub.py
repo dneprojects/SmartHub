@@ -40,7 +40,7 @@ class QueryServer:
 
     def __init__(self, lp, sm_hub):
         self.loop = lp
-        self.sm_hub = sm_hub
+        self.lan_mac = sm_hub.lan_mac
         self.logger = logging.getLogger(__name__)
         self._q_running = False
 
@@ -52,7 +52,7 @@ class QueryServer:
         serial_str = SMHUB_INFO.SERIAL
         empty_str_10 = "0000000000"
         mac_str = ""
-        for nmbr in self.sm_hub.lan_mac.split(":"):
+        for nmbr in self.lan_mac.split(":"):
             mac_str += chr(int(nmbr, 16))
         self.resp_str = (
             resp_header
@@ -106,7 +106,6 @@ class SmartHub:
         self.loop = loop
         self.tg = asyncio.TaskGroup()
         self.logger = logger
-        self.api_srv: ApiServer = []
         self.q_srv: QueryServer = []
         self.conf_srv: ConfigServer = []
         self.get_mac()
@@ -407,20 +406,20 @@ async def main(init_flag, ev_loop):
         if rt_serial == None:
             init_flag = False
             logger.error(f"Initialization of serial connection failed")
-        # Instantiate config server object
-        logger.debug("Initializing config server")
-        sm_hub.conf_srv = ConfigServer(sm_hub)
-        await sm_hub.conf_srv.initialize()
         # Instantiate query object
         logger.debug("Initializing query server")
         sm_hub.q_srv = QueryServer(ev_loop, sm_hub)
         await sm_hub.q_srv.initialize()
         # Instantiate api_server object
+        api_srv = ApiServer(ev_loop, sm_hub, rt_serial)
+        # Instantiate config server object
+        logger.debug("Initializing config server")
+        sm_hub.conf_srv = ConfigServer(api_srv)
         logger.debug("Initializing API server")
-        sm_hub.api_srv = ApiServer(ev_loop, sm_hub, rt_serial)
+        await sm_hub.conf_srv.initialize()
         if init_flag:
-            await sm_hub.api_srv.get_initial_status()
-            sm_hub.api_srv.is_offline = False
+            await api_srv.get_initial_status()
+            api_srv.is_offline = False
         else:
             logger.warning("Initialization of router and modules skipped")
         startup_ok = True
@@ -437,7 +436,7 @@ async def main(init_flag, ev_loop):
         async with sm_hub.tg:
             logger.debug("Starting API server")
             skip_init = sm_hub.tg.create_task(
-                sm_hub.run_api_server(ev_loop, sm_hub.api_srv), name="api_srv"
+                sm_hub.run_api_server(ev_loop, api_srv), name="api_srv"
             )
             logger.debug("Starting query server")
             sm_hub.tg.create_task(sm_hub.q_srv.run_query_srv(), name="q_srv")
