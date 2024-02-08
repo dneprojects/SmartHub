@@ -44,14 +44,8 @@ class AutomationsSet:
                 if len(if_desc.name) > 0:
                     self.autmn_dict[a_key][if_desc.nmbr] += f"{if_desc.name}"
         self.autmn_dict["user_modes"] = {1: "User1", 2: "User2"}
-        if len(settings.module.rt.user_modes[1:11].strip()) > 0:
-            self.autmn_dict["user_modes"][1] = (
-                settings.module.rt.user_modes[1:11].strip().decode("iso8859-1")
-            )
-        if len(settings.module.rt.user_modes[12:].strip()) > 0:
-            self.autmn_dict["user_modes"][2] = (
-                settings.module.rt.user_modes[12:].strip().decode("iso8859-1")
-            )
+        self.autmn_dict["user_modes"][1] = settings.user1_name
+        self.autmn_dict["user_modes"][2] = settings.user2_name
 
     def get_automations(self, settings):
         """Get automations of Habitron module."""
@@ -63,22 +57,29 @@ class AutomationsSet:
         if len(list) == 0:
             return False
         for _ in range(no_lines):
-            if list == b"":
-                break
-            line_len = int(list[5]) + 5
-            line = list[0:line_len]
-            src_rt = int(line[0])
-            src_mod = int(line[1])
-            if ((src_rt == 0) | (src_rt == 250)) & (src_mod == 0):  # local automation
-                self.local.append(AutomationDefinition(line, self.autmn_dict, settings))
-            elif (src_rt == settings.module.rt._id) | (src_rt == 250):
-                self.external.append(
-                    ExtAutomationDefinition(line, self.autmn_dict, settings)
-                )
-            elif src_rt < 65:
-                self.forward.append(
-                    ExtAutomationDefinition(line, self.autmn_dict, settings)
-                )
+            try:
+                if list == b"":
+                    break
+                line_len = int(list[5]) + 5
+                line = list[0:line_len]
+                src_rt = int(line[0])
+                src_mod = int(line[1])
+                if ((src_rt == 0) | (src_rt == 250)) & (
+                    src_mod == 0
+                ):  # local automation
+                    self.local.append(
+                        AutomationDefinition(line, self.autmn_dict, settings)
+                    )
+                elif (src_rt == settings.module.rt._id) | (src_rt == 250):
+                    self.external.append(
+                        ExtAutomationDefinition(line, self.autmn_dict, settings)
+                    )
+                elif src_rt < 65:
+                    self.forward.append(
+                        ExtAutomationDefinition(line, self.autmn_dict, settings)
+                    )
+            except Exception as err_msg:
+                self.logger.error(f"Error decoding automation {line}: {err_msg}")
             list = list[line_len : len(list)]  # Strip processed line
         self.local, i = self.sort_automation_list(self.local, 0)
         self.external, i = self.sort_automation_list(self.external, 0)

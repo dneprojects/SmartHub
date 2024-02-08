@@ -8,14 +8,14 @@ from configuration import ModuleSettings
 class HbtnModule:
     """Habitron module object, holds complete status."""
 
-    def __init__(self, mod_id: int, hdlr, rt) -> None:
+    def __init__(self, mod_id: int, rt_id: int, hdlr, api_srv) -> None:
         self._id: int = mod_id
+        self.rt_id = rt_id
         self.logger = logging.getLogger(__name__)
         self._name = ""
         self._typ: bytes = b""
         self._type = ""
-        self.rt = rt
-        self.api_srv = rt.api_srv
+        self.api_srv = api_srv
         self.hdlr = hdlr
 
         self.status: bytes = b""  # full mirror, holds module settings
@@ -64,6 +64,10 @@ class HbtnModule:
             .decode("iso8859-1")
             .strip()
         )
+
+    def get_rtr(self):
+        """Return router object."""
+        return self.api_srv.routers[self.rt_id - 1]
 
     def get_smc_crc(self) -> int:
         """Return smc crc from status."""
@@ -381,7 +385,7 @@ class HbtnModule:
 
     def get_module_settings(self):
         """Collect all settings and prepare for config server."""
-        self.settings = ModuleSettings(self, self.rt)
+        self.settings = ModuleSettings(self)
         return self.settings
 
     async def set_settings(self, settings: ModuleSettings):

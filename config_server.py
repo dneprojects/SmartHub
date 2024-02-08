@@ -1557,7 +1557,7 @@ def prepare_src_mod_trigger(automtn, rtr, src_mod):
     """Init empty trigger into given automation."""
     automtn.src_mod = src_mod
     mod = rtr.get_module(src_mod)
-    src_settings = ModuleSettings(mod, rtr)
+    src_settings = ModuleSettings(mod)
     automtn.trigger = AutomationTrigger(automtn, src_settings, None)
     automtn.event_code = 0
     automtn.trigger.src_mod = automtn.src_mod
@@ -1713,7 +1713,9 @@ async def send_to_module(app, content: str, mod_addr: int):
     """Send uploads to module."""
     rtr = app["api_srv"].routers[0]
     if app["api_srv"].is_offline:
-        rtr.modules.append(HbtnModule(mod_addr, ModHdlr(mod_addr, rtr.api_srv), rtr))
+        rtr.modules.append(
+            HbtnModule(mod_addr, rtr._id, ModHdlr(mod_addr, rtr.api_srv), rtr.api_srv)
+        )
         module = rtr.modules[-1]
         module.smg_upload, module.list = seperate_upload(content)
         module.calc_SMG_crc(module.smg_upload)

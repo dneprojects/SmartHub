@@ -77,8 +77,8 @@ class AutomationCondition:
             16: "Modus 'Abwesend'",
             32: "Modus 'Anwesend'",
             48: "Modus 'Schlafen'",
-            80: f"Modus '{self.automation.settings.module.rt.user_modes[1:11].decode('iso8859-1').strip()}'",
-            96: f"Modus '{self.automation.settings.module.rt.user_modes[12:].decode('iso8859-1').strip()}'",
+            80: f"Modus '{self.automation.settings.user1_name}'",
+            96: f"Modus '{self.automation.settings.user2_name}'",
             112: "Modus 'Urlaub'",
             1: "Modus 'Tag'/'Nacht'/'Alarm'",
         }

@@ -14,32 +14,31 @@ from automation import AutomationDefinition, AutomationsSet
 class ModuleSettings:
     """Object with all module settings."""
 
-    def __init__(self, module, rtr):
+    def __init__(self, module):
         """Fill all properties with module's values."""
         self.id = module._id
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Initialzing module settings object")
         self.module = module
-        self.rtr = rtr
         self.name = dpcopy(module._name)
         self.typ = module._typ
         self.type = module._type
         self.list = dpcopy(module.list)
         self.status = dpcopy(module.status)
         self.smg = dpcopy(module.build_smg())
-        self.desc = dpcopy(rtr.descriptions)
+        self.desc = dpcopy(module.get_rtr().descriptions)
         self.properties: dict = module.io_properties
         self.prop_keys = module.io_prop_keys
         self.cover_times = [0, 0, 0, 0, 0]
         self.blade_times = [0, 0, 0, 0, 0]
-        self.user1_name = rtr.user_modes[1:11].decode("iso8859-1").strip()
-        self.user2_name = rtr.user_modes[12:].decode("iso8859-1").strip()
+        self.user1_name = module.get_rtr().user_modes[1:11].decode("iso8859-1").strip()
+        self.user2_name = module.get_rtr().user_modes[12:].decode("iso8859-1").strip()
         self.get_io_interfaces()
         self.get_names()
         self.get_settings()
         self.get_descriptions()
         self.automtns_def = AutomationsSet(self)
-        self.group = dpcopy(rtr.groups[self.id])
+        self.group = dpcopy(module.get_rtr().groups[self.id])
 
     def get_io_interfaces(self):
         """Parse config files to extract names, etc."""
@@ -141,7 +140,6 @@ class ModuleSettings:
 
     def set_module_settings(self, status: bytes) -> bytes:
         """Restore settings to module."""
-
         status = replace_bytes(
             status,
             (self.name + " " * (32 - len(self.name))).encode("iso8859-1"),
@@ -383,6 +381,7 @@ class ModuleSettings:
 
         self.logger.debug("Getting module descriptions")
         resp = self.desc.encode("iso8859-1")
+
         no_lines = int.from_bytes(resp[:2], "little")
         resp = resp[4:]
         for _ in range(no_lines):
@@ -633,7 +632,6 @@ class RouterSettings:
         self.smr = rtr.smr
         self.desc = rtr.descriptions
         self.logger = logging.getLogger(__name__)
-        self.logger.debug("Initialzing router settings object")
         self.channels = rtr.channels
         self.timeout = rtr.timeout
         # self.groups = rtr.groups

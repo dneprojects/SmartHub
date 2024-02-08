@@ -81,7 +81,7 @@ class HbtnRouter:
         for mod_addr in self.mod_addrs:
             try:
                 self.modules.append(
-                    HbtnModule(mod_addr, ModHdlr(mod_addr, self.api_srv), self)
+                    HbtnModule(mod_addr, self._id, ModHdlr(mod_addr, self.api_srv), self.api_srv)
                 )
                 self.logger.debug(f"Module {mod_addr} instantiated")
                 await self.modules[-1].initialize()
