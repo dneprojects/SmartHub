@@ -24,6 +24,7 @@ class HbtnModule:
         self.smg_crc = 0
         self.list: bytes = b""  # SMC information: labels, commands
         self.list_upload: bytes = b""  # buffer for SMC upload
+        self.settings = None
 
     async def initialize(self):
         """Get full module status"""
@@ -386,6 +387,12 @@ class HbtnModule:
     def get_module_settings(self):
         """Collect all settings and prepare for config server."""
         self.settings = ModuleSettings(self)
+        return self.settings
+
+    def get_settings_def(self):
+        """Return settings object."""
+        if self.settings == None:
+            return self.get_module_settings()
         return self.settings
 
     async def set_settings(self, settings: ModuleSettings):

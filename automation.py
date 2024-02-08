@@ -351,7 +351,7 @@ class ExtAutomationDefinition(AutomationDefinition):
         rtr = settings.module.get_rtr()
         if self.src_mod in rtr.mod_addrs:
             mod = rtr.get_module(self.src_mod)
-            src_settings = mod.get_module_settings()
+            src_settings = mod.get_settings_def()
             self.trigger = AutomationTrigger(self, src_settings, atm_def)
         else:
             settings.logger.warning(
