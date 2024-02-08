@@ -65,7 +65,7 @@ class ConfigServer:
         """Initialize config server."""
         self.app = web.Application()
         self.app["smhub"] = self.sm_hub
-        self.app["conf_srv"] = self
+        # self.app["conf_srv"] = self
         self.app.add_routes(routes)
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
@@ -81,14 +81,7 @@ class ConfigServer:
         self.api_srv = self.sm_hub.api_srv
         self.app["api_srv"] = self.api_srv
         self.app["is_offline"] = self.api_srv.is_offline
-        self.init_side_menu()
-
-    def init_side_menu(self):
-        """Setup side menu."""
-        self.side_menu = adjust_side_menu(
-            self.api_srv.routers[0].modules, self.app["is_offline"]
-        )
-        self.app["side_menu"] = self.side_menu
+        init_side_menu(self.app)
 
     @routes.get("/")
     async def root(request: web.Request) -> web.Response:
@@ -268,7 +261,7 @@ class ConfigServer:
                 request.app["logger"].info(
                     f"Module configuration file for module {mod_addr} uploaded"
                 )
-            request.app["conf_srv"].init_side_menu()
+            init_side_menu(request.app)
             return show_modules(request.app)
         elif data["ModUpload"] == "ModAddress":
             # router upload
@@ -560,6 +553,12 @@ async def show_next_prev(request, args):
         if step > 0:
             step -= 1
     return show_setting_step(request.app, mod_addr, step)
+
+
+def init_side_menu(app):
+    """Setup side menu."""
+    side_menu = adjust_side_menu(app["api_srv"].routers[0].modules, app["is_offline"])
+    app["side_menu"] = side_menu
 
 
 def show_modules(app) -> web.Response:
