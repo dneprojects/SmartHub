@@ -519,7 +519,7 @@ async def show_next_prev(request, args):
         logger = request.app["logger"]
         if mod_addr > 0:
             module = settings.module
-            router = module.rt
+            router = module.get_rtr()
             await request.app["api_srv"].block_network_if(module.rt_id, True)
             try:
                 await module.set_settings(settings)
