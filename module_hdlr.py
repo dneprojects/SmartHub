@@ -26,7 +26,7 @@ class ModHdlr(HdlrBase):
     def initialize(self, mod):
         """Set module properties."""
         self.mod = mod
-        self.rt_id = mod.rt._id
+        self.rt_id = mod.rt_id
 
     async def mod_reboot(self):
         """Initiates a module reboot"""
