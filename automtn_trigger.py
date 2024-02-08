@@ -220,14 +220,8 @@ class AutomationTrigger:
                 if len(if_desc.name) > 0:
                     self.autmn_dict[a_key][if_desc.nmbr] += f"{if_desc.name}"
         self.autmn_dict["user_modes"] = {1: "User1", 2: "User2"}
-        if len(settings.module.rt.user_modes[1:11].strip()) > 0:
-            self.autmn_dict["user_modes"][1] = (
-                settings.module.rt.user_modes[1:11].strip().decode("iso8859-1")
-            )
-        if len(settings.module.rt.user_modes[12:].strip()) > 0:
-            self.autmn_dict["user_modes"][2] = (
-                settings.module.rt.user_modes[12:].strip().decode("iso8859-1")
-            )
+        self.autmn_dict["user_modes"][1] = settings.user1_name
+        self.autmn_dict["user_modes"][2] = settings.user2_name
 
     def get_dict_entry(self, key, arg) -> str:
         """Lookup dict and return value, if found."""

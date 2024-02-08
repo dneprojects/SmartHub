@@ -269,7 +269,7 @@ class AutomationAction:
                     txt_low = ", 'Nacht'"
                 else:
                     txt_low = ""
-                actn_target = f"Modus für Gruppe {self.automation.settings.rtr.groups[self.automation.mod_addr-1]} auf '{txt_high}'{txt_low}"
+                actn_target = f"Modus für Gruppe {self.automation.settings.group} auf '{txt_high}'{txt_low}"
                 actn_target = actn_target.replace("'Immer', ", "")
 
             elif actn_target[:6] == "Temper":

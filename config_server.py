@@ -301,14 +301,14 @@ class ConfigServer:
                 case "save":
                     settings = request.app["settings"]
                     module = settings.module
-                    await request.app["api_srv"].block_network_if(module.rt._id, True)
+                    await request.app["api_srv"].block_network_if(module.rt_id, True)
                     try:
                         await module.set_automations(settings)
                     except Exception as err_msg:
                         request.app["logger"].error(
                             f"Error while saving module automations: {err_msg}"
                         )
-                    await request.app["api_srv"].block_network_if(module.rt._id, False)
+                    await request.app["api_srv"].block_network_if(module.rt_id, False)
                     return show_module_overview(request.app, mod_addr)
                 case "next":
                     step += 1
@@ -520,7 +520,7 @@ async def show_next_prev(request, args):
         if mod_addr > 0:
             module = settings.module
             router = module.rt
-            await request.app["api_srv"].block_network_if(module.rt._id, True)
+            await request.app["api_srv"].block_network_if(module.rt_id, True)
             try:
                 await module.set_settings(settings)
                 request.app["side_menu"] = adjust_side_menu(
@@ -532,7 +532,7 @@ async def show_next_prev(request, args):
                     await router.set_module_group(mod_addr, int(settings.group_member))
             except Exception as err_msg:
                 logger.error(f"Error while saving module settings: {err_msg}")
-            await request.app["api_srv"].block_network_if(module.rt._id, False)
+            await request.app["api_srv"].block_network_if(module.rt_id, False)
             return show_module_overview(request.app, mod_addr)
         else:
             # Save settings in router
@@ -986,7 +986,7 @@ def enable_new_popup(settings, page: str) -> str:
     page = page.replace('"newext">Neu</button-->', '"newext">Neu</button>')
     page = page.replace('<button name="NewAutomtn"', '<!--button name="NewAutomtn"')
     page = page.replace('value="new">Neu</button>', 'value="new">Neu</button-->')
-    rtr = settings.rtr
+    rtr = settings.module.get_rtr()
     opt_str = '<option value="">-- Modul wählen --</option>'
     for mod in rtr.modules:
         if (mod._id != settings.id) & (mod._typ[0] != 20):

@@ -70,7 +70,7 @@ class AutomationsSet:
                     self.local.append(
                         AutomationDefinition(line, self.autmn_dict, settings)
                     )
-                elif (src_rt == settings.module.rt._id) | (src_rt == 250):
+                elif (src_rt == settings.module.rt_id) | (src_rt == 250):
                     self.external.append(
                         ExtAutomationDefinition(line, self.autmn_dict, settings)
                     )
@@ -348,7 +348,7 @@ class ExtAutomationDefinition(AutomationDefinition):
 
     def __init__(self, atm_def, autmn_dict, settings):
         super().__init__(atm_def, autmn_dict, settings)
-        rtr = settings.rtr.api_srv.routers[self.src_rt - 1]
+        rtr = settings.module.get_rtr()
         if self.src_mod in rtr.mod_addrs:
             mod = rtr.get_module(self.src_mod)
             src_settings = mod.get_module_settings()

@@ -33,12 +33,12 @@ class ModuleSettings:
         self.blade_times = [0, 0, 0, 0, 0]
         self.user1_name = module.get_rtr().user_modes[1:11].decode("iso8859-1").strip()
         self.user2_name = module.get_rtr().user_modes[12:].decode("iso8859-1").strip()
+        self.group = dpcopy(module.get_rtr().groups[self.id])
         self.get_io_interfaces()
         self.get_names()
         self.get_settings()
         self.get_descriptions()
         self.automtns_def = AutomationsSet(self)
-        self.group = dpcopy(module.get_rtr().groups[self.id])
 
     def get_io_interfaces(self):
         """Parse config files to extract names, etc."""

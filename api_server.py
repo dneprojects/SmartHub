@@ -174,6 +174,10 @@ class ApiServer:
         """Turn on operate mode: enable router events."""
         # Client ip needed for event handling;
         # method "get_extra_info" is only implemented for writer object
+        if not "ip_writer" in self.__dir__():
+            # no command received yet
+            self._opr_mode = False
+            return False
         self._client_ip = self.ip_writer.get_extra_info("peername")[0]
         self.is_addon = self._client_ip == self.sm_hub.get_host_ip()
         # SmartHub running with Home Assistant, use internal websocket
@@ -232,7 +236,7 @@ class ApiServer:
             self._ev_srv_task.cancel()
             self.logger.info("EventSrv cancelled after 1 sec")
         self._ev_srv_task = []
-        
+
         self._opr_mode = False
         await asyncio.sleep(0.01)
 
