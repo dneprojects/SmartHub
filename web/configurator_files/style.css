@@ -600,7 +600,6 @@ a:hover {
    background: #FFF;
 }
 
-
 #left {
    position: relative;
    z-index: 450;
@@ -623,7 +622,7 @@ th {
    padding-bottom: 6px;
 }
 
-tr:nth-child(odd) {
+tr#atm-tr:nth-child(odd) {
    background-color: #f4e5e3;
 }
 /* ---------------------------------------------------------Elemente---------------------------- */
@@ -1043,6 +1042,12 @@ select {
    accent-color: #C0372D;
 }
 
+#rgb-colorpicker {
+   width: 50px;
+   height: 22px;
+   border: 1px solid #C0372D;
+   margin-left: 200px;
+}
 
 input[type="text"],
 input[type="number"],
