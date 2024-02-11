@@ -615,6 +615,17 @@ a:hover {
    border-top: 1px solid #722e29;
 }
 
+th {
+   background-color: #af6258;
+   color: #ffffff;
+   padding: 3px;
+   padding-top: 6px;
+   padding-bottom: 6px;
+}
+
+tr:nth-child(odd) {
+   background-color: #f4e5e3;
+}
 /* ---------------------------------------------------------Elemente---------------------------- */
 
 #pic {

@@ -2,7 +2,7 @@ import logging
 from pymodbus.utilities import checkCRC as ModbusCheckCRC
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from const import MirrIdx, SMGIdx, MStatIdx, MODULE_CODES, CStatBlkIdx, HA_EVENTS
-from configuration import ModuleSettings
+from configuration import ModuleSettings, ModuleSettingsLight
 
 
 class HbtnModule:
@@ -277,19 +277,19 @@ class HbtnModule:
             else:
                 polarity = polarity | (1 << (2 * c_i + 1))
             self.status = (
-                self.status[: MirrIdx.COVER_T]
+                self.status[: MirrIdx.COVER_T + c_i]
                 + int.to_bytes(ta + tb)
-                + self.status[MirrIdx.COVER_T + 1 :]
+                + self.status[MirrIdx.COVER_T + c_i + 1 :]
             )
             self.status = (
-                self.status[: MirrIdx.BLAD_T]
+                self.status[: MirrIdx.BLAD_T + c_i]
                 + int.to_bytes(smg[20 + 2 * c_i] + smg[20 + 2 * c_i + 1])
-                + self.status[MirrIdx.BLAD_T + 1 :]
+                + self.status[MirrIdx.BLAD_T + c_i + 1 :]
             )
             self.status = (
-                self.status[: MirrIdx.COVER_INTERP]
+                self.status[: MirrIdx.COVER_INTERP + c_i]
                 + int.to_bytes(interp)
-                + self.status[MirrIdx.COVER_INTERP + 1 :]
+                + self.status[MirrIdx.COVER_INTERP + c_i + 1 :]
             )
         self.status = (
             self.status[: MirrIdx.COVER_POL]
@@ -391,9 +391,7 @@ class HbtnModule:
 
     def get_settings_def(self):
         """Return settings object."""
-        if self.settings == None:
-            return self.get_module_settings()
-        return self.settings
+        return ModuleSettingsLight(self)
 
     async def set_settings(self, settings: ModuleSettings):
         """Restore changed settings from config server into module and re-initialize."""

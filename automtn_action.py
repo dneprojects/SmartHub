@@ -16,7 +16,7 @@ ActionNames = {
     24: "Dimmen komplett",
     30: "Prozentwert anzeigen",
     31: "Prozentwert in Register",
-    35: "RGB-Licht",
+    35: "Farblicht",
     50: "Sammelbefehl",
     55: "Alarmmeldung auslösen",
     56: "Meldung setzen",
@@ -93,6 +93,40 @@ ActionsSets = {
     240: [240],
 }
 
+col_on = [10, 10, 10]
+col_off = [0, 0, 0]
+col_red = [90, 0, 0]
+col_green = [0, 90, 0]
+col_blue = [0, 0, 90]
+col_white = [80, 80, 80]
+amb_white = [60, 60, 60]
+amb_warm = [90, 60, 30]
+amb_cool = [50, 60, 70]
+
+DefaultRGBColors = {
+    1: col_on,
+    2: col_off,
+    5: col_red,
+    6: col_green,
+    7: col_blue,
+    10: col_white,
+    11: amb_white,
+    12: amb_warm,
+    13: amb_cool,
+}
+
+DefaultRGBNames = {
+    1: "",
+    2: "",
+    5: "rot",
+    6: "grün",
+    7: "blau",
+    10: "weiß",
+    11: "weiß",
+    12: "warm",
+    13: "cool",
+}
+
 
 class AutomationAction:
     """Object for action part of habitron automations."""
@@ -148,8 +182,7 @@ class AutomationAction:
         elif typ == b"\x32\x01":  # Smart Controller Mini
             actions_dict = {
                 SelActCodes["output"]: "Ausgang",
-                SelActCodes["led"]: "LED",
-                SelActCodes["rgb"]: "RGB",
+                SelActCodes["rgb"]: "Farblicht",
                 SelActCodes["climate"]: "Klima",
                 SelActCodes["collcmd"]: "Sammelbefehl",
                 SelActCodes["flag"]: "Merker",
@@ -233,11 +266,14 @@ class AutomationAction:
                     outp_no = self.action_args[0] + 10
                 else:
                     outp_no = self.action_args[0]
-                out_desc = self.get_dict_entry("outputs", outp_no)
-                if actn_target == "Dimmwert":
+                if outp_no > 20:
+                    outp_no -= 10
+                    actn_desc = f"{self.action_args[1]}% mit Übergabe"
+                elif actn_target == "Dimmwert":
                     actn_desc = f"{self.action_args[1]}%"
                 else:
                     actn_desc = actn_target.split()[1]
+                out_desc = self.get_dict_entry("outputs", outp_no)
                 actn_target = f"{actn_target.split()[0]} {out_desc}"
             elif actn_target == "Counter":
                 self.unit = self.action_args[0]
@@ -271,7 +307,6 @@ class AutomationAction:
                     txt_low = ""
                 actn_target = f"Modus für Gruppe {self.automation.settings.group} auf '{txt_high}'{txt_low}"
                 actn_target = actn_target.replace("'Immer', ", "")
-
             elif actn_target[:6] == "Temper":
                 strings = TempTargetCodes[self.action_args[0]].split()
                 if self.action_args[0] in [11, 12, 13, 14]:
@@ -322,24 +357,32 @@ class AutomationAction:
                 if led_id in range(1, 9):
                     actn_desc = f"#{led_id} "
                 elif led_id in range(41, 45):
-                    actn_desc = f"Ecke {led_id - 40} "
+                    actn_desc = self.get_dict_entry("leds", led_id - 40) + " "
                 elif led_id == 100:
-                    actn_desc = f"gesamt "
+                    actn_desc = f"ambient "
                 else:
                     actn_desc = f"Farbe unverändert "
                 if task == 1:
-                    actn_desc += "setzen"
+                    actn_desc += "setzen: "
                 elif task == 2:
                     actn_desc += "ausschalten"
                 elif task == 3:
-                    actn_desc += "temporär setzen"
-                elif task == 5:
-                    actn_desc += "zurück setzen"
-                if len(self.action_args) > 5:
-                    red = self.action_args[3]
-                    green = self.action_args[4]
-                    blue = self.action_args[5]
-                    actn_desc += f" - rot: {red}, grün: {green}, blau: {blue}"
+                    actn_desc += "temporär setzen: "
+                red = self.action_args[3]
+                green = self.action_args[4]
+                blue = self.action_args[5]
+                color = [red, green, blue]
+                col_name = ""
+                for key, value in DefaultRGBColors.items():
+                    if color == value:
+                        col_name = DefaultRGBNames[key]
+                        break
+                if len(col_name) > 0:
+                    actn_desc += f"'{col_name}'"
+                elif task == 2:
+                    pass
+                else:
+                    actn_desc += f"rot: {red}, grün: {green}, blau: {blue}"
             elif self.action_code == 240:
                 actn_target += f" für {self.action_args[0]} s"
                 actn_desc = ""
@@ -399,6 +442,9 @@ class AutomationAction:
         opt_str = '<option value="">-- Dimm-Ausgang wählen --</option>'
         for dimm in sel_atm.settings.dimmers:
             opt_str += f'<option value="{dimm.nmbr}">{dimm.name}</option>'
+            opt_str += (
+                f'<option value="{dimm.nmbr + 10}">{dimm.name} mit Übergabe</option>'
+            )
         page = page.replace(
             '<option value="">-- Dimm-Ausgang wählen --</option>', opt_str
         )
@@ -474,6 +520,34 @@ class AutomationAction:
             )
         page = page.replace(">User1Mode<", f">{self.autmn_dict['user_modes'][1]}<")
         page = page.replace(">User2Mode<", f">{self.autmn_dict['user_modes'][2]}<")
+        if app["settings"].typ == b"\x32\x01":
+            for led_no in range(1, 5):
+                if len(self.autmn_dict["leds"][led_no]) > 0:
+                    page = page.replace(
+                        f"Signalecke {led_no}", self.autmn_dict["leds"][led_no]
+                    )
+            # set javascript color definitions according to definitions in python
+            page = page.replace(
+                "const col_red = [0, 0, 0];", f"const col_red = {col_red};"
+            )
+            page = page.replace(
+                "const col_green = [0, 0, 0];", f"const col_green = {col_green};"
+            )
+            page = page.replace(
+                "const col_blue = [0, 0, 0];", f"const col_blue = {col_blue};"
+            )
+            page = page.replace(
+                "const col_white = [0, 0, 0];", f"const col_white = {col_white};"
+            )
+            page = page.replace(
+                "const amb_white = [0, 0, 0];", f"const amb_white = {amb_white};"
+            )
+            page = page.replace(
+                "const amb_warm = [0, 0, 0];", f"const amb_warm = {amb_warm};"
+            )
+            page = page.replace(
+                "const amb_cool = [0, 0, 0];", f"const amb_cool = {amb_cool};"
+            )
         page = self.activate_ui_elements(page)
         return page
 
@@ -614,6 +688,30 @@ class AutomationAction:
         elif self.action_code in ActionsSets[SelActCodes["ambient"]]:
             time = self.automation.get_sel(form_data, "modlite_time")
             self.action_args.append(time)
+        elif self.action_code in ActionsSets[SelActCodes["rgb"]]:
+            opts = self.automation.get_sel(form_data, "rgb_opts")
+            if opts == 2:
+                self.action_args.append(2)
+            else:
+                self.action_args.append(1)
+            leds = self.automation.get_sel(form_data, "rgb_select")
+            if leds == 100:
+                self.action_args.append(2)
+            else:
+                self.action_args.append(1)
+            self.action_args.append(leds)
+            if opts == 4:
+                col_str = form_data["rgb_cols"][0]
+                for c_i in range(3):
+                    self.action_args.append(
+                        round(int(col_str[1 + 2 * c_i : 3 + 2 * c_i], 16) * 100 / 255)
+                    )
+            else:
+                color = DefaultRGBColors[opts]
+                for c_i in range(3):
+                    self.action_args.append(color[c_i])
+            self.action_args.append(1)
+            self.action_args.append(1)
         self.automation.action_code = self.action_code
         self.name = self.action_name()
         self.parse()

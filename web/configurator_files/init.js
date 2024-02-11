@@ -14,6 +14,14 @@ const counter_sel = document.getElementById("counter-select");
 counter_sel.addEventListener("change", function () {
     setMaxCount();
 });
+const rgbled_sel = document.getElementById("rgb-select");
+rgbled_sel.addEventListener("change", function () {
+    setRGBColorOptions();
+});
+const rgb_mode = document.getElementById("rgb-opts");
+rgb_mode.addEventListener("change", function () {
+    setRGBPicker();
+});
 const act_counter_sel = document.getElementById("counter-act");
 act_counter_sel.addEventListener("change", function () {
     setMaxCountAct();
@@ -38,10 +46,18 @@ const dim_actopt = document.getElementById("dimmopt-act")
 dim_actopt.addEventListener("change", function () {
     setActDPercval();
 });
+const cvr_actopt = document.getElementById("covopt-act")
+cvr_actopt.addEventListener("change", function () {
+    disablePercval();
+});
 const clim_actopt = document.getElementById("climopt-act")
     clim_actopt.addEventListener("change", function () {
         setActClimate();
     });
+const sys_sel = document.getElementById("sys-select")
+sys_sel.addEventListener("change", function () {
+    setSysTrigger();
+});
 const tset_actopt = document.getElementById("tsetopt-act")
 tset_actopt.addEventListener("change", function () {
     setActTsetval();

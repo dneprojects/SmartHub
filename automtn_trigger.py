@@ -6,13 +6,16 @@ EventCodes = {
     0: "---",
     6: "Merker/Logik",
     10: "Ausgangsänderung",
+    12: "Netzspannung",
     23: "IR-Befehl kurz",
     24: "IR-Befehl lang",
     25: "IR-Befehl lang Ende",
+    30: "Prozentübergabe Nummer",
     31: "Visualisierungsbefehl",
     40: "Bewegung Innenlicht",
     41: "Bewegung Außenlicht",
     50: "Sammelereignis",
+    101: "Systemfehler",
     137: "Modusänderung",
     149: "Dimmbefehl",
     150: "Taste kurz",
@@ -35,6 +38,7 @@ EventCodes = {
     219: "A/D Eingang 2",
     221: "Klima Sensor intern",
     222: "Klima Sensor extern",
+    249: "Modulstart",
     253: "Direktbefehl",
 }
 
@@ -67,6 +71,7 @@ EventCodesSel = {
     221: "Klima",
     222: "Klima",
     170: "Zeit",
+    249: "System",
 }
 
 EventArgsLogic = {
@@ -92,6 +97,7 @@ SelTrgCodes = {
     "time": 170,
     "sensor": 203,
     "climate": 220,
+    "system": 249,
     "dircmd": 253,
 }
 
@@ -111,6 +117,7 @@ EventsSets = {
     170: [170],
     203: [201, 202, 203, 204, 205, 213, 214, 215, 216, 217, 218, 219],
     220: [220, 221, 222],
+    249: [12, 101, 249],
     253: [253],
 }
 SelSensCodes = {
@@ -261,6 +268,7 @@ class AutomationTrigger:
                 SelTrgCodes["sensor"]: "Sensor",
                 SelTrgCodes["count"]: "Zählerwert",
                 SelTrgCodes["time"]: "Zeit",
+                SelTrgCodes["system"]: "System",
             }
             sensors_dict = {
                 SelSensCodes["ad_1"]: "A/D-Kanal 1",
@@ -447,15 +455,10 @@ class AutomationTrigger:
             elif self.event_code in EventsSets[SelTrgCodes["output"]]:
                 trig_command = self.name
                 self.unit = self.event_arg1 + self.event_arg2
+                event_desc = f"{self.get_output_desc(self.unit, False)} an"
                 if self.event_arg1:
-                    event_desc = (
-                        f"{self.automation.get_output_desc(self.event_arg1, False)} an"
-                    )
                     self.value = 1
                 else:
-                    event_desc = (
-                        f"{self.automation.get_output_desc(self.event_arg2, False)} aus"
-                    )
                     self.value = 0
             elif self.event_code in EventsSets[SelTrgCodes["remote"]]:
                 trig_command = f"IR-Befehl: '{self.event_arg1} | {self.event_arg2}'"
@@ -532,6 +535,21 @@ class AutomationTrigger:
                         f"{FingerNames[self.event_arg2 - 1]} von '{user}' erkannt"
                     )
                 event_desc = ""
+            elif self.event_code == 30:
+                trig_command = self.name
+                event_desc = f"{self.event_arg1}"
+            elif self.event_code == 12:
+                trig_command = self.name
+                if self.event_arg1 == 74:
+                    event_desc = "aktiv"
+                else:
+                    event_desc = "inaktiv"
+            elif self.event_code == 249:
+                trig_command = self.name
+                event_desc = ""
+            elif self.event_code == 101:
+                trig_command = self.name
+                event_desc = f"{self.event_arg1 * 256 + self.event_arg2}"
             else:
                 trig_command = "Unknown event"
                 self.description = f"Unknown event: {self.event_code} / {self.event_arg1} / {self.event_arg2}"
@@ -588,11 +606,18 @@ class AutomationTrigger:
                 '<select name="trigger_switch" disabled',
             )
 
-        opt_str = '<option value="">-- Ausgang wählen --</option>'
+        opt_str = '<option value="">-- Ausgang oder LED wählen --</option>'
         for outp in self.settings.outputs:
             if len(outp.name.strip()) > 0:
                 opt_str += f'<option value="{outp.nmbr}">{outp.name}</option>'
-        page = page.replace('<option value="">-- TrAusgang wählen --</option>', opt_str)
+        for outp in self.settings.leds:
+            if len(outp.name.strip()) > 0:
+                opt_str += f'<option value="{outp.nmbr + 16}">LED {outp.name}</option>'
+            else:
+                opt_str += f'<option value="{outp.nmbr + 16}">LED {outp.nmbr}</option>'
+        page = page.replace(
+            '<option value="">-- Ausgang oder LED wählen --</option>', opt_str
+        )
 
         opt_str = '<option value="">-- Modus wählen --</option>'
         md_lst = self.get_modes()
@@ -866,6 +891,18 @@ class AutomationTrigger:
             self.event_code += self.automation.get_sel(form_data, "clim_sens_select")
             self.event_arg1 = self.automation.get_sel(form_data, "clim_mode_select")
             self.event_arg2 = 0
+        elif self.event_code in EventsSets[SelTrgCodes["system"]]:
+            self.event_code = self.automation.get_sel(form_data, "trigger_sys")
+            if self.event_code == 249:
+                self.event_arg1 = 1
+                self.event_arg2 = 0
+            elif self.event_code == 12:
+                self.event_arg1 = self.automation.get_sel(form_data, "supply_select")
+                self.event_arg2 = 0
+            elif self.event_code == 101:
+                err_no = self.automation.get_sel(form_data, "syserr_no")
+                self.event_arg1 = err_no >> 8
+                self.event_arg2 = err_no & 0xFF
         if self.event_id == None:
             self.event_id = self.event_code
         self.automation.src_rt = self.src_rt
@@ -874,6 +911,51 @@ class AutomationTrigger:
         self.name = self.event_name()
         self.parse()
         return
+
+    def get_output_desc(self, arg: int, time_function: bool) -> str:
+        """Return string description for output arg."""
+        if arg < 17:
+            unit_no = arg
+            out_desc = f"Ausgang {self.get_dict_entry('outputs', unit_no)}"
+            return out_desc
+        if arg < 25:
+            unit_no = arg - 16
+            out_desc = f"LED {self.get_dict_entry('leds', unit_no)}"
+            return out_desc
+        if time_function:
+            if arg < 32:
+                unit_no = arg - 24
+                out_desc = f"Lok. Merker {self.get_dict_entry('flags', unit_no)}"
+            elif arg < 41:
+                unit_no = arg - 32
+                out_desc = f"Glob. Merker {self.get_dict_entry('glob_flags', unit_no)}"
+            else:
+                l_inp = arg - 41
+                unit_no = int(l_inp / 2) + 1
+                inp_no = l_inp - (unit_no - 1) * 2 + 1
+                unit_no, inp_no, l_name = self.get_counter_inputs(l_inp)
+                out_desc = f"Logikeingang {inp_no} von Unit {unit_no}"
+            return out_desc
+        else:
+            if arg < 117:
+                unit_no = arg - 100
+                out_desc = f"Lok. Merker {self.get_dict_entry('flags', unit_no)}"
+            elif arg < 149:
+                unit_no = arg - 132
+                out_desc = f"Glob. Merker {self.get_dict_entry('glob_flags', unit_no)}"
+            else:
+                l_inp = arg - 164
+                unit_no, inp_no, l_name = self.get_counter_inputs(l_inp)
+                if l_name == "":
+                    out_desc = f"Logikeingang {inp_no} von Unit {unit_no}"
+                else:
+                    if inp_no == 1:
+                        out_desc = f"Zähler '{l_name}' hoch"
+                    elif inp_no == 2:
+                        out_desc = f"Zähler '{l_name}' runter"
+                    else:
+                        out_desc = f"Zähler '{l_name}' ???"
+            return out_desc
 
     def get_modes(self):
         """Return modes with user modes."""

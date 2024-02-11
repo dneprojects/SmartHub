@@ -47,6 +47,13 @@
         const act_code = 0;
         const act_args = [0, 0];
         const max_count = [16, 16, 16, 16, 16, 16, 16, 16, 16, 16];
+        const col_red = [0, 0, 0];
+        const col_green = [0, 0, 0];
+        const col_blue = [0, 0, 0];
+        const col_white = [0, 0, 0];
+        const amb_white = [0, 0, 0];
+        const amb_warm = [0, 0, 0];
+        const amb_cool = [0, 0, 0];
     </script>
 </head>
 
@@ -124,7 +131,7 @@
                                         </select>
                                         <select name="trigger_output" style="visibility: hidden; position: absolute"
                                             id="output-select">
-                                            <option value="">-- TrAusgang wählen --</option>
+                                            <option value="">-- Ausgang oder LED wählen --</option>
                                         </select>
                                         <select name="trigger_mov" style="visibility: hidden; position: absolute" 
                                             id="mov-select">
@@ -132,6 +139,12 @@
                                             <option value="0" selected>ohne Helligkeit</option>
                                             <option value="1">Helligkeit innen</option>
                                             <option value="2">Helligkeit außen</option>
+                                        </select>
+                                        <select name="trigger_sys" style="visibility: hidden; position: absolute" id="sys-select">
+                                            <option value="">-- Systemereignis wählen --</option>
+                                            <option value="249">Modulstart</option>
+                                            <option value="12">Netzspannung</option>
+                                            <option value="101">Systemfehler</option>
                                         </select>
                                         <select name="trigger_sensor" style="visibility: hidden; position: absolute"
                                             id="sensor-select">
@@ -293,6 +306,15 @@
                                             <option value="74">ja</option>
                                             <option value="78">nein</option>
                                         </select>
+                                        <select name="supply_select" style="visibility: hidden; position: absolute" id="supply-select">
+                                            <option value="">-- Zustand wählen --</option>
+                                            <option value="74">aktiv</option>
+                                            <option value="78">inaktiv</option>
+                                        </select>
+                                        <div name="syserr_div" class="sens_lims" style="visibility: hidden; position: absolute" id="syserr-div">
+                                            <div id="ssyserr_lbl" class="sens_lbl"><label for="syserr-no">Fehlernummer:</label></div>
+                                            <input type="number" id="syserr-no" class="sens_no" name="syserr_no" min="0" max="65535" step="1" value="0" />
+                                        </div>
                                         <div name="sens_lims_ad" class="sens_lims" style="visibility: hidden; position: absolute" id="sens-lims-ad">
                                             <div id="sens-lbl_low" class="sens_lbl"><label for="sens-low">Bereich unten [V]:</label></div>
                                             <input type="number" id="sens-low-ad" class="sens_no" name="sens_low_ad" min="0" max="10.2" step="0.04" value="0"/>
@@ -377,6 +399,14 @@
                                         <select name="act_led" style="visibility: hidden; position: absolute" id="led-act">
                                             <option value="">-- LED wählen --</option>
                                         </select>
+                                        <select name="rgb_select" style="visibility: hidden; position: absolute" id="rgb-select">
+                                            <option value="">-- Lichtquelle wählen --</option>
+                                            <option value="100">Ambientes Licht</option>
+                                            <option value="41">Signalecke 1</option>
+                                            <option value="42">Signalecke 2</option>
+                                            <option value="43">Signalecke 3</option>
+                                            <option value="44">Signalecke 4</option>
+                                        </select>
                                         <select name="act_counter" style="visibility: hidden; position: absolute" id="counter-act">
                                             <option value="">-- AcZähler wählen --</option>
                                         </select>
@@ -432,9 +462,25 @@
                                             <option value="6">verzögert einschalten</option>
                                             <option value="7">verzögert ausschalten</option>
                                         </select>
+                                        <select name="rgb_opts" style="visibility: hidden; position: absolute" id="rgb-opts">
+                                            <option value="">-- Farbwert wählen --</option>\n
+                                            <option value="1">an</option>
+                                            <option value="2">aus</option>
+                                            <option value="5">rot</option>
+                                            <option value="6">grün</option>
+                                            <option value="7">blau</option>
+                                            <option value="10">weiß</option>
+                                            <option value="11">weiß</option>
+                                            <option value="12">warm</option>
+                                            <option value="13">cool</option>
+                                            <option value="4">Farbwert setzen</option>
+                                        </select>
+                                        <input type="color" id="rgb-colorpicker" name="rgb_cols" onchange="clickColor(0, -1, -1, 5)" value="#ff0000" ">
                                         <select name="act_covopt" style="visibility: hidden; position: absolute" id="covopt-act">
                                             <option value="1" selected>Rollladenposition [%]:</option>
+                                            <option value="11">Rollladenposition inaktiv</option>
                                             <option value="2">Lamellenposition [%]:</option>
+                                            <option value="12">Lamellenposition inaktiv</option>
                                         </select>
                                         <select name="act_countopt" style="visibility: hidden; position: absolute" id="countopt-act">
                                             <option value="">-- Zähleraktion wählen --</option>

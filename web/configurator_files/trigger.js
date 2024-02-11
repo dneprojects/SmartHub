@@ -19,6 +19,7 @@ const wind_sens = new Set([204])
 const rain_sens = new Set([205])
 const ad_sens = new Set([218, 219])
 const climate_trg = new Set([220, 221, 222])
+const sys_trg = new Set([12, 101, 249])
 const dircmd_trg = new Set([253])
  
 function initTrigElements(trg_code, trg_arg1, trg_arg2, trg_time) {
@@ -117,7 +118,7 @@ function initTrigElements(trg_code, trg_arg1, trg_arg2, trg_time) {
             setElement("sens-high-wind", trg_arg2);
         }
         if (rain_sens.has(trg_code)) {
-                setElement("rain-select", trg_arg1);
+            setElement("rain-select", trg_arg1);
         }
         if (ad_sens.has(trg_code)) {
             setElement("sens-low-ad", trg_arg1 / 25);
@@ -136,6 +137,16 @@ function initTrigElements(trg_code, trg_arg1, trg_arg2, trg_time) {
         setElement("day-vals", trg_arg1);
         setElement("month-vals", trg_arg2);
         setElement("time-vals", trg_time);
+    }
+    else if (sys_trg.has(trg_code)) {
+        setElement("trigger-select", 249);
+        setElement("sys-select", trg_code);
+        if (trg_code == 12) {
+            setElement("supply-select", trg_arg1);
+        }
+        else if (trg_code == 101) {
+            setElement("syserr-no", trg_arg1 * 256 + trg_arg2);
+        }
     }
     trig_sel.dispatchEvent(new Event("change"));
 }
@@ -176,6 +187,9 @@ function setTriggerSels() {
     document.getElementById("clim-sens-select").style.visibility = "hidden";
     document.getElementById("clim-mode-select").style.visibility = "hidden";
     document.getElementById("remote-codes").style.visibility = "hidden";
+    document.getElementById("sys-select").style.visibility = "hidden";
+    document.getElementById("supply-select").style.visibility = "hidden";
+    document.getElementById("syserr-div").style.visibility = "hidden";
     
     if (selectn == "150") {
         document.getElementById("button-select").style.visibility = "visible";
@@ -239,6 +253,10 @@ function setTriggerSels() {
         document.getElementById("clim-sens-select").style.visibility = "visible";
         document.getElementById("clim-mode-select").style.visibility = "visible";
     }
+    if (selectn == "249") {
+        document.getElementById("sys-select").style.visibility = "visible";
+        setSysTrigger()
+    }
 }
 
 function setMaxCount() {
@@ -283,6 +301,22 @@ function setEkeyUsrFingers() {
         finger_sel.style.visibility = "hidden";
     else
         finger_sel.style.visibility = "visible";
+}
+function setSysTrigger() {
+    var idx = sys_sel.selectedIndex;
+    var selectn = sys_sel[idx].value;
+    if (selectn == 249) {
+        document.getElementById("supply-select").style.visibility = "hidden";
+        document.getElementById("syserr-div").style.visibility = "hidden";
+    }
+    else if (selectn == 12) {
+        document.getElementById("supply-select").style.visibility = "visible";
+        document.getElementById("syserr-div").style.visibility = "hidden";
+    }
+    else if (selectn == 101) {
+        document.getElementById("supply-select").style.visibility = "hidden";
+        document.getElementById("syserr-div").style.visibility = "visible";
+    }
 }
 
 function u2sign7(uint_in) {

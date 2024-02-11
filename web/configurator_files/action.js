@@ -51,10 +51,10 @@ function initActElements(act_code, act_args) {
                 setElement("outopt-act", 5);
             else if ((act_args[0] == 21) | (act_args[0] == 22))
                 setElement("outopt-act", 7);
-            }
+        }
         else
             setElement("outopt-act", act_code);
-        }
+    }
     else if (dimm_act.has(act_code)) {
         setElement("action-select", 20)
         setElement("dimmout-act", act_args[0]);
@@ -63,11 +63,63 @@ function initActElements(act_code, act_args) {
             setElement("perc-val", act_args[1]);
         }
     }
+    else if (rgb_act.has(act_code)) {
+        setElement("action-select", 35)
+        setElement("rgb-select", act_args[2]);
+        setRGBColorOptions()
+        rd = act_args[3]
+        gn = act_args[4]
+        bl = act_args[5]
+        sel_col = [rd, gn, bl].toString()
+
+        if (act_args[2] == 100) {
+            if (act_args[0] == 2)
+                setElement("rgb-opts", 2)
+            else {
+                if (sel_col == amb_white.toString()) 
+                    setElement("rgb-opts", 11)
+                else if (sel_col == amb_warm.toString())
+                    setElement("rgb-opts", 12)
+                else if (sel_col == amb_cool.toString())
+                    setElement("rgb-opts", 13)
+                else {
+                    setElement("rgb-opts", 4);
+                    col_str = colArray2StrConv([act_args[3], act_args[4], act_args[5]]);
+                    document.getElementById("rgb-colorpicker").value = col_str;
+                }
+            }
+        }
+        else {
+            if (act_args[0] == 2)
+                setElement("rgb-opts", 2)
+            else {
+                if (sel_col == col_red.toString())
+                    setElement("rgb-opts", 5)
+                else if (sel_col == col_green.toString())
+                    setElement("rgb-opts", 6)
+                else if (sel_col == col_blue.toString())
+                    setElement("rgb-opts", 7)
+                else if (sel_col == col_white.toString())
+                    setElement("rgb-opts", 10)
+                else {
+                    setElement("rgb-opts", 4);
+                    col_str = colArray2StrConv([act_args[3], act_args[4], act_args[5]]);
+                    document.getElementById("rgb-colorpicker").value = col_str;
+                }
+            }
+        }
+    }
     else if (cover_act.has(act_code)) {
         setElement("action-select", 17)
         setElement("cover-act", act_args[1]);
-        setElement("covopt-act", act_args[0]);
-        setElement("perc-val", act_args[2]);
+        if (act_args[2] == 255) {
+            setElement("covopt-act", act_args[0] + 10);
+        }
+        else {
+            setElement("covopt-act", act_args[0]);
+            setElement("perc-val", act_args[2]);
+        }
+        
     }
     else if (ccmd_act.has(act_code)) {
         setElement("action-select", 50)
@@ -136,6 +188,9 @@ function setActionSels() {
     document.getElementById("counter-act").style.visibility = "hidden";
     document.getElementById("countopt-act").style.visibility = "hidden";
     document.getElementById("outopt-act").style.visibility = "hidden";
+    document.getElementById("rgb-select").style.visibility = "hidden";
+    document.getElementById("rgb-opts").style.visibility = "hidden";
+    document.getElementById("rgb-colorpicker").style.visibility = "hidden";
     document.getElementById("cover-act").style.visibility = "hidden";
     document.getElementById("covopt-act").style.visibility = "hidden";
     document.getElementById("dimmout-act").style.visibility = "hidden";
@@ -172,6 +227,12 @@ function setActionSels() {
         document.getElementById("cover-act").style.visibility = "visible";
         document.getElementById("covopt-act").style.visibility = "visible";
         document.getElementById("perc-val").style.visibility = "visible";
+        disablePercval()
+    }
+    if (selectn == "35") {
+        document.getElementById("rgb-select").style.visibility = "visible";
+        document.getElementById("rgb-opts").style.visibility = "visible";
+        setRGBPicker()
     }
     if (selectn == "220") {
         document.getElementById("climopt-act").style.visibility = "visible";
@@ -293,6 +354,14 @@ function setActTsetval() {
     }
 }
 
+function disablePercval() {
+    var cvr_opt = cvr_actopt.value
+    if (cvr_opt > 10)
+        document.getElementById("perc-val").style.visibility = "hidden";
+    else
+        document.getElementById("perc-val").style.visibility = "visible";
+}
+
 function setSensorNums() {
     var idx = sens_sel.selectedIndex
     var selectn = sens_sel[idx].value
@@ -333,3 +402,87 @@ function setMaxCountAct() {
     if (cnt_val.value > max_cnt_val)
         cnt_val.value = max_cnt_val
 };
+
+function setRGBColorOptions() {
+    const out_selval = document.getElementById("rgb-select").value
+    const col_sel = document.getElementById("rgb-opts")
+    const col_pick = document.getElementById("rgb-colorpicker")
+    if (out_selval == 100) {
+        disableOption("rgb-opts", 5);
+        disableOption("rgb-opts", 6);
+        disableOption("rgb-opts", 7);
+        disableOption("rgb-opts", 10);
+        enableOption("rgb-opts", 11);
+        enableOption("rgb-opts", 12);
+        enableOption("rgb-opts", 13);
+    }
+    else {
+        enableOption("rgb-opts", 5);
+        enableOption("rgb-opts", 6);
+        enableOption("rgb-opts", 7);
+        enableOption("rgb-opts", 10);
+        disableOption("rgb-opts", 11);
+        disableOption("rgb-opts", 12);
+        disableOption("rgb-opts", 13);
+    }
+    if (col_sel.options[col_sel.selectedIndex].disabled) {
+        if (col_sel.value == 5)
+            col_str = colArray2StrConv(col_red)
+        else if (col_sel.value == 6)
+            col_str = colArray2StrConv(col_green)
+        else if (col_sel.value == 7)
+            col_str = colArray2StrConv(col_blue)
+        else if (col_sel.value == 10)
+            col_str = colArray2StrConv(col_white)
+        else if (col_sel.value == 11)
+            col_str = colArray2StrConv(amb_white)
+        else if (col_sel.value == 12)
+            col_str = colArray2StrConv(amb_warm)
+        else if (col_sel.value == 13)
+            col_str = colArray2StrConv(amb_cool)
+        col_sel.value = 4
+        col_pick.value = col_str
+        col_pick.style.visibility = "visible";
+    }
+}
+
+function colArray2Str(col) {
+    
+    return "#" + ("0" + col[0].toString(16)).slice(-2) + ("0" + col[1].toString(16)).slice(-2) + ("0" + col[2].toString(16)).slice(-2);
+}
+
+function colArray2StrConv(col) {
+    col_str = "#"
+    for (var i = 0; i < 3; i++) {
+        col_val = Math.round(col[i] * 255 / 100)
+        col_str += ("0" + (col_val).toString(16)).slice(-2)
+    }
+    return col_str
+}
+
+function setRGBPicker() {
+    if (document.getElementById("rgb-opts").value == 4)
+        document.getElementById("rgb-colorpicker").style.visibility = "visible";
+    else
+        document.getElementById("rgb-colorpicker").style.visibility = "hidden";
+}
+    
+function disableOption(elem, opt) {
+    const selector = document.getElementById(elem)
+    for (var i= 0; i<selector.options.length; i++) {
+        if (selector.options[i].value==opt) {
+            selector.options[i].disabled = true;
+            break;
+        }
+    }  
+}
+
+function enableOption(elem, opt) {
+    const selector = document.getElementById(elem)
+    for (var i= 0; i<selector.options.length; i++) {
+        if (selector.options[i].value==opt) {
+            selector.options[i].disabled = false;
+            break;
+        }
+    }  
+}

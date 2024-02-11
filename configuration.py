@@ -110,28 +110,28 @@ class ModuleSettings:
             conf[MirrIdx.COVER_POL : MirrIdx.COVER_POL + 2], "little"
         )
         for c_idx in range(len(self.covers)):
-            cm_idx = c_idx
+            co_idx = c_idx
             if self.type[:16] == "Smart Controller":
-                cm_idx -= 2
-                if cm_idx < 0:
-                    cm_idx += 5
+                co_idx += 2
+                if co_idx > 4:
+                    co_idx -= 5
             if (
-                conf[MirrIdx.COVER_SETTINGS] & (0x01 << cm_idx) > 0
+                conf[MirrIdx.COVER_SETTINGS] & (0x01 << c_idx) > 0
             ):  # binary flag for shutters
-                self.cover_times[c_idx] = int(conf[MirrIdx.COVER_T + cm_idx]) / 10
-                self.blade_times[c_idx] = int(conf[MirrIdx.BLAD_T + cm_idx]) / 10
+                self.cover_times[co_idx] = int(conf[MirrIdx.COVER_T + c_idx]) / 10
+                self.blade_times[co_idx] = int(conf[MirrIdx.BLAD_T + c_idx]) / 10
                 # polarity defined per output, 2 per cover
-                polarity = (covr_pol & (0x01 << (2 * cm_idx)) == 0) * 2 - 1
-                tilt = 1 + (self.blade_times[c_idx] > 0)
+                polarity = (covr_pol & (0x01 << (2 * co_idx)) == 0) * 2 - 1
+                tilt = 1 + (self.blade_times[co_idx] > 0)
                 pol = polarity * tilt  # +-1 for shutters, +-2 for blinds
-                cname = self.outputs[2 * c_idx].name.strip()
+                cname = self.outputs[2 * co_idx].name.strip()
                 cname = cname.replace("auf", "")
                 cname = cname.replace("ab", "")
                 cname = cname.replace("auf", "")
                 cname = cname.replace("zu", "")
                 self.covers[c_idx] = IfDescriptor(cname.strip(), c_idx + 1, pol)
-                self.outputs[2 * c_idx].type = -10  # disable light output
-                self.outputs[2 * c_idx + 1].type = -10
+                self.outputs[2 * co_idx].type = -10  # disable light output
+                self.outputs[2 * co_idx + 1].type = -10
         for l_idx in range(10):
             if conf[MirrIdx.LOGIC + 3 * l_idx] == 5:
                 # counter found
@@ -745,6 +745,35 @@ class RouterSettings:
             desc += f"\x01\xff\x07{chr(grp.nmbr)}\x00\x00\x00\x00{chr(len(grp.name))}{grp.name}"
             line_no += 1
         return chr(line_no & 0xFF) + chr(line_no >> 8) + desc[2:]
+
+
+class ModuleSettingsLight(ModuleSettings):
+    """Object with all module settings, including automations."""
+
+    def __init__(self, module):
+        """Fill all properties with module's values."""
+        self.id = module._id
+        self.logger = logging.getLogger(__name__)
+        self.logger.debug("Initialzing module settings object")
+        self.module = module
+        self.name = dpcopy(module._name)
+        self.typ = module._typ
+        self.type = module._type
+        self.list = dpcopy(module.list)
+        self.status = dpcopy(module.status)
+        self.smg = dpcopy(module.build_smg())
+        self.desc = dpcopy(module.get_rtr().descriptions)
+        self.properties: dict = module.io_properties
+        self.prop_keys = module.io_prop_keys
+        self.cover_times = [0, 0, 0, 0, 0]
+        self.blade_times = [0, 0, 0, 0, 0]
+        self.user1_name = module.get_rtr().user_modes[1:11].decode("iso8859-1").strip()
+        self.user2_name = module.get_rtr().user_modes[12:].decode("iso8859-1").strip()
+        self.group = dpcopy(module.get_rtr().groups[self.id])
+        self.get_io_interfaces()
+        self.get_names()
+        self.get_settings()
+        self.get_descriptions()
 
 
 def replace_bytes(in_bytes: bytes, repl_bytes: bytes, idx: int) -> bytes:

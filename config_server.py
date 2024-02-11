@@ -1016,21 +1016,33 @@ def prepare_automations_list(app, step):
         automations = app["automations_def"].external
         last_source_header = ""
     tbl = indent(4) + f'<form id="automations_table" action="automtns" method="post">\n'
-    tbl += indent(5) + "<table>\n"
     for at_i in range(len(automations)):
         if step > 0:
             src_mod = automations[at_i].src_mod
+            if at_i == 0:
+                tbl += indent(5) + '<table id="atm-table">\n'
             if src_mod != curr_mod:
                 rtr = app["api_srv"].routers[0]
                 if src_mod in rtr.mod_addrs:
                     smod_name = rtr.modules[rtr.mod_addrs.index(src_mod)]._name
-                    source_header = f"Von Modul {src_mod}: '{smod_name}'"
+                    source_header = f"von Modul {src_mod}: '{smod_name}'"
                 else:
-                    source_header = f"Von Modul {src_mod}"
+                    source_header = f"von Modul {src_mod}"
                 if source_header != last_source_header:
                     last_source_header = source_header
-                    tbl += indent(6) + f"<tr><td><b>{source_header}</b></td></tr>\n"
-        tbl += indent(6) + "<tr>\n"
+                    tbl += (
+                        indent(6)
+                        + f'<tr id="atm-th"><th><b>Auslöser {source_header}</b></th><th><b>Bedingung</b></th><th></th><th><b>Aktion</b></th><th></th></tr>\n'
+                    )
+
+        else:
+            if at_i == 0:
+                tbl += indent(5) + '<table id="atm-table">\n'
+                tbl += (
+                    indent(6)
+                    + f'<tr id="atm-th"><th><b>Auslöser</b></th><th><b>Bedingung</b></th><th></th><th><b>Aktion</b></th><th></th></tr>\n'
+                )
+        tbl += indent(6) + '<tr id="atm-tr">\n'
         evnt_desc = automations[at_i].trigger.description
         cond_desc = automations[at_i].condition.name
         actn_desc = automations[at_i].action.description

@@ -17,7 +17,7 @@ DATA_FILES_DIR = "./"
 DATA_FILES_ADDON_DIR = "/config/"
 FWD_TABLE_FILE = "ip_table.fwd"
 WEB_FILES_DIR = "./web/"
-LOGGING_DEF_FILE = "smhub_logging.yaml"
+LOGGING_DEF_FILE = "smconf_logging.yaml"
 HOMEPAGE = "configurator.html"
 HUB_HOMEPAGE = "hub.html"
 CONF_HOMEPAGE = "home.html"
@@ -123,6 +123,10 @@ class API_ACTIONS:
     OUTP_RBG_TOGL = 256 * 12 + 2
     OUTP_RBG_TIME = 256 * 12 + 3
     OUTP_RBG_VAL = 256 * 12 + 4
+    OUTP_RBG_RD = 256 * 12 + 5
+    OUTP_RBG_GN = 256 * 12 + 6
+    OUTP_RBG_BL = 256 * 12 + 7
+    OUTP_RBG_WH = 256 * 12 + 10
 
     MODLIGHT_OFF = 256 * 13 + 0
     MODLIGHT_ON = 256 * 13 + 1
@@ -369,8 +373,12 @@ class RT_CMDS:
     SET_LOGIC_INP = "\x2a<rtr>\x0c\x44<mod>\x08\x09\x45\x00<sr><inp>\xff"
     # SET_COUNTER_VAL = "\x2a<rtr>\x0e\x44<mod>\x0a\x09\x45\x00<lno>\x05<val>\x00\xff"
 
-    SWITCH_RGB_LED = "\x2a<rtr>\x0b\x44<mod>\x07\x23<tsk>\x01\xc8\xff"
-    SET_RGB_LED = "\x2a<rtr>\x10\x44<mod>\x0c\x23<tsk>\x01<inp><r><g><b><tl><th>\xff"
+    SET_RGB_AMB_COL = "\x2a<rtr>\x10\x44<mod>\x0c\x23\x01\x02\x64<r><g><b>\x01\x01\xff"
+    SWOFF_RGB_AMB = "\x2a<rtr>\x10\x44<mod>\x0c\x23\x02\x02\x64\x00\x00\x00\x01\x01\xff"
+    SET_RGB_CORNR = "\x2a<rtr>\x10\x44<mod>\x0c\x23\x01\x01<cnr><r><g><b>\x01\x01\xff"
+    SWOFF_RGB_CORNR = "\x2a<rtr>\x10\x44<mod>\x0c\x23\x02\x01<cnr><r><g><b>\x01\x01\xff"
+    SET_RGB_LED = "\x2a<rtr>\x10\x44<mod>\x0c\x23<tsk><md><inp><r><g><b><tl><th>\xff"
+
     SET_COVER_SETTGS = "\x2a<rtr>\x0a\x44<mod>\x06\x15\x4f<set>\xff"
     SET_COVER_TIME = "\x2a<rtr>\x0d\x44<mod>\x09\x11<sob><int><out><vala><valb>\xff"
     SET_INP_TIMES = "\x2a<rtr>\x0a\x44<mod>\x06\x02<tshrt><tlng>\xff"
