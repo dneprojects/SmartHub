@@ -84,7 +84,7 @@ class EventServer:
     async def open_websocket(self):
         """Opens web socket connection to home assistant."""
 
-        if (not(self.websck == None)) & (not(self.websck == [])):
+        if (not (self.websck == None)) & (not (self.websck == [])):
             # websocket object registered
             return
 
@@ -100,9 +100,9 @@ class EventServer:
             self._client_ip = self.api_srv._client_ip
             self._uri = "ws://<ip>:8123/api/websocket".replace("<ip>", self._client_ip)
             self.logger.debug(f"URI: {self._uri}")
-            # token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMWI1ZjgyNmUxMDg0MjFhYWFmNTZlYWQ0ZThkZGNiZSIsImlhdCI6MTY5NDUzNTczOCwiZXhwIjoyMDA5ODk1NzM4fQ.0YZWyuQn5DgbCAfEWZXbQZWaViNBsR4u__LjC4Zf2lY"
+            # token for local docker:    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMWI1ZjgyNmUxMDg0MjFhYWFmNTZlYWQ0ZThkZGNiZSIsImlhdCI6MTY5NDUzNTczOCwiZXhwIjoyMDA5ODk1NzM4fQ.0YZWyuQn5DgbCAfEWZXbQZWaViNBsR4u__LjC4Zf2lY"
             # token for 192.168.178.133: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlYjQ2MTA4ZjUxOTU0NTY3Yjg4ZjUxM2Q5ZjBkZWRlYSIsImlhdCI6MTY5NDYxMDEyMywiZXhwIjoyMDA5OTcwMTIzfQ.3LtGwhonmV2rAbRnKqEy3WYRyqiS8DTh3ogx06pNz1g"
-            # token for 192.168.178.140: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI4OTNlZDJhODU2ZmY0ZDQ3YmVlZDE2MzIyMmU1ODViZCIsImlhdCI6MTcwMjgyMTYxNiwiZXhwIjoyMDE4MTgxNjE2fQ.NT-WSwkG9JN8f2cCt5fXlP4A8FEOAgDTrS1sdhB0ioo"
+            # token for 192.168.178.160: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI4OTNlZDJhODU2ZmY0ZDQ3YmVlZDE2MzIyMmU1ODViZCIsImlhdCI6MTcwMjgyMTYxNiwiZXhwIjoyMDE4MTgxNjE2fQ.NT-WSwkG9JN8f2cCt5fXlP4A8FEOAgDTrS1sdhB0ioo"
             self.token = self.get_ident()
 
         if self.token == None:
@@ -196,7 +196,7 @@ class EventServer:
                             # Look for new start byte
                             recvd_byte = await rt_rd.readexactly(1)
                         resynced = await rt_rd.readexactly(1) == b"\x23"
-                        # continue with 'elif recvd_byte == b"\xff":' 
+                        # continue with 'elif recvd_byte == b"\xff":'
 
                 elif prefix[3] < 4:
                     self.logger.warning(
@@ -219,7 +219,9 @@ class EventServer:
                         )
                     elif (rt_event[4] == 133) & (rt_event[5] == 1):
                         # Response should have been received before, not in event watcher
-                        self.logger.warning("Warning, router event message: Operate mode started, should have been received in Srv mode")
+                        self.logger.warning(
+                            "Warning, router event message: Operate mode started, should have been received in Srv mode"
+                        )
                         self.logger.info(f"     Complete meassage sent: {rt_event}")
                         self.api_srv._opr_mode = True
                         tail = self.extract_rest_msg(rt_event, 9)
