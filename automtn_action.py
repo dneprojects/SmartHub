@@ -93,15 +93,15 @@ ActionsSets = {
     240: [240],
 }
 
-col_on = [10, 10, 10]
+col_on = [1, 1, 1]
 col_off = [0, 0, 0]
-col_red = [90, 0, 0]
-col_green = [0, 90, 0]
-col_blue = [0, 0, 90]
-col_white = [80, 80, 80]
-amb_white = [60, 60, 60]
-amb_warm = [90, 60, 30]
-amb_cool = [50, 60, 70]
+col_red = [230, 0, 0]
+col_green = [0, 230, 0]
+col_blue = [0, 0, 230]
+col_white = [204, 204, 204]
+amb_white = [153, 153, 153]
+amb_warm = [230, 153, 77]
+amb_cool = [128, 153, 179]
 
 DefaultRGBColors = {
     1: col_on,
@@ -703,9 +703,7 @@ class AutomationAction:
             if opts == 4:
                 col_str = form_data["rgb_cols"][0]
                 for c_i in range(3):
-                    self.action_args.append(
-                        round(int(col_str[1 + 2 * c_i : 3 + 2 * c_i], 16) * 100 / 255)
-                    )
+                    self.action_args.append(int(col_str[1 + 2 * c_i : 3 + 2 * c_i], 16))
             else:
                 color = DefaultRGBColors[opts]
                 for c_i in range(3):

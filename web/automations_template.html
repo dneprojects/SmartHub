@@ -114,13 +114,13 @@
         <div class="inside">
           <div id="confbuttons">
             <form action="settings_step">
-              <button name="ModSettings" class="config_button" id="config_button" type="submit" form="automations_table"
+              <button name="ModSettings" class="config_button" id="config_button_bck" type="submit" form="automations_table"
                 value="back-ModAddress">zurück</button>
-              <button name="ModSettings" class="config_button" id="config_button" type="submit"
+              <button name="ModSettings" class="config_button" id="config_button_cnc" type="submit"
                 value="cancel-ModAddress">Abbruch</button>
-              <button name="ModSettings" class="config_button" id="config_button" type="submit" form="automations_table"
+              <button name="ModSettings" class="config_button" id="config_button_sav" type="submit" form="automations_table"
                 value="save-ModAddress">Speichern</button>
-              <button name="ModSettings" class="config_button" id="config_button" type="submit" form="automations_table"
+              <button name="ModSettings" class="config_button" id="config_button_nxt" type="submit" form="automations_table"
                 value="next-ModAddress">weiter</button>
             </form>
           </div>
@@ -137,6 +137,15 @@
       <div id="del_buttons">
         <button id="close_del_popup">Abbruch</button>
         <button id="del_automtn" type="submit" form="automations_table">Löschen</button>
+      </div>
+    </div>
+  </div>
+  <div id="wait_popup" class="popup">
+    <div class="popup-content">
+      <h1 id="msg_popup_txt">ContentTitle</h1>
+      <h3 id="msg_popup_txt">Einstellungen speichern</h3>
+      <div id="image_container_wait">
+        <img src="./configurator_files/wait_red.gif" alt="Please wait" id="msg_popup_img">
       </div>
     </div>
   </div>
@@ -166,21 +175,21 @@
   const mod_sel = document.getElementById("src-module");
   const src_frm = document.getElementById("sel-src-module");
   del_button.addEventListener("click", function () {
-    open_del_popup();
+    openDelPopup();
   });
   close_del_popup.addEventListener("click", function () {
     automtn_del_popup.classList.remove("show");
   });
   new_ext_button.addEventListener("click", function () {
-    open_new_popup();
+    openNewPopup();
   });
   close_new_popup.addEventListener("click", function () {
     automtn_new_popup.classList.remove("show");
   });
   ext_automtn.addEventListener("click", function () {
-    continue_with_module();
+    continueWithModule();
     });
-  function open_del_popup() {
+  function openDelPopup() {
     var sel = 0
     for (let l = 0; l < frm.length; l++) {
       if (frm[l].checked) {
@@ -190,7 +199,7 @@
     del_automtn.value = "del_automtn-" + sel;
     automtn_del_popup.classList.add("show");
   };
-  function open_new_popup() {
+  function openNewPopup() {
       var sel = 0
       for (let l = 0; l < frm.length; l++) {
         if (frm[l].checked) {
@@ -200,9 +209,14 @@
       ext_automtn.value = "new_automtn-" + sel;
       automtn_new_popup.classList.add("show");
     };
-    function continue_with_module() {
+    function continueWithModule() {
       src_frm[1].value = ext_automtn.value
       src_frm.submit()
     }
-
+  config_button_sav.addEventListener("click", function (event) {
+      openWaitPopup();
+  });
+  function openWaitPopup() {
+    wait_popup.classList.add("show");
+  };
 </script>

@@ -454,7 +454,7 @@ function colArray2Str(col) {
 function colArray2StrConv(col) {
     col_str = "#"
     for (var i = 0; i < 3; i++) {
-        col_val = Math.round(col[i] * 255 / 100)
+        col_val = col[i]
         col_str += ("0" + (col_val).toString(16)).slice(-2)
     }
     return col_str
