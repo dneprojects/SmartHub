@@ -179,10 +179,12 @@
   });
   close_del_popup.addEventListener("click", function () {
     automtn_del_popup.classList.remove("show");
-  });
-  new_ext_button.addEventListener("click", function () {
-    openNewPopup();
-  });
+  }); 
+  if (document.getElementById("new_ext_button") != null) {
+    new_ext_button.addEventListener("click", function () {
+      openNewPopup();
+    });
+  }
   close_new_popup.addEventListener("click", function () {
     automtn_new_popup.classList.remove("show");
   });

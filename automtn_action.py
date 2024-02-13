@@ -166,7 +166,7 @@ class AutomationAction:
         """Return available actions for given module settings."""
         typ = self.automation.settings.typ
         if typ[0] == 1:
-            actions_dict = {
+            self.actions_dict = {
                 SelActCodes["output"]: "Ausgang",
                 SelActCodes["dimm"]: "Dimmen",
                 SelActCodes["cover"]: "Rollladen/Jalousie",
@@ -180,7 +180,7 @@ class AutomationAction:
                 SelActCodes["buzzer"]: "Summton",
             }
         elif typ == b"\x32\x01":  # Smart Controller Mini
-            actions_dict = {
+            self.actions_dict = {
                 SelActCodes["output"]: "Ausgang",
                 SelActCodes["rgb"]: "Farblicht",
                 SelActCodes["climate"]: "Klima",
@@ -191,7 +191,7 @@ class AutomationAction:
                 SelActCodes["buzzer"]: "Summton",
             }
         elif (typ[0] == 10) & (typ[1] in [20, 21, 22]):  # dimm output modules
-            actions_dict = {
+            self.actions_dict = {
                 SelActCodes["output"]: "Ausgang",
                 SelActCodes["dimm"]: "Dimmen",
                 SelActCodes["climate"]: "Klima",
@@ -201,7 +201,7 @@ class AutomationAction:
                 SelActCodes["counter"]: "Zähler",
             }
         elif typ[0] == 10:  # other output modules
-            actions_dict = {
+            self.actions_dict = {
                 SelActCodes["output"]: "Ausgang",
                 SelActCodes["cover"]: "Rollladen/Jalousie",
                 SelActCodes["climate"]: "Klima",
@@ -211,8 +211,8 @@ class AutomationAction:
                 SelActCodes["counter"]: "Zähler",
             }
         else:
-            actions_dict = {}
-        return actions_dict
+            self.actions_dict = {}
+        return self.actions_dict
 
     def parse(self):
         """Parse action arguments and return description."""
@@ -455,10 +455,10 @@ class AutomationAction:
             if cov.type > 0:
                 opt_str += f'<option value="{cov.nmbr}">{cov.name}</option>'
                 no_covs += 1
-        if no_covs == 0:
+        if (no_covs == 0) & (SelActCodes["cover"] in self.actions_dict.keys()):
             page = page.replace(
-                f'<option value="{SelActCodes["cover"]}">',
-                f'<option value="{SelActCodes["cover"]}" disabled>',
+                f'<option value="{SelActCodes["cover"]}">{self.actions_dict[SelActCodes["cover"]]}',
+                f'<option value="{SelActCodes["cover"]}" disabled>{self.actions_dict[SelActCodes["cover"]]}',
             )
         page = page.replace(
             '<option value="">-- Rollladen/Jalousie wählen --</option>', opt_str
@@ -470,8 +470,8 @@ class AutomationAction:
 
         if (sel_atm.settings.typ[0] != 1) & (sel_atm.settings.typ != b"\x32\x01"):
             page = page.replace(
-                f'<option value="{SelActCodes["buzzer"]}">',
-                f'<option value="{SelActCodes["buzzer"]}" disabled>',
+                f'<option value="{SelActCodes["buzzer"]}">{self.actions_dict[SelActCodes["buzzer"]]}',
+                f'<option value="{SelActCodes["buzzer"]}" disabled>{self.actions_dict[SelActCodes["buzzer"]]}',
             )
         if (
             (sel_atm.settings.typ == b"\x0a\x14")
@@ -479,12 +479,12 @@ class AutomationAction:
             | (sel_atm.settings.typ == b"\x0a\x16")
         ):
             page = page.replace(
-                f'<option value="{SelActCodes["climate"]}">',
-                f'<option value="{SelActCodes["climate"]}" disabled>',
+                f'<option value="{SelActCodes["climate"]}">{self.actions_dict[SelActCodes["climate"]]}',
+                f'<option value="{SelActCodes["climate"]}" disabled>{self.actions_dict[SelActCodes["climate"]]}',
             )
             page = page.replace(
-                f'<option value="{SelActCodes["cover"]}">',
-                f'<option value="{SelActCodes["cover"]}" disabled>',
+                f'<option value="{SelActCodes["cover"]}">{self.actions_dict[SelActCodes["cover"]]}',
+                f'<option value="{SelActCodes["cover"]}" disabled>{self.actions_dict[SelActCodes["cover"]]}',
             )
 
         opt_str = '<option value="">-- Befehl wählen --</option>'
@@ -515,8 +515,8 @@ class AutomationAction:
         page = page.replace('<option value="">-- AcZähler wählen --</option>', opt_str)
         if no_counters == 0:
             page = page.replace(
-                f'<option value="{SelActCodes["counter"]}">',
-                f'<option value="{SelActCodes["counter"]}" disabled>',
+                f'<option value="{SelActCodes["counter"]}">{self.actions_dict[SelActCodes["counter"]]}',
+                f'<option value="{SelActCodes["counter"]}" disabled>{self.actions_dict[SelActCodes["counter"]]}',
             )
         page = page.replace(">User1Mode<", f">{self.autmn_dict['user_modes'][1]}<")
         page = page.replace(">User2Mode<", f">{self.autmn_dict['user_modes'][2]}<")

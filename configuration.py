@@ -514,11 +514,15 @@ class ModuleSettings:
         # insert automations
         automations = self.automtns_def
         for atmn in automations.local:
-            new_list.append(atmn.make_definition())
+            if atmn.src_rt == 0:
+                new_list.append(atmn.make_definition())
         for atmn in automations.external:
             new_list.append(atmn.make_definition())
         for atmn in automations.forward:
             new_list.append(atmn.make_definition())
+        for atmn in automations.local:
+            if atmn.src_rt != 0:
+                new_list.append(atmn.make_definition())
 
         # copy rest of list
         for line in list_lines[1:]:

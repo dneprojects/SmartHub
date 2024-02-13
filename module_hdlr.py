@@ -224,7 +224,7 @@ class ModHdlr(HdlrBase):
             await self.handle_router_cmd_resp(self.rt_id, cmd)
             flg = chr(7)
             resp_cnt = self.rt_msg._resp_buffer[-2]
-            resp_flg = self.rt_msg._resp_buffer[-3]
+            resp_flg = self.rt_msg._resp_buffer[8]
             if resp_cnt == cnt:
                 if cnt < 255:
                     cnt += 1
@@ -234,10 +234,20 @@ class ModHdlr(HdlrBase):
             elif resp_flg == 8:
                 cnt += 1
                 l_cnt += l_p
+            elif resp_flg == 250:
+                self.logger.debug(
+                    f"List upload (SMC) returned unexpected flag, repeat flag 6: Count {resp_cnt} Flag {resp_flg}"
+                )
+                flg = chr(6)
+            elif resp_flg == 255:
+                self.logger.error(
+                    f"List upload (SMC) returned error flag: Count {resp_cnt} Flag {resp_flg}"
+                )
+                l_cnt += l_p
             self.logger.debug(
                 f"List upload (SMC) returned: Count {resp_cnt} Flag {resp_flg}"
             )
-            await asyncio.sleep(0.5)
+            # await asyncio.sleep(0.1)
         self.logger.info(
             f"List upload (SMC) terminated: Count {resp_cnt} Flag {resp_flg}"
         )

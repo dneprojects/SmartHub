@@ -252,7 +252,7 @@ class AutomationTrigger:
             )
 
         if mod_typ[0] == 1:
-            triggers_dict = {
+            self.triggers_dict = {
                 SelTrgCodes["button"]: "Taster",
                 SelTrgCodes["switch"]: "Schalter",
                 SelTrgCodes["dimm"]: "Dimmen",
@@ -270,7 +270,7 @@ class AutomationTrigger:
                 SelTrgCodes["time"]: "Zeit",
                 SelTrgCodes["system"]: "System",
             }
-            sensors_dict = {
+            self.sensors_dict = {
                 SelSensCodes["ad_1"]: "A/D-Kanal 1",
                 SelSensCodes["ad_2"]: "A/D-Kanal 2",
                 SelSensCodes["temp_ext"]: "Temperatur außen",
@@ -284,7 +284,7 @@ class AutomationTrigger:
                 SelSensCodes["wind"]: "Wind",
             }
         if mod_typ == b"\x32\x01":
-            triggers_dict = {
+            self.triggers_dict = {
                 SelTrgCodes["button"]: "Taster",
                 SelTrgCodes["switch"]: "Schalter",
                 SelTrgCodes["dimm"]: "Dimmen",
@@ -300,7 +300,7 @@ class AutomationTrigger:
                 SelTrgCodes["count"]: "Zählerwert",
                 SelTrgCodes["time"]: "Zeit",
             }
-            sensors_dict = {
+            self.sensors_dict = {
                 SelSensCodes["ad_1"]: "A/D-Kanal 1",
                 SelSensCodes["ad_2"]: "A/D-Kanal 2",
                 SelSensCodes["temp_ext"]: "Temperatur außen",
@@ -314,7 +314,7 @@ class AutomationTrigger:
                 SelSensCodes["wind"]: "Wind",
             }
         if mod_typ[0] == 10:
-            triggers_dict = {
+            self.triggers_dict = {
                 SelTrgCodes["output"]: "Ausgangsänderung",
                 SelTrgCodes["collcmd"]: "Sammelbefehl",
                 SelTrgCodes["viscmd"]: "Visualisierungsbefehl",
@@ -324,7 +324,7 @@ class AutomationTrigger:
                 SelTrgCodes["count"]: "Zählerwert",
                 SelTrgCodes["time"]: "Zeit",
             }
-            sensors_dict = {
+            self.sensors_dict = {
                 SelSensCodes["temp_ext"]: "Temperatur außen",
                 SelSensCodes["humid_ext"]: "Feuchte außen",
                 SelSensCodes["light_ext"]: "Helligkeit außen",
@@ -332,14 +332,14 @@ class AutomationTrigger:
                 SelSensCodes["wind"]: "Wind",
             }
         if mod_typ[0] == 0x0B:
-            triggers_dict = {
+            self.triggers_dict = {
                 SelTrgCodes["button"]: "Taster",
                 SelTrgCodes["switch"]: "Schalter",
                 SelTrgCodes["dimm"]: "Dimmen",
                 SelTrgCodes["collcmd"]: "Sammelbefehl",
                 SelTrgCodes["mode"]: "Modusänderung",
             }
-            sensors_dict = {
+            self.sensors_dict = {
                 SelSensCodes["temp_ext"]: "Temperatur außen",
                 SelSensCodes["humid_ext"]: "Feuchte außen",
                 SelSensCodes["light_ext"]: "Helligkeit außen",
@@ -347,14 +347,14 @@ class AutomationTrigger:
                 SelSensCodes["wind"]: "Wind",
             }
         if mod_typ == b"\x1e\x01":
-            triggers_dict = {
+            self.triggers_dict = {
                 SelTrgCodes["ekey"]: "Fingerprint",
                 SelTrgCodes["collcmd"]: "Sammelbefehl",
                 SelTrgCodes["viscmd"]: "Visualisierungsbefehl",
                 SelTrgCodes["logic"]: "Merker",
                 SelTrgCodes["mode"]: "Modusänderung",
             }
-            sensors_dict = {
+            self.sensors_dict = {
                 SelSensCodes["temp_ext"]: "Temperatur außen",
                 SelSensCodes["humid_ext"]: "Feuchte außen",
                 SelSensCodes["light_ext"]: "Helligkeit außen",
@@ -362,14 +362,14 @@ class AutomationTrigger:
                 SelSensCodes["wind"]: "Wind",
             }
         if mod_typ[0] == 0x50:
-            triggers_dict = {
+            self.triggers_dict = {
                 SelTrgCodes["move"]: "Bewegung",
             }
-            sensors_dict = {
+            self.sensors_dict = {
                 SelSensCodes["light_int"]: "Helligkeit",
             }
 
-        return triggers_dict, sensors_dict
+        return self.triggers_dict, self.sensors_dict
 
     def parse(self) -> str:
         """Parse event arguments and return readable string."""
@@ -455,10 +455,11 @@ class AutomationTrigger:
             elif self.event_code in EventsSets[SelTrgCodes["output"]]:
                 trig_command = self.name
                 self.unit = self.event_arg1 + self.event_arg2
-                event_desc = f"{self.get_output_desc(self.unit, False)} an"
                 if self.event_arg1:
+                    event_desc = f"{self.get_output_desc(self.unit, False)} an"
                     self.value = 1
                 else:
+                    event_desc = f"{self.get_output_desc(self.unit, False)} aus"
                     self.value = 0
             elif self.event_code in EventsSets[SelTrgCodes["remote"]]:
                 trig_command = f"IR-Befehl: '{self.event_arg1} | {self.event_arg2}'"
@@ -592,15 +593,15 @@ class AutomationTrigger:
         page = page.replace('<option value="">-- Taster wählen --</option>', opt_str)
 
         opt_str = '<option value="">-- Schalter wählen --</option>'
-        sw_no = 0
+        no_switches = 0
         for inp in self.settings.inputs:
             if (inp.type > 1) & (len(inp.name.strip()) > 0):
-                sw_no += 1
+                no_switches += 1
                 opt_str += (
                     f'<option value="{inp.nmbr+no_buttons}">{inp.name}</option>\n'
                 )
         page = page.replace('<option value="">-- Schalter wählen --</option>', opt_str)
-        if sw_no == 0:
+        if no_switches == 0:
             page = page.replace(
                 '<select name="trigger_switch"',
                 '<select name="trigger_switch" disabled',
@@ -664,8 +665,8 @@ class AutomationTrigger:
             )
         else:
             page = page.replace(
-                f'<option value="{SelTrgCodes["viscmd"]}">',
-                f'<option value="{SelTrgCodes["viscmd"]}" disabled>',
+                f'<option value="{SelTrgCodes["viscmd"]}">{self.triggers_dict[SelTrgCodes["viscmd"]]}',
+                f'<option value="{SelTrgCodes["viscmd"]}" disabled>{self.triggers_dict[SelTrgCodes["viscmd"]]}',
             )
 
         opt_str = '<option value="">-- Befehl wählen --</option>'
@@ -683,8 +684,8 @@ class AutomationTrigger:
             )
         else:
             page = page.replace(
-                f'<option value="{SelTrgCodes["dircmd"]}">',
-                f'<option value="{SelTrgCodes["dircmd"]}" disabled>',
+                f'<option value="{SelTrgCodes["dircmd"]}">{self.triggers_dict[SelTrgCodes["dircmd"]]}',
+                f'<option value="{SelTrgCodes["dircmd"]}" disabled>{self.triggers_dict[SelTrgCodes["dircmd"]]}',
             )
 
         opt_str = '<option value="">-- Benutzer wählen --</option>'
@@ -701,10 +702,11 @@ class AutomationTrigger:
                 '<option value="">-- Benutzer wählen --</option>', opt_str
             )
         else:
-            page = page.replace(
-                f'<option value="{SelTrgCodes["ekey"]}">',
-                f'<option value="{SelTrgCodes["ekey"]}" disabled>',
-            )
+            if SelTrgCodes["ekey"] in self.triggers_dict.keys():
+                page = page.replace(
+                    f'<option value="{SelTrgCodes["ekey"]}">{self.triggers_dict[SelTrgCodes["ekey"]]}',
+                    f'<option value="{SelTrgCodes["ekey"]}" disabled>{self.triggers_dict[SelTrgCodes["ekey"]]}',
+                )
 
         opt_str = '<option value="">-- Zähler wählen --</option>'
         max_cnt = []
@@ -726,8 +728,8 @@ class AutomationTrigger:
         )
         if no_counters == 0:
             page = page.replace(
-                f'<option value="{SelTrgCodes["count"]}">',
-                f'<option value="{SelTrgCodes["count"]}" disabled>',
+                f'<option value="{SelTrgCodes["count"]}">{self.triggers_dict[SelTrgCodes["count"]]}',
+                f'<option value="{SelTrgCodes["count"]}" disabled>{self.triggers_dict[SelTrgCodes["count"]]}',
             )
         page = self.activate_ui_elements(page, step)
         return page
@@ -800,6 +802,7 @@ class AutomationTrigger:
             self.event_arg1 = self.automation.get_sel(form_data, "ir_high")
             self.event_arg2 = self.automation.get_sel(form_data, "ir_low")
         elif self.event_code in EventsSets[SelTrgCodes["collcmd"]]:
+            self.src_rt = 250
             self.event_code = 50
             self.event_arg1 = self.automation.get_sel(form_data, "trigger_collcmd")
             self.event_arg2 = 0
@@ -808,6 +811,7 @@ class AutomationTrigger:
             self.event_arg1 = int(form_data["trigger_viscmd"][0]) >> 8
             self.event_arg2 = int(form_data["trigger_viscmd"][0]) & 0xFF
         elif self.event_code in EventsSets[SelTrgCodes["mode"]]:
+            self.src_rt = 250
             self.event_code = 137
             self.event_arg1 = 69
             self.event_arg2 = self.automation.get_sel(
