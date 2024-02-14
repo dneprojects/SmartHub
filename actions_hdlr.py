@@ -263,25 +263,14 @@ class ActionsHdlr(HdlrBase):
                     [1, 2, 3, 4, 5, 6, 7, 8, 41, 42, 43, 44, 100],
                     "Error: led no out of range 1..8, corners 41..44, all 100",
                 )
-                self.check_arg(
-                    self._args[1],
-                    range(101),
-                    "Error: value for red out of range 0..100",
-                )
-                self.check_arg(
-                    self._args[2],
-                    range(101),
-                    "Error: value for green out of range 0..100",
-                )
-                self.check_arg(
-                    self._args[3],
-                    range(101),
-                    "Error: value for blue out of range 0..100",
-                )
                 if self.args_err:
                     return
                 task = 0x01
                 inp_code = self._args[0]
+                if inp_code < 5:
+                    inp_code += 40
+                elif inp_code == 5:
+                    inp_code = 100
                 self._rt_command = (
                     RT_CMDS.SET_RGB_LED.replace("<rtr>", chr(rt))
                     .replace("<mod>", chr(mod))
@@ -293,8 +282,8 @@ class ActionsHdlr(HdlrBase):
                     .replace("<tl>", chr(10))
                     .replace("<th>", chr(0))
                 )
-                self.logger.info(
-                    f"Router {rt}, module {mod}: turn LED to R:{self._args[1]} G:{self._args[2]} B:{self._args[3]}"
+                self.logger.debug(
+                    f"Router {rt}, module {mod}, led {inp_code}: turn LED to R:{self._args[1]} G:{self._args[2]} B:{self._args[3]}"
                 )
 
             case _:
