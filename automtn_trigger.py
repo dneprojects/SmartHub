@@ -30,6 +30,7 @@ EventCodes = {
     203: "Außenhelligkeit",
     204: "Wind",
     205: "Regen",
+    206: "Wind Peak",
     213: "Innentemperatur",
     215: "Luftfeuchtigkeit innen",
     216: "Helligkeit innen",
@@ -115,7 +116,7 @@ EventsSets = {
     152: [152, 153],
     169: [169],
     170: [170],
-    203: [201, 202, 203, 204, 205, 213, 214, 215, 216, 217, 218, 219],
+    203: [201, 202, 203, 204, 205, 206, 213, 214, 215, 216, 217, 218, 219],
     220: [220, 221, 222],
     249: [12, 101, 249],
     253: [253],
@@ -126,6 +127,7 @@ SelSensCodes = {
     "light_ext": 203,
     "wind": 204,
     "rain": 205,
+    "wind_peak": 206,
     "temp_int": 213,
     "humid_int": 215,
     "light_int": 216,
@@ -139,6 +141,7 @@ SensorUnit = {
     203: "Lux",
     204: "m/s",
     205: "",
+    206: "m/s",
     213: "°C",
     215: "%",
     216: "Lux",
@@ -281,7 +284,7 @@ class AutomationTrigger:
                 SelSensCodes["light_int"]: "Helligkeit innen",
                 SelSensCodes["airqual"]: "Luftqualität",
                 SelSensCodes["rain"]: "Regen",
-                SelSensCodes["wind"]: "Wind",
+                SelSensCodes["wind_peak"]: "Wind",
             }
         if mod_typ == b"\x32\x01":
             self.triggers_dict = {
@@ -311,7 +314,7 @@ class AutomationTrigger:
                 SelSensCodes["light_int"]: "Helligkeit innen",
                 SelSensCodes["airqual"]: "Luftqualität",
                 SelSensCodes["rain"]: "Regen",
-                SelSensCodes["wind"]: "Wind",
+                SelSensCodes["wind_peak"]: "Wind",
             }
         if mod_typ[0] == 10:
             self.triggers_dict = {
@@ -329,7 +332,7 @@ class AutomationTrigger:
                 SelSensCodes["humid_ext"]: "Feuchte außen",
                 SelSensCodes["light_ext"]: "Helligkeit außen",
                 SelSensCodes["rain"]: "Regen",
-                SelSensCodes["wind"]: "Wind",
+                SelSensCodes["wind_peak"]: "Wind",
             }
         if mod_typ[0] == 0x0B:
             self.triggers_dict = {
@@ -344,7 +347,7 @@ class AutomationTrigger:
                 SelSensCodes["humid_ext"]: "Feuchte außen",
                 SelSensCodes["light_ext"]: "Helligkeit außen",
                 SelSensCodes["rain"]: "Regen",
-                SelSensCodes["wind"]: "Wind",
+                SelSensCodes["wind_peak"]: "Wind",
             }
         if mod_typ == b"\x1e\x01":
             self.triggers_dict = {
@@ -359,7 +362,7 @@ class AutomationTrigger:
                 SelSensCodes["humid_ext"]: "Feuchte außen",
                 SelSensCodes["light_ext"]: "Helligkeit außen",
                 SelSensCodes["rain"]: "Regen",
-                SelSensCodes["wind"]: "Wind",
+                SelSensCodes["wind_peak"]: "Wind",
             }
         if mod_typ[0] == 0x50:
             self.triggers_dict = {
@@ -859,7 +862,10 @@ class AutomationTrigger:
             ]:
                 self.event_arg1 = self.automation.get_sel(form_data, "sens_low_perc")
                 self.event_arg2 = self.automation.get_sel(form_data, "sens_high_perc")
-            if self.event_code in [SelSensCodes["wind"]]:
+            if self.event_code in [
+                SelSensCodes["wind"],
+                SelSensCodes["wind_peak"],
+            ]:
                 self.event_arg1 = self.automation.get_sel(form_data, "sens_low_wind")
                 self.event_arg2 = self.automation.get_sel(form_data, "sens_high_wind")
             if self.event_code in [
