@@ -30,7 +30,9 @@ class AdminHdlr(HdlrBase):
                 ip_len = self._args[0]
                 self.api_srv._hass_ip = self._args[1 : ip_len + 1].decode("iso8859-1")
                 tok_len = self._args[ip_len + 1]
-                self.save_id(self._args[ip_len + 2 : ip_len + 2 + tok_len])
+                ip_len = len(self.api_srv._client_ip)
+                cl_ip_str = (chr(ip_len) + self.api_srv._client_ip).encode("iso8859-1")
+                self.save_id(cl_ip_str + self._args)
                 self.response = "OK"
             case spec.SMHUB_LOG_LEVEL:
                 self.check_arg(

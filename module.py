@@ -351,7 +351,7 @@ class HbtnModule:
 
         return cv_times.encode("iso8859-1") + bl_times.encode("iso8859-1")
 
-    def encode_cover_settings(self, t_a: int, t_b: int) -> (int, int, int):
+    def encode_cover_settings(self, t_a: int, t_b: int) -> tuple[int, int, int]:
         """Create cover settings from cover times"""
         pos_polarity = (t_a >= 0) & (t_b == 0)
         neg_polarity = (t_a == 0) & (t_b >= 0)

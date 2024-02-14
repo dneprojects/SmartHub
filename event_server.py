@@ -71,10 +71,19 @@ class EventServer:
             with open(DATA_FILES_DIR + "settings.set", mode="rb") as fid:
                 id_str = fid.read().decode("iso8859-1")
             fid.close()
+            ip_len = ord(id_str[0])
+            self.api_srv._client_ip = id_str[1 : ip_len + 1]
+            self._client_ip = self.api_srv._client_ip
+            id_str = id_str[ip_len + 1 :]
+            ip_len = ord(id_str[0])
+            self.api_srv._hass_ip = id_str[1 : ip_len + 1]
+            self._hass_ip = self.api_srv._hass_ip
+            tok_len = ord(id_str[ip_len + 1])
+            tok_str = id_str[ip_len + 2 : ip_len + 2 + tok_len]
             for nmbr in self.api_srv.sm_hub.lan_mac.split(":"):
                 idx = int("0x" + nmbr, 0) & 0x7F
-                id_str = id_str[:idx] + id_str[-1] + id_str[idx:-1]
-            return id_str
+                tok_str = tok_str[:idx] + tok_str[-1] + tok_str[idx:-1]
+            return tok_str
         except Exception as err_msg:
             self.logger.error(
                 f"Failed to open {DATA_FILES_DIR + 'settings.set'}, event server can't transmit events"
