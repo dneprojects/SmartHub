@@ -679,6 +679,7 @@ def fill_page_template(
         WEB_FILES_DIR + CONFIG_TEMPLATE_FILE, mode="r", encoding="utf-8"
     ) as tplf_id:
         page = tplf_id.read()
+    ext = download_file.split(".")[1]
     page = (
         page.replace("ContentTitle", title)
         .replace("ContentSubtitle", subtitle)
@@ -686,6 +687,7 @@ def fill_page_template(
         .replace("<!-- SideMenu -->", menu)
         .replace("controller.jpg", image)
         .replace("my_module.hmd", download_file)
+        .replace('accept=".hmd"', f'accept=".{ext}"')
     )
     return page
 
@@ -1249,10 +1251,22 @@ def prepare_table(app, mod_addr, step, key) -> str:
             maxl = 18
         else:
             maxl = 32
-        tbl += (
-            indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" type="text" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci].name[:maxl].strip()}"></td>'
-        )
+        if key == "covers":
+            if covers[ci].type == 0:
+                tbl += (
+                    indent(7)
+                    + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" type="text" id="{id_name}" maxlength="{maxl}" value=" --" disabled></td>'
+                )
+            else:
+                tbl += (
+                    indent(7)
+                    + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" type="text" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci].name[:maxl].strip()}"></td>'
+                )
+        else:
+            tbl += (
+                indent(7)
+                + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" type="text" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci].name[:maxl].strip()}"></td>'
+            )
         if key in ["leds", "buttons", "dir_cmds"]:
             tbl += f'<td><input name="data[{ci},1]" type="text" id="{id_name}" maxlength="14" value="{tbl_data[ci].name[18:].strip()}"></td>'
         elif key == "inputs":
