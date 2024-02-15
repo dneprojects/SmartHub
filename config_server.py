@@ -926,7 +926,8 @@ def fill_settings_template(app, title, subtitle, step, settings, key: str) -> st
         page = disable_button("zurück", page)
         # page = page.replace('form="settings_table"', "")
         settings_form = prepare_basic_settings(app, settings.id, mod_type)
-
+        if settings.properties["no_keys"] == 0:
+            page = disable_button("weiter", page)
     else:
         if step == app["props"]["no_keys"]:
             page = disable_button("weiter", page)

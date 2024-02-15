@@ -247,11 +247,11 @@ class ActionsHdlr(HdlrBase):
                 if self.args_err:
                     return
                 if self._spec == spec.OUTP_RBG_OFF:
-                    task = 0x02
+                    rt_cmd = RT_CMDS.SWOFF_RGB_CORNR
                 else:
-                    task = 0x01
+                    rt_cmd = RT_CMDS.SET_RGB_CORNR
                 self._rt_command = (
-                    RT_CMDS.SWITCH_RGB_LED.replace("<rtr>", chr(rt))
+                    rt_cmd.replace("<rtr>", chr(rt))
                     .replace("<mod>", chr(mod))
                     .replace("<tsk>", chr(task))
                 )
