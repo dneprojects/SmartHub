@@ -579,7 +579,7 @@ def show_router_overview(app) -> web.Response:
     type_desc = "Smart Router - Kommunikationsschnittstelle zwischen den Modulen"
     if rtr.channels == b"":
         page = fill_page_template(
-            f"Router", type_desc, "Router not found", side_menu, "router.jpg", ""
+            f"Router", type_desc, "--", side_menu, "router.jpg", ""
         )
         page = adjust_settings_button(page, "", f"{0}")
         return web.Response(text=page, content_type="text/html")
@@ -679,7 +679,10 @@ def fill_page_template(
         WEB_FILES_DIR + CONFIG_TEMPLATE_FILE, mode="r", encoding="utf-8"
     ) as tplf_id:
         page = tplf_id.read()
-    ext = download_file.split(".")[1]
+    if download_file == "":
+        ext = ""
+    else:
+        ext = download_file.split(".")[1]
     page = (
         page.replace("ContentTitle", title)
         .replace("ContentSubtitle", subtitle)
@@ -1024,6 +1027,7 @@ def prepare_automations_list(app, step):
             src_mod = automations[at_i].src_mod
             if at_i == 0:
                 tbl += indent(5) + '<table id="atm-table">\n'
+                tbl += indent(6) + "<thead>\n"
             if src_mod != curr_mod:
                 rtr = app["api_srv"].routers[0]
                 if src_mod in rtr.mod_addrs:
@@ -1033,18 +1037,25 @@ def prepare_automations_list(app, step):
                     source_header = f"von Modul {src_mod}"
                 if source_header != last_source_header:
                     last_source_header = source_header
+                    tbl += indent(6) + "</tbody>\n"
+                    tbl += indent(6) + "<thead>\n"
                     tbl += (
                         indent(6)
-                        + f'<tr id="atm-th"><th><b>Auslöser {source_header}</b></th><th><b>Bedingung</b></th><th></th><th><b>Aktion</b></th><th></th></tr>\n'
+                        + f'<tr id="atm-th" data-sort-method="none"><th><b>Auslöser {source_header}</b></th><th><b>Bedingung</b></th><th data-sort-method="none"></th><th><b>Aktion</b></th><th data-sort-method="none"></th></tr>\n'
                     )
+                    tbl += indent(6) + "</thead>\n"
+                    tbl += indent(6) + "<tbody>\n"
 
         else:
             if at_i == 0:
                 tbl += indent(5) + '<table id="atm-table">\n'
+                tbl += indent(6) + "<thead>\n"
                 tbl += (
                     indent(6)
-                    + f'<tr id="atm-th"><th><b>Auslöser</b></th><th><b>Bedingung</b></th><th></th><th><b>Aktion</b></th><th></th></tr>\n'
+                    + f'<tr id="atm-th" data-sort-method="none"><th><b>Auslöser</b></th><th><b>Bedingung</b></th><th data-sort-method="none"></th><th><b>Aktion</b></th><th data-sort-method="none"></th></tr>\n'
                 )
+                tbl += indent(6) + "</thead>\n"
+                tbl += indent(6) + "<tbody>\n"
         tbl += indent(6) + '<tr id="atm-tr">\n'
         evnt_desc = automations[at_i].trigger.description
         cond_desc = automations[at_i].condition.name
@@ -1060,6 +1071,7 @@ def prepare_automations_list(app, step):
         tbl += indent(7) + f"<td>{actn_desc}</td>\n"
         tbl += f'<td><input type="radio" name="{id_name}" id="{id_name}" value="{at_i}" {sel_chkd}></td>'
         tbl += indent(6) + "</tr>\n"
+    tbl += indent(6) + "</tbody>\n"
     tbl += indent(5) + "</table>\n"
     tbl += indent(4) + "</form>\n"
     return tbl
