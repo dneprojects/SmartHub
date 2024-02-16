@@ -47,7 +47,7 @@ jobs:
       with:
         # The arguments for the `git add` command (see the paragraph below for more info)
         # Default: '.'
-        add: '/opt/hostedtoolcache/Python/3.11.8/x64/license-report.json'
+        add: './license-report.json'
     
         # Additional arguments for the git commit command. The --message argument is already set by the message input.
         # Default: ''
