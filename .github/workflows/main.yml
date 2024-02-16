@@ -35,7 +35,7 @@ jobs:
         exclude: '(?i)^(pylint|aio[-_]*).*'
     - name: Save report
       if: ${{ always() }}
-      run: echo "${{ steps.license_check_report.outputs.report }}" > license-report.json
+      run: echo "${{ steps.license_check_report.outputs.report }}" > ./web/license-report.json
     - name: Upload artifact
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
@@ -47,7 +47,7 @@ jobs:
       with:
         # The arguments for the `git add` command (see the paragraph below for more info)
         # Default: '.'
-        add: './license-report.json'
+        add: './web/license-report.json'
     
         # Additional arguments for the git commit command. The --message argument is already set by the message input.
         # Default: ''
