@@ -42,3 +42,24 @@ jobs:
       with:
         name: license-report
         path: license-report.json
+    - name: Add to repo
+      uses: EndBug/add-and-commit@v9 # You can change this to use a specific version.
+      with:
+        # The arguments for the `git add` command (see the paragraph below for more info)
+        # Default: '.'
+        add: 'license-report.json'
+    
+        # Additional arguments for the git commit command. The --message argument is already set by the message input.
+        # Default: ''
+        commit: --signoff
+    
+        # The local path to the directory where your repository is located. You should use actions/checkout first to set it up.
+        # Default: '.'
+        cwd: './web'
+        default_author: github_actor
+        fetch: false
+    
+        # The message for the commit.
+        # Default: 'Commit from GitHub Actions (name of the workflow)'
+        message: 'Automatic license check'
+
