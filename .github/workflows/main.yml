@@ -1,2 +1,16 @@
-- name: Dependencies license compliance checker
-  uses: pilosus/action-pip-license-checker@v2.0.0
+---
+name: License Check
+
+# yamllint disable-line rule:truthy
+on:
+  push:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+  workflow_dispatch:
+
+jobs:
+  workflows:
+    uses: https://github.com/pilosus/action-pip-license-checker@v2.0.0
