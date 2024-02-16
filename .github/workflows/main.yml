@@ -33,6 +33,12 @@ jobs:
         requirements: 'requirements-all.txt'
         fail: 'Copyleft'
         exclude: '(?i)^(pylint|aio[-_]*).*'
-    - name: Print report
+    - name: Save report
       if: ${{ always() }}
-      run: echo "${{ steps.license_check_report.outputs.report }}"
+      run: echo "${{ steps.license_check_report.outputs.report }}" > license-report.json
+    - name: Upload artifact
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: license-report
+        path: license-report.json
