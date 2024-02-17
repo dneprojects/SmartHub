@@ -1,10 +1,9 @@
 import logging
-import socket
 import json
 import os
 import websockets
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
-from const import DATA_FILES_DIR, EVENT_PORT, API_RESPONSE, MirrIdx, HA_EVENTS
+from const import DATA_FILES_DIR, HA_EVENTS
 from forward_hdlr import ForwardHdlr
 
 
