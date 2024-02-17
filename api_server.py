@@ -1,7 +1,6 @@
 import struct
 import const
 import asyncio
-from asyncio import StreamReader, StreamWriter
 
 from const import RT_CMDS, SYS_MODES, API_CATEGS
 import logging

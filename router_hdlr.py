@@ -4,11 +4,8 @@ from math import ceil
 from const import (
     RT_CMDS,
     API_RESPONSE,
-    MODULE_CODES,
-    RtStatIIdx,
     RT_RESP,
     RT_STAT_CODES,
-    SYS_MODES,
 )
 from hdlr_class import HdlrBase
 from messages import RtMessage, RtResponse

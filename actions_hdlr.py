@@ -1,5 +1,4 @@
 import struct
-import asyncio
 from const import API_ACTIONS as spec
 from const import RT_CMDS
 from hdlr_class import HdlrBase

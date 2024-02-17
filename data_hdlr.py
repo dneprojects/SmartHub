@@ -3,7 +3,7 @@ import asyncio
 
 from const import API_DATA as spec
 from hdlr_class import HdlrBase
-from const import RT_CMDS, MirrIdx, MStatIdx, RD_DELAY
+from const import MirrIdx, MStatIdx, RD_DELAY
 
 
 class DataHdlr(HdlrBase):

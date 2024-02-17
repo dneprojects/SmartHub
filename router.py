@@ -1,8 +1,6 @@
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from os.path import isfile
-import asyncio
 from const import (
-    SYS_MODES,
     RT_STAT_CODES,
     DATA_FILES_DIR,
     DATA_FILES_ADDON_DIR,

@@ -1,4 +1,3 @@
-import aioserial
 import logging
 import socket
 import json
@@ -165,7 +164,7 @@ class EventServer:
             self.msg_appended = True
             return tail
 
-    async def watch_rt_events(self, rt_rd: aioserial.AioSerial):
+    async def watch_rt_events(self, rt_rd):
         """Task for handling router responses and events in api mode"""
 
         self.logger.info("Event server running")

@@ -8,7 +8,7 @@ from const import (
     MirrIdx,
     FingerNames,
 )
-from automation import AutomationDefinition, AutomationsSet
+from automation import AutomationsSet
 
 
 class ModuleSettings:

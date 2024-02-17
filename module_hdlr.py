@@ -1,9 +1,8 @@
 import logging
 import asyncio
 from math import ceil
-from const import MirrIdx, SMGIdx, RT_CMDS, MODULE_CODES, API_RESPONSE
+from const import MirrIdx, SMGIdx, RT_CMDS
 from hdlr_class import HdlrBase
-from messages import RtResponse
 from module import HbtnModule
 from configuration import ModuleSettings
 

@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from const import API_DATA as spec
-from const import RT_CMDS, API_ACTIONS, API_FILES
+from const import RT_CMDS, API_ACTIONS
 from messages import RtMessage
 
 
