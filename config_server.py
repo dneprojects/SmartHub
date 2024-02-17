@@ -1,5 +1,5 @@
 from math import copysign
-from copy import deepcopy as dpcopy
+from os import path
 from aiohttp import web
 from urllib.parse import parse_qs
 from multidict import MultiDict
@@ -1814,10 +1814,37 @@ def show_license_table(app):
     """Return html page with license table."""
     page = get_html("licenses.html")
     table = get_html("license_table.html").split("\n")
+    table_str = build_lic_table(table, "hub")
+    table_end = "  </tbody>\n</table>\n"
+    tablesort_str = (
+        "    <tr>\n"
+        + "      <td>tablesort</td>\n"
+        + "      <td>5.3.0</td>\n"
+        + "      <td>Personal License</td>\n"
+        + "      <td>Tristen Brown</td>\n"
+        + '      <td><a href="https://github.com/tristen/tablesort">github.com/tristen/tablesort</a></td>\n'
+        + "      <td>A small & simple sorting component for tables written in JavaScript</td>\n"
+        + "    </tr>\n"
+    )
+    table_str = table_str.replace(table_end, tablesort_str + table_end)
+    if path.isfile(WEB_FILES_DIR + "license_table_haint.html"):
+        table = get_html("license_table_haint.html").split("\n")
+        new_table = "<br><br>\n<h3>Home Assistant / Habitron Integration</h3>"
+        table_str += new_table + build_lic_table(table, "hai")
+    if app["is_offline"]:
+        page = page.replace("Smart Hub", "Smart Configurator")
+    elif app["api_srv"].is_addon:
+        page = page.replace("Smart Hub", "Smart Center")
+    page = page.replace("<table></table>", table_str)
+    return web.Response(text=page, content_type="text/html", charset="utf-8")
+
+
+def build_lic_table(table, spec) -> str:
+    """Build html table string from table line list."""
     table_str = ""
     for line in table:
         if line.find("<table>") >= 0:
-            line = line.replace("<table>", '<table id="lic-table">')
+            line = line.replace("<table>", f'<table id="lic-{spec}-table">')
         elif line.find("<th>Version") > 0:
             line = line.replace("<th>", '<th data-sort-method="none">')
         elif line.find("<th>Author") > 0:
@@ -1826,7 +1853,7 @@ def show_license_table(app):
             line = line.replace("<th>", '<th data-sort-method="none">')
         elif line.find("<th>Description") > 0:
             line = line.replace("<th>", '<th data-sort-method="none">')
-        elif line.find("https") > 0:
+        elif line.find("https://") > 0:
             h_link = line.replace("<td>", "").replace("</td>", "").strip()
             short_link = h_link.replace("https://", "")
             if short_link[-1] == "/":
@@ -1834,10 +1861,13 @@ def show_license_table(app):
             line = line.replace(
                 f"<td>{h_link}", f'<td><a href="{h_link}">{short_link}</a>'
             )
+        elif line.find("http://") > 0:
+            h_link = line.replace("<td>", "").replace("</td>", "").strip()
+            short_link = h_link.replace("http://", "")
+            if short_link[-1] == "/":
+                short_link = short_link[:-1]
+            line = line.replace(
+                f"<td>{h_link}", f'<td><a href="{h_link}">{short_link}</a>'
+            )
         table_str += line + "\n"
-    if app["is_offline"]:
-        page = page.replace("Smart Hub", "Smart Configurator")
-    elif app["api_srv"].is_addon:
-        page = page.replace("Smart Hub", "Smart Center")
-    page = page.replace("<table></table>", table_str)
-    return web.Response(text=page, content_type="text/html", charset="utf-8")
+    return table_str
