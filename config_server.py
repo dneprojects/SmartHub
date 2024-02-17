@@ -87,6 +87,10 @@ class ConfigServer:
             page = page.replace(">Hub<", ">Home<")
         return web.Response(text=page, content_type="text/html", charset="utf-8")
 
+    @routes.get("/licenses")
+    async def root(request: web.Request) -> web.Response:
+        return show_license_table(request.app)
+
     @routes.get("/exit")
     async def root(request: web.Request) -> web.Response:
         page = get_html(HOMEPAGE)
@@ -1804,3 +1808,36 @@ async def terminate_delayed(api_srv):
     await asyncio.sleep(0.5)
     # execute the other coroutine
     await api_srv.shutdown(None, False)
+
+
+def show_license_table(app):
+    """Return html page with license table."""
+    page = get_html("licenses.html")
+    table = get_html("license_table.html").split("\n")
+    table_str = ""
+    for line in table:
+        if line.find("<table>") >= 0:
+            line = line.replace("<table>", '<table id="lic-table">')
+        elif line.find("<th>Version") > 0:
+            line = line.replace("<th>", '<th data-sort-method="none">')
+        elif line.find("<th>Author") > 0:
+            line = line.replace("<th>", '<th data-sort-method="none">')
+        elif line.find("<th>URL") > 0:
+            line = line.replace("<th>", '<th data-sort-method="none">')
+        elif line.find("<th>Description") > 0:
+            line = line.replace("<th>", '<th data-sort-method="none">')
+        elif line.find("https") > 0:
+            h_link = line.replace("<td>", "").replace("</td>", "").strip()
+            short_link = h_link.replace("https://", "")
+            if short_link[-1] == "/":
+                short_link = short_link[:-1]
+            line = line.replace(
+                f"<td>{h_link}", f'<td><a href="{h_link}">{short_link}</a>'
+            )
+        table_str += line + "\n"
+    if app["is_offline"]:
+        page = page.replace("Smart Hub", "Smart Configurator")
+    elif app["api_srv"].is_addon:
+        page = page.replace("Smart Hub", "Smart Center")
+    page = page.replace("<table></table>", table_str)
+    return web.Response(text=page, content_type="text/html", charset="utf-8")
