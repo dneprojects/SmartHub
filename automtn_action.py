@@ -56,6 +56,7 @@ SelActCodes = {
     "dimm": 20,
     "rgb": 35,
     "collcmd": 50,
+    "msg": 56,
     "mode": 64,
     "flag": 111,
     "climate": 220,
@@ -87,6 +88,7 @@ ActionsSets = {
     20: [20, 22, 23, 24],
     35: [35],
     50: [50],
+    56: [56, 57, 58],
     64: [64],
     111: [111, 112, 113, 114],
     220: [220, 221, 222],
@@ -177,6 +179,7 @@ class AutomationAction:
                 SelActCodes["mode"]: "Modus",
                 SelActCodes["counter"]: "Zähler",
                 SelActCodes["ambient"]: "Modulbeleuchtung",
+                SelActCodes["msg"]: "Meldung",
                 SelActCodes["buzzer"]: "Summton",
             }
         elif typ == b"\x32\x01":  # Smart Controller Mini
@@ -284,14 +287,16 @@ class AutomationAction:
             elif actn_target[:6] == "Sammel":
                 actn_target = f"{actn_target.split()[0]} {self.get_dict_entry('coll_cmds',self.action_args[0])}"
                 actn_desc = ""
-            elif actn_target[:4] == "Meld":
+            elif actn_target[:7] == "Meldung":
                 actn_target = (
                     f"Meldung {self.get_dict_entry('messages',self.action_args[0])}"
                 )
                 if self.action_code == 58:
                     actn_desc = f"für {self.action_args[1]} Min. setzen"
-                else:
-                    actn_desc = ""
+                elif self.action_code == 56:
+                    actn_desc = "setzen"
+                elif self.action_code == 57:
+                    actn_desc = "rücksetzen"
             elif actn_target[:5] == "Modus":
                 actn_desc = "setzen"
                 txt_high = self.automation.get_mode_desc(self.action_args[1])
@@ -506,13 +511,21 @@ class AutomationAction:
             if cnt.type == 5:
                 no_counters += 1
                 max_cnt.append(app["settings"].status[MirrIdx.LOGIC - 2 + cnt.nmbr * 3])
-                if self.unit == cnt.nmbr:
-                    opt_str += (
-                        f'<option value="{cnt.nmbr}" selected>{cnt.name}</option>\n'
-                    )
-                else:
-                    opt_str += f'<option value="{cnt.nmbr}">{cnt.name}</option>\n'
+                opt_str += f'<option value="{cnt.nmbr}">{cnt.name}</option>\n'
         page = page.replace('<option value="">-- AcZähler wählen --</option>', opt_str)
+        if len(app["settings"].messages) > 0:
+            opt_str = '<option value="">-- Meldung wählen --</option>'
+            for msg in app["settings"].messages:
+                if msg.type == 1:
+                    opt_str += f'<option value="{msg.nmbr}">{msg.name}</option>\n'
+            page = page.replace(
+                '<option value="">-- Meldung wählen --</option>', opt_str
+            )
+        else:
+            page = page.replace(
+                f'<option value="{SelActCodes["msg"]}">{self.actions_dict[SelActCodes["msg"]]}',
+                f'<option value="{SelActCodes["msg"]}" disabled>{self.actions_dict[SelActCodes["msg"]]}',
+            )
         if no_counters == 0:
             page = page.replace(
                 f'<option value="{SelActCodes["counter"]}">{self.actions_dict[SelActCodes["counter"]]}',
@@ -635,6 +648,12 @@ class AutomationAction:
                 val = self.automation.get_sel(form_data, "cnt_val")
                 self.action_args.append(val)
                 self.action_args.append(0)
+
+        elif self.action_code in ActionsSets[SelActCodes["msg"]]:
+            self.action_code = int(form_data["act_msgopt"][0])
+            self.action_args.append(int(form_data["act_msg"][0]))
+            if self.action_code == 58:
+                self.action_args.append(int(form_data["msgset_time"][0]))
 
         elif self.action_code in ActionsSets[SelActCodes["buzzer"]]:
             self.action_args.append(int(form_data["buzz_freq"][0]))

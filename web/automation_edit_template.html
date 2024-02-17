@@ -447,6 +447,9 @@
                                             <div id="buzz-dur-lbl" class="sens_lbl"><label for="buzz-dur">Dauer:</label></div>
                                             <input type="number" id="buzz-dur" class="sens_no" name="buzz_dur" min="1" max="254" step="1" value="5" />
                                         </div>
+                                        <select name="act_msg" style="visibility: hidden; position: absolute" id="msg-act">
+                                            <option value="">-- Meldung wählen --</option>
+                                        </select>
                                         <br><br>
                                         <div name="buzz_pars2" class="sens_lims" style="visibility: hidden; position: absolute" id="buzz-pars2">
                                             <div id="buzz-rep-lbl" class="sens_lbl"><label for="buzz-rep">Wiederholungen:</label></div>
@@ -512,6 +515,12 @@
                                             <option value="2">vorübergehend setzen [°C]:</option>
                                             <option value="3">rücksetzen</option>
                                         </select>
+                                        <select name="act_msgopt" style="visibility: hidden; position: absolute" id="msgopt-act">
+                                            <option value="">-- Meldungsbefehl wählen --</option>
+                                            <option value="56">setzen</option>
+                                            <option value="58">vorübergehend setzen [Minuten]</option>
+                                            <option value="57">rücksetzen</option>
+                                        </select>
                                         <input type="number" class="sens_no" id="tset-val" min="0" max="25.5" step="0.5" value="20"
                                             name="tset_val" style="visibility: hidden; position: absolute; margin-left: 200px" />
                                         <input type="number" class="sens_no" id="cnt-val" min="1" max="16" step="1" value="1"
@@ -524,6 +533,8 @@
                                             <option value="1" selected>Sekunden</option>
                                             <option value="2">Minuten</option>
                                         </select>
+                                        <input type="number" class="sens_no" id="msgset-time" min="1" max="240" step="1" value="3" name="msgset_time"
+                                            style="visibility: hidden; position: absolute; margin-left: 200px" />
                                         <input type="hidden" id="ok-result" name="ok_result" value="edit" />
                                     </div>
                             </div>
@@ -549,8 +560,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
     </div>
     <div id="automtn_err_popup" class="popup">
         <div class="popup-content">

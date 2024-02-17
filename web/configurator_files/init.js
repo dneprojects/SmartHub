@@ -70,6 +70,10 @@ const ok_butt = document.getElementById("ok_button")
 ok_butt.addEventListener("click", function () {
     checkFormEntries();
 });
+const msg_opt = document.getElementById("msgopt-act")
+msg_opt.addEventListener("change", function () {
+    setMsgTime();
+});
 
 close_err_popup.addEventListener("click", function () {
 automtn_err_popup.classList.remove("show");

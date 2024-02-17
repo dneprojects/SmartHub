@@ -6,6 +6,7 @@ const dimm_act = new Set([20, 22, 23, 24]);
 const rgb_act = new Set([35]);
 const ccmd_act = new Set([50]);
 const mode_act = new Set([64]);
+const msg_act = new Set([56, 57, 58]);
 const climate_act = new Set([220, 221, 222]);
 const ambient_act = new Set([240]);
 
@@ -170,6 +171,14 @@ function initActElements(act_code, act_args) {
         setElement("action-select", 240)
         setElement("modlite-time", act_args[0]);
     }
+    else if (msg_act.has(act_code)) {
+        setElement("action-select", 56)
+        setElement("msgopt-act", act_code);
+        setElement("msg-act", act_args[0]);
+        if (act_code == 58) {
+            setElement("msgset-time", act_args[1]);
+        }
+    }
     else if (buzzer_act.has(act_code)) {
         setElement("action-select", 10)
         setElement("buzz-freq", act_args[0]);
@@ -208,6 +217,9 @@ function setActionSels() {
     document.getElementById("modlite-pars").style.visibility = "hidden";
     document.getElementById("mode-low").style.visibility = "hidden";
     document.getElementById("mode-high").style.visibility = "hidden";
+    document.getElementById("msg-act").style.visibility = "hidden";
+    document.getElementById("msgopt-act").style.visibility = "hidden";
+    document.getElementById("msgset-time").style.visibility = "hidden";
     if (selectn == "1") {
         document.getElementById("output-act").style.visibility = "visible";
         document.getElementById("outopt-act").style.visibility = "visible"; 
@@ -240,6 +252,11 @@ function setActionSels() {
     }
     if (selectn == "50") {
         document.getElementById("collcmd-act").style.visibility = "visible";
+    }
+    if (selectn == "56") {
+        document.getElementById("msg-act").style.visibility = "visible";
+        document.getElementById("msgopt-act").style.visibility = "visible";
+        setMsgTime()
     }
     if (selectn == "111") {
         document.getElementById("flag-act").style.visibility = "visible";
@@ -485,4 +502,10 @@ function enableOption(elem, opt) {
             break;
         }
     }  
+}
+function setMsgTime() {
+    if (document.getElementById("msgopt-act").value == 58)
+        document.getElementById("msgset-time").style.visibility = "visible";
+    else
+        document.getElementById("msgset-time").style.visibility = "hidden";
 }
