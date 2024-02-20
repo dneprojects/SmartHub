@@ -1,7 +1,7 @@
 import logging
 from pymodbus.utilities import checkCRC as ModbusCheckCRC
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
-from const import MirrIdx, SMGIdx, MODULE_CODES, CStatBlkIdx, HA_EVENTS
+from const import MirrIdx, SMGIdx, MStatIdx, MODULE_CODES, CStatBlkIdx, HA_EVENTS
 from configuration import ModuleSettings, ModuleSettingsLight
 
 
@@ -400,9 +400,10 @@ class HbtnModule:
         self.list = await settings.set_list()
         self.list_upload = self.list
         self.smg_upload = self.build_smg()
-        await self.hdlr.send_module_smg(self._id)
-        await self.hdlr.send_module_list(self._id)
-        await self.hdlr.get_module_status(self._id)
+        if not self.api_srv.is_offline:
+            await self.hdlr.send_module_smg(self._id)
+            await self.hdlr.send_module_list(self._id)
+            await self.hdlr.get_module_status(self._id)
         self.comp_status = self.get_status(False)
         self.calc_SMG_crc(self.build_smg())
         self._name = (
@@ -418,7 +419,8 @@ class HbtnModule:
         self.settings = settings
         self.list = await settings.set_automations()
         self.list_upload = self.list
-        await self.hdlr.send_module_list(self._id)
+        if not self.api_srv.is_offline:
+            await self.hdlr.send_module_list(self._id)
         self.comp_status = self.get_status(False)
         # self.list = await self.hdlr.get_module_list(self._id)
         self.calc_SMC_crc(self.list)

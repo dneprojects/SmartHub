@@ -1,8 +1,9 @@
 import logging
 import asyncio
 from math import ceil
-from const import MirrIdx, SMGIdx, RT_CMDS
+from const import MirrIdx, SMGIdx, RT_CMDS, MODULE_CODES, API_RESPONSE
 from hdlr_class import HdlrBase
+from messages import RtResponse
 from module import HbtnModule
 from configuration import ModuleSettings
 
@@ -735,4 +736,5 @@ class ModHdlr(HdlrBase):
 
     async def set_config_mode(self, flg: bool):
         """Forward to own router."""
-        await self.api_srv.routers[self.rt_id - 1].set_config_mode(flg)
+        if not self.api_srv.is_offline:
+            await self.api_srv.routers[self.rt_id - 1].set_config_mode(flg)
