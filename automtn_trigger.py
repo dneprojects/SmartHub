@@ -666,7 +666,7 @@ class AutomationTrigger:
             page = page.replace(
                 '<option value="">-- VKommando wählen --</option>', opt_str
             )
-        else:
+        elif SelTrgCodes["viscmd"] in self.triggers_dict.keys():
             page = page.replace(
                 f'<option value="{SelTrgCodes["viscmd"]}">{self.triggers_dict[SelTrgCodes["viscmd"]]}',
                 f'<option value="{SelTrgCodes["viscmd"]}" disabled>{self.triggers_dict[SelTrgCodes["viscmd"]]}',
@@ -685,7 +685,7 @@ class AutomationTrigger:
             page = page.replace(
                 '<option value="">-- DKommando wählen --</option>', opt_str
             )
-        else:
+        elif SelTrgCodes["dircmd"] in self.triggers_dict.keys():
             page = page.replace(
                 f'<option value="{SelTrgCodes["dircmd"]}">{self.triggers_dict[SelTrgCodes["dircmd"]]}',
                 f'<option value="{SelTrgCodes["dircmd"]}" disabled>{self.triggers_dict[SelTrgCodes["dircmd"]]}',
@@ -704,12 +704,11 @@ class AutomationTrigger:
             page = page.replace(
                 '<option value="">-- Benutzer wählen --</option>', opt_str
             )
-        else:
-            if SelTrgCodes["ekey"] in self.triggers_dict.keys():
-                page = page.replace(
-                    f'<option value="{SelTrgCodes["ekey"]}">{self.triggers_dict[SelTrgCodes["ekey"]]}',
-                    f'<option value="{SelTrgCodes["ekey"]}" disabled>{self.triggers_dict[SelTrgCodes["ekey"]]}',
-                )
+        elif SelTrgCodes["ekey"] in self.triggers_dict.keys():
+            page = page.replace(
+                f'<option value="{SelTrgCodes["ekey"]}">{self.triggers_dict[SelTrgCodes["ekey"]]}',
+                f'<option value="{SelTrgCodes["ekey"]}" disabled>{self.triggers_dict[SelTrgCodes["ekey"]]}',
+            )
 
         opt_str = '<option value="">-- Zähler wählen --</option>'
         max_cnt = []
@@ -729,7 +728,7 @@ class AutomationTrigger:
             "max_count = [16, 16, 16, 16, 16, 16, 16, 16, 16, 16]",
             f"max_count = {max_cnt}",
         )
-        if no_counters == 0:
+        if (no_counters == 0) & (SelTrgCodes["count"] in self.triggers_dict.keys()):
             page = page.replace(
                 f'<option value="{SelTrgCodes["count"]}">{self.triggers_dict[SelTrgCodes["count"]]}',
                 f'<option value="{SelTrgCodes["count"]}" disabled>{self.triggers_dict[SelTrgCodes["count"]]}',

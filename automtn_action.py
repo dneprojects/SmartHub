@@ -473,25 +473,6 @@ class AutomationAction:
             opt_str += f'<option value="{led.nmbr + 16}">{led.name}</option>\n'
         page = page.replace('<option value="">-- LED wählen --</option>', opt_str)
 
-        if (sel_atm.settings.typ[0] != 1) & (sel_atm.settings.typ != b"\x32\x01"):
-            page = page.replace(
-                f'<option value="{SelActCodes["buzzer"]}">{self.actions_dict[SelActCodes["buzzer"]]}',
-                f'<option value="{SelActCodes["buzzer"]}" disabled>{self.actions_dict[SelActCodes["buzzer"]]}',
-            )
-        if (
-            (sel_atm.settings.typ == b"\x0a\x14")
-            | (sel_atm.settings.typ == b"\x0a\x15")
-            | (sel_atm.settings.typ == b"\x0a\x16")
-        ):
-            page = page.replace(
-                f'<option value="{SelActCodes["climate"]}">{self.actions_dict[SelActCodes["climate"]]}',
-                f'<option value="{SelActCodes["climate"]}" disabled>{self.actions_dict[SelActCodes["climate"]]}',
-            )
-            page = page.replace(
-                f'<option value="{SelActCodes["cover"]}">{self.actions_dict[SelActCodes["cover"]]}',
-                f'<option value="{SelActCodes["cover"]}" disabled>{self.actions_dict[SelActCodes["cover"]]}',
-            )
-
         opt_str = '<option value="">-- Befehl wählen --</option>'
         for cmd in app["settings"].coll_cmds:
             opt_str += f'<option value="{cmd.nmbr}">{cmd.name}</option>'
@@ -513,6 +494,11 @@ class AutomationAction:
                 max_cnt.append(app["settings"].status[MirrIdx.LOGIC - 2 + cnt.nmbr * 3])
                 opt_str += f'<option value="{cnt.nmbr}">{cnt.name}</option>\n'
         page = page.replace('<option value="">-- AcZähler wählen --</option>', opt_str)
+        if (no_counters == 0) & (SelActCodes["counter"] in self.actions_dict.keys()):
+            page = page.replace(
+                f'<option value="{SelActCodes["counter"]}">{self.actions_dict[SelActCodes["counter"]]}',
+                f'<option value="{SelActCodes["counter"]}" disabled>{self.actions_dict[SelActCodes["counter"]]}',
+            )
         if len(app["settings"].messages) > 0:
             opt_str = '<option value="">-- Meldung wählen --</option>'
             for msg in app["settings"].messages:
@@ -521,15 +507,10 @@ class AutomationAction:
             page = page.replace(
                 '<option value="">-- Meldung wählen --</option>', opt_str
             )
-        else:
+        elif SelActCodes["msg"] in self.actions_dict.keys():
             page = page.replace(
                 f'<option value="{SelActCodes["msg"]}">{self.actions_dict[SelActCodes["msg"]]}',
                 f'<option value="{SelActCodes["msg"]}" disabled>{self.actions_dict[SelActCodes["msg"]]}',
-            )
-        if no_counters == 0:
-            page = page.replace(
-                f'<option value="{SelActCodes["counter"]}">{self.actions_dict[SelActCodes["counter"]]}',
-                f'<option value="{SelActCodes["counter"]}" disabled>{self.actions_dict[SelActCodes["counter"]]}',
             )
         page = page.replace(">User1Mode<", f">{self.autmn_dict['user_modes'][1]}<")
         page = page.replace(">User2Mode<", f">{self.autmn_dict['user_modes'][2]}<")
