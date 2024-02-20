@@ -190,132 +190,132 @@ function initActElements(act_code, act_args) {
 function setActionSels() {
     var idx = act_sel.selectedIndex
     var selectn = act_sel[idx].value
-    document.getElementById("output-act").style.visibility = "hidden";
-    document.getElementById("led-act").style.visibility = "hidden";
-    document.getElementById("collcmd-act").style.visibility = "hidden";
-    document.getElementById("flag-act").style.visibility = "hidden";
-    document.getElementById("counter-act").style.visibility = "hidden";
-    document.getElementById("countopt-act").style.visibility = "hidden";
-    document.getElementById("outopt-act").style.visibility = "hidden";
-    document.getElementById("rgb-select").style.visibility = "hidden";
-    document.getElementById("rgb-opts").style.visibility = "hidden";
-    document.getElementById("rgb-colorpicker").style.visibility = "hidden";
-    document.getElementById("cover-act").style.visibility = "hidden";
-    document.getElementById("covopt-act").style.visibility = "hidden";
-    document.getElementById("dimmout-act").style.visibility = "hidden";
-    document.getElementById("dimmopt-act").style.visibility = "hidden";
-    document.getElementById("climopt-act").style.visibility = "hidden";
-    document.getElementById("tsetopt-act").style.visibility = "hidden";
-    document.getElementById("climoutput-act").style.visibility = "hidden";
-    document.getElementById("tset-val").style.visibility = "hidden";
-    document.getElementById("cnt-val").style.visibility = "hidden";
-    document.getElementById("perc-val").style.visibility = "hidden";
-    document.getElementById("timeinterv-val").style.visibility = "hidden";
-    document.getElementById("timeunit-act").style.visibility = "hidden";
-    document.getElementById("buzz-pars").style.visibility = "hidden";
-    document.getElementById("buzz-pars2").style.visibility = "hidden";
-    document.getElementById("modlite-pars").style.visibility = "hidden";
-    document.getElementById("mode-low").style.visibility = "hidden";
-    document.getElementById("mode-high").style.visibility = "hidden";
-    document.getElementById("msg-act").style.visibility = "hidden";
-    document.getElementById("msgopt-act").style.visibility = "hidden";
-    document.getElementById("msgset-time").style.visibility = "hidden";
+    setElementVisibility("output-act", "hidden");
+    setElementVisibility("led-act", "hidden");
+    setElementVisibility("collcmd-act", "hidden");
+    setElementVisibility("flag-act", "hidden");
+    setElementVisibility("counter-act", "hidden");
+    setElementVisibility("countopt-act", "hidden");
+    setElementVisibility("outopt-act", "hidden");
+    setElementVisibility("rgb-select", "hidden");
+    setElementVisibility("rgb-opts", "hidden");
+    setElementVisibility("rgb-colorpicker", "hidden");
+    setElementVisibility("cover-act", "hidden");
+    setElementVisibility("covopt-act", "hidden");
+    setElementVisibility("dimmout-act", "hidden");
+    setElementVisibility("dimmopt-act", "hidden");
+    setElementVisibility("climopt-act", "hidden");
+    setElementVisibility("tsetopt-act", "hidden");
+    setElementVisibility("climoutput-act", "hidden");
+    setElementVisibility("tset-val", "hidden");
+    setElementVisibility("cnt-val", "hidden");
+    setElementVisibility("perc-val", "hidden");
+    setElementVisibility("timeinterv-val", "hidden");
+    setElementVisibility("timeunit-act", "hidden");
+    setElementVisibility("buzz-pars", "hidden");
+    setElementVisibility("buzz-pars2", "hidden");
+    setElementVisibility("modlite-pars", "hidden");
+    setElementVisibility("mode-low", "hidden");
+    setElementVisibility("mode-high", "hidden");
+    setElementVisibility("msg-act", "hidden");
+    setElementVisibility("msgopt-act", "hidden");
+    setElementVisibility("msgset-time", "hidden");
     if (selectn == "1") {
-        document.getElementById("output-act").style.visibility = "visible";
-        document.getElementById("outopt-act").style.visibility = "visible"; 
+        setElementVisibility("output-act", "visible");
+        setElementVisibility("outopt-act", "visible"); 
         setActTimeinterval();
     }
     if (selectn == "2") {
-        document.getElementById("led-act").style.visibility = "visible";
-        document.getElementById("outopt-act").style.visibility = "visible";
+        setElementVisibility("led-act", "visible");
+        setElementVisibility("outopt-act", "visible");
         setActTimeinterval();
     }
     if (selectn == "20") {
-        document.getElementById("dimmout-act").style.visibility = "visible";
-        document.getElementById("dimmopt-act").style.visibility = "visible";
+        setElementVisibility("dimmout-act", "visible");
+        setElementVisibility("dimmopt-act", "visible");
         setActDPercval();
     }
     if (selectn == "17") {
-        document.getElementById("cover-act").style.visibility = "visible";
-        document.getElementById("covopt-act").style.visibility = "visible";
-        document.getElementById("perc-val").style.visibility = "visible";
+        setElementVisibility("cover-act", "visible");
+        setElementVisibility("covopt-act", "visible");
+        setElementVisibility("perc-val", "visible");
         disablePercval()
     }
     if (selectn == "35") {
-        document.getElementById("rgb-select").style.visibility = "visible";
-        document.getElementById("rgb-opts").style.visibility = "visible";
+        setElementVisibility("rgb-select", "visible");
+        setElementVisibility("rgb-opts", "visible");
         setRGBPicker()
     }
     if (selectn == "220") {
-        document.getElementById("climopt-act").style.visibility = "visible";
+        setElementVisibility("climopt-act", "visible");
         setActClimate();
     }
     if (selectn == "50") {
-        document.getElementById("collcmd-act").style.visibility = "visible";
+        setElementVisibility("collcmd-act", "visible");
     }
     if (selectn == "56") {
-        document.getElementById("msg-act").style.visibility = "visible";
-        document.getElementById("msgopt-act").style.visibility = "visible";
+        setElementVisibility("msg-act", "visible");
+        setElementVisibility("msgopt-act", "visible");
         setMsgTime()
     }
     if (selectn == "111") {
-        document.getElementById("flag-act").style.visibility = "visible";
-        document.getElementById("outopt-act").style.visibility = "visible"; 
+        setElementVisibility("flag-act", "visible");
+        setElementVisibility("outopt-act", "visible"); 
         setActTimeinterval();
     }
     if (selectn == "6") {
-        document.getElementById("counter-act").style.visibility = "visible";
-        document.getElementById("countopt-act").style.visibility = "visible";
+        setElementVisibility("counter-act", "visible");
+        setElementVisibility("countopt-act", "visible");
         setActCntval();
     }
     if (selectn == "10") {
-        document.getElementById("buzz-pars").style.visibility = "visible";
-        document.getElementById("buzz-pars2").style.visibility = "visible";
+        setElementVisibility("buzz-pars", "visible");
+        setElementVisibility("buzz-pars2", "visible");
     }
     if (selectn == "64") {
-        document.getElementById("mode-low").style.visibility = "visible";
-        document.getElementById("mode-high").style.visibility = "visible";
+        setElementVisibility("mode-low", "visible");
+        setElementVisibility("mode-high", "visible");
     }
     if (selectn == "240") {
-        document.getElementById("modlite-pars").style.visibility = "visible";
+        setElementVisibility("modlite-pars", "visible");
     }
 }
 
 function setMovLight(){
     var idx = mov_sel.selectedIndex
-    document.getElementById("mov-light").style.visibility = "hidden";
-    document.getElementById("mov-light-lbl").style.visibility = "hidden";
+    setElementVisibility("mov-light", "hidden");
+    setElementVisibility("mov-light-lbl", "hidden");
     if (idx <= 1) {
-        document.getElementById("mov-light").style.visibility = "hidden";
-        document.getElementById("mov-light-lbl").style.visibility = "hidden";
+        setElementVisibility("mov-light", "hidden");
+        setElementVisibility("mov-light-lbl", "hidden");
     }
     if (idx > 1) {
-        document.getElementById("mov-light").style.visibility = "visible";
-        document.getElementById("mov-light-lbl").style.visibility = "visible";
+        setElementVisibility("mov-light", "visible");
+        setElementVisibility("mov-light-lbl", "visible");
     }
 }
 
 function setActCntval() {
     var idx = cnt_actopt.selectedIndex
-    document.getElementById("cnt-val").style.visibility = "hidden";
+    setElementVisibility("cnt-val", "hidden");
     if (idx == 3){
-        document.getElementById("cnt-val").style.visibility = "visible";
+        setElementVisibility("cnt-val", "visible");
     }
 }
 function setActDPercval() {
     var idx = dim_actopt.selectedIndex
-    document.getElementById("perc-val").style.visibility = "hidden";
+    setElementVisibility("perc-val", "hidden");
     if (idx == 1) {
-        document.getElementById("perc-val").style.visibility = "visible";
+        setElementVisibility("perc-val", "visible");
     }
 }
 function setActTimeinterval() {
     var idx = out_actopt.selectedIndex
-    document.getElementById("timeinterv-val").style.visibility = "hidden";
-    document.getElementById("timeunit-act").style.visibility = "hidden";
+    setElementVisibility("timeinterv-val", "hidden");
+    setElementVisibility("timeunit-act", "hidden");
     if (idx > 3) {
-        document.getElementById("timeinterv-val").style.visibility = "visible";
-        document.getElementById("timeunit-act").style.visibility = "visible";
+        setElementVisibility("timeinterv-val", "visible");
+        setElementVisibility("timeunit-act", "visible");
         if (act_sel.value == "act-111") {
             var flg_sel = document.getElementById("flag-act")
             for (var i = 0; i < flg_sel.length; i++) {
@@ -343,71 +343,71 @@ function setActTimeinterval() {
 }
 function setActFTimeinterval() {
     var idx = flag_actopt.selectedIndex
-    document.getElementById("timeinterv-act").style.visibility = "hidden";
-    document.getElementById("timeunit-act").style.visibility = "hidden";
+    setElementVisibility("timeinterv-act", "hidden");
+    setElementVisibility("timeunit-act", "hidden");
     if (idx == 1) {
-        document.getElementById("timeinterv-val").style.visibility = "visible";
-        document.getElementById("timeunit-act").style.visibility = "visible";
+        setElementVisibility("timeinterv-val", "visible");
+        setElementVisibility("timeunit-act", "visible");
     }
 }
 function setActClimate() {
     var idx = clim_actopt.selectedIndex
-    document.getElementById("tsetopt-act").style.visibility = "hidden";
-    document.getElementById("climoutput-act").style.visibility = "hidden";
-    document.getElementById("tset-val").style.visibility = "hidden";
+    setElementVisibility("tsetopt-act", "hidden");
+    setElementVisibility("climoutput-act", "hidden");
+    setElementVisibility("tset-val", "hidden");
     if ((idx == 1) || (idx == 2)) {
-        document.getElementById("tsetopt-act").style.visibility = "visible";
+        setElementVisibility("tsetopt-act", "visible");
         setActTsetval()
     }
     if ((idx == 3) || (idx == 4)) {
-        document.getElementById("climoutput-act").style.visibility = "visible";
+        setElementVisibility("climoutput-act", "visible");
     }
 }
 function setActTsetval() {
     var idx = tset_actopt.selectedIndex
-    document.getElementById("tset-val").style.visibility = "hidden";
+    setElementVisibility("tset-val", "hidden");
     if ((idx == 1) || (idx == 2)) {
-        document.getElementById("tset-val").style.visibility = "visible";
+        setElementVisibility("tset-val", "visible");
     }
 }
 
 function disablePercval() {
     var cvr_opt = cvr_actopt.value
     if (cvr_opt > 10)
-        document.getElementById("perc-val").style.visibility = "hidden";
+        setElementVisibility("perc-val", "hidden");
     else
-        document.getElementById("perc-val").style.visibility = "visible";
+        setElementVisibility("perc-val", "visible");
 }
 
 function setSensorNums() {
     var idx = sens_sel.selectedIndex
     var selectn = sens_sel[idx].value
-    document.getElementById("sens-lims-wind").style.visibility = "hidden";
-    document.getElementById("sens-lims-lux").style.visibility = "hidden";
-    document.getElementById("sens-lims-temp").style.visibility = "hidden";
-    document.getElementById("sens-lims-perc").style.visibility = "hidden";
-    document.getElementById("rain-select").style.visibility = "hidden";
-    document.getElementById("sens-lims-ad").style.visibility = "hidden";
+    setElementVisibility("sens-lims-wind", "hidden");
+    setElementVisibility("sens-lims-lux", "hidden");
+    setElementVisibility("sens-lims-temp", "hidden");
+    setElementVisibility("sens-lims-perc", "hidden");
+    setElementVisibility("rain-select", "hidden");
+    setElementVisibility("sens-lims-ad", "hidden");
     if ((selectn == "218") || (selectn == "219")) {
-        document.getElementById("sens-lims-ad").style.visibility = "visible";
+        setElementVisibility("sens-lims-ad", "visible");
     }
     if (selectn == "204") {
-        document.getElementById("sens-lims-wind").style.visibility = "visible";
+        setElementVisibility("sens-lims-wind", "visible");
     }
     if ((selectn == "203") || (selectn == "216")) {
-        document.getElementById("sens-lims-lux").style.visibility = "visible";
+        setElementVisibility("sens-lims-lux", "visible");
     } 
     if ((selectn == "201") || (selectn == "213")) {
-        document.getElementById("sens-lims-temp").style.visibility = "visible";
+        setElementVisibility("sens-lims-temp", "visible");
     } 
     if ((selectn == "202") || (selectn == "215")) {
-        document.getElementById("sens-lims-perc").style.visibility = "visible";
+        setElementVisibility("sens-lims-perc", "visible");
     } 
     if (selectn == "205") {
-        document.getElementById("rain-select").style.visibility = "visible";
+        setElementVisibility("rain-select", "visible");
     }
     if (selectn == "217") {
-        document.getElementById("sens-lims-perc").style.visibility = "visible";
+        setElementVisibility("sens-lims-perc", "visible");
     }
 }
 
@@ -479,9 +479,9 @@ function colArray2StrConv(col) {
 
 function setRGBPicker() {
     if (document.getElementById("rgb-opts").value == 4)
-        document.getElementById("rgb-colorpicker").style.visibility = "visible";
+        setElementVisibility("rgb-colorpicker", "visible");
     else
-        document.getElementById("rgb-colorpicker").style.visibility = "hidden";
+        setElementVisibility("rgb-colorpicker", "hidden");
 }
     
 function disableOption(elem, opt) {
@@ -505,7 +505,7 @@ function enableOption(elem, opt) {
 }
 function setMsgTime() {
     if (document.getElementById("msgopt-act").value == 58)
-        document.getElementById("msgset-time").style.visibility = "visible";
+        setElementVisibility("msgset-time", "visible");
     else
-        document.getElementById("msgset-time").style.visibility = "hidden";
+        setElementVisibility("msgset-time", "hidden");
 }

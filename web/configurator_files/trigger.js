@@ -154,107 +154,107 @@ function initTrigElements(trg_code, trg_arg1, trg_arg2, trg_time) {
 function setTriggerSels() {
     var idx = trig_sel.selectedIndex
     var selectn = trig_sel[idx].value
-    document.getElementById("button-select").style.visibility = "hidden";
-    document.getElementById("switch-select").style.visibility = "hidden";
-    document.getElementById("output-select").style.visibility = "hidden";
-    document.getElementById("flag-select").style.visibility = "hidden";
-    document.getElementById("flag2-select").style.visibility = "hidden";
-    document.getElementById("mode-select").style.visibility = "hidden";
-    document.getElementById("mode2-select").style.visibility = "hidden";
-    document.getElementById("viscmd-select").style.visibility = "hidden";
-    document.getElementById("collcmd-select").style.visibility = "hidden";
-    document.getElementById("dircmd-select").style.visibility = "hidden";
-    document.getElementById("sensor-select").style.visibility = "hidden";
-    document.getElementById("counter-select").style.visibility = "hidden";
-    document.getElementById("mov-select").style.visibility = "hidden";
-    document.getElementById("mov-params").style.visibility = "hidden";
-    document.getElementById("mov-light").style.visibility = "hidden";
-    document.getElementById("mov-light-lbl").style.visibility = "hidden";
-    document.getElementById("shortlong-select").style.visibility = "hidden";
-    document.getElementById("onoff-select").style.visibility = "hidden";
-    document.getElementById("count-vals").style.visibility = "hidden";
-    document.getElementById("sens-lims-wind").style.visibility = "hidden";
-    document.getElementById("sens-lims-lux").style.visibility = "hidden";
-    document.getElementById("sens-lims-temp").style.visibility = "hidden";
-    document.getElementById("sens-lims-perc").style.visibility = "hidden";
-    document.getElementById("rain-select").style.visibility = "hidden";
-    document.getElementById("sens-lims-ad").style.visibility = "hidden";
-    document.getElementById("time-vals").style.visibility = "hidden";
-    document.getElementById("day-vals").style.visibility = "hidden";
-    document.getElementById("month-vals").style.visibility = "hidden";
-    document.getElementById("ekey-select").style.visibility = "hidden";
-    document.getElementById("finger-select").style.visibility = "hidden";
-    document.getElementById("clim-sens-select").style.visibility = "hidden";
-    document.getElementById("clim-mode-select").style.visibility = "hidden";
-    document.getElementById("remote-codes").style.visibility = "hidden";
-    document.getElementById("sys-select").style.visibility = "hidden";
-    document.getElementById("supply-select").style.visibility = "hidden";
-    document.getElementById("syserr-div").style.visibility = "hidden";
+    setElementVisibility("button-select", "hidden");
+    setElementVisibility("switch-select", "hidden");
+    setElementVisibility("output-select", "hidden");
+    setElementVisibility("flag-select", "hidden");
+    setElementVisibility("flag2-select", "hidden");
+    setElementVisibility("mode-select", "hidden");
+    setElementVisibility("mode2-select", "hidden");
+    setElementVisibility("viscmd-select", "hidden");
+    setElementVisibility("collcmd-select", "hidden");
+    setElementVisibility("dircmd-select", "hidden");
+    setElementVisibility("sensor-select", "hidden");
+    setElementVisibility("counter-select", "hidden");
+    setElementVisibility("mov-select", "hidden");
+    setElementVisibility("mov-params", "hidden");
+    setElementVisibility("mov-light", "hidden");
+    setElementVisibility("mov-light-lbl", "hidden");
+    setElementVisibility("shortlong-select", "hidden");
+    setElementVisibility("onoff-select", "hidden");
+    setElementVisibility("count-vals", "hidden");
+    setElementVisibility("sens-lims-wind", "hidden");
+    setElementVisibility("sens-lims-lux", "hidden");
+    setElementVisibility("sens-lims-temp", "hidden");
+    setElementVisibility("sens-lims-perc", "hidden");
+    setElementVisibility("rain-select", "hidden");
+    setElementVisibility("sens-lims-ad", "hidden");
+    setElementVisibility("time-vals", "hidden");
+    setElementVisibility("day-vals", "hidden");
+    setElementVisibility("month-vals", "hidden");
+    setElementVisibility("ekey-select", "hidden");
+    setElementVisibility("finger-select", "hidden");
+    setElementVisibility("clim-sens-select", "hidden");
+    setElementVisibility("clim-mode-select", "hidden");
+    setElementVisibility("remote-codes", "hidden");
+    setElementVisibility("sys-select", "hidden");
+    setElementVisibility("supply-select", "hidden");
+    setElementVisibility("syserr-div", "hidden");
     
     if (selectn == "150") {
-        document.getElementById("button-select").style.visibility = "visible";
-        document.getElementById("shortlong-select").style.visibility = "visible";
+        setElementVisibility("button-select", "visible");
+        setElementVisibility("shortlong-select", "visible");
     }
     if (selectn == "152") {
-        document.getElementById("switch-select").style.visibility = "visible";
-        document.getElementById("onoff-select").style.visibility = "visible";
+        setElementVisibility("switch-select", "visible");
+        setElementVisibility("onoff-select", "visible");
     }
     if (selectn == "149") {
-        document.getElementById("button-select").style.visibility = "visible";
+        setElementVisibility("button-select", "visible");
     }
     if (selectn == "23") {
-        document.getElementById("remote-codes").style.visibility = "visible";
+        setElementVisibility("remote-codes", "visible");
     }
     if (selectn == "10") {
-        document.getElementById("output-select").style.visibility = "visible";
-        document.getElementById("onoff-select").style.visibility = "visible";
+        setElementVisibility("output-select", "visible");
+        setElementVisibility("onoff-select", "visible");
     }
     if (selectn == "50") {
-        document.getElementById("collcmd-select").style.visibility = "visible";
+        setElementVisibility("collcmd-select", "visible");
     }
     if (selectn == "31") {
-        document.getElementById("viscmd-select").style.visibility = "visible";
+        setElementVisibility("viscmd-select", "visible");
     }
     if (selectn == "253") {
-        document.getElementById("dircmd-select").style.visibility = "visible";
+        setElementVisibility("dircmd-select", "visible");
     }
     if (selectn == "6") {
-        document.getElementById("flag-select").style.visibility = "visible";
-        document.getElementById("flag2-select").style.visibility = "visible";
+        setElementVisibility("flag-select", "visible");
+        setElementVisibility("flag2-select", "visible");
     }
     if (selectn == "137") {
-        document.getElementById("mode-select").style.visibility = "visible";
-        document.getElementById("mode2-select").style.visibility = "visible";
+        setElementVisibility("mode-select", "visible");
+        setElementVisibility("mode2-select", "visible");
     }
     if (selectn == "203") {
-        document.getElementById("sensor-select").style.visibility = "visible";
+        setElementVisibility("sensor-select", "visible");
         setSensorNums();
     }
     if (selectn == "9") {
-        document.getElementById("counter-select").style.visibility = "visible";
-        document.getElementById("count-vals").style.visibility = "visible";
+        setElementVisibility("counter-select", "visible");
+        setElementVisibility("count-vals", "visible");
     }
     if (selectn == "40") {
-        document.getElementById("mov-select").style.visibility = "visible";
-        document.getElementById("mov-params").style.visibility = "visible";
+        setElementVisibility("mov-select", "visible");
+        setElementVisibility("mov-params", "visible");
         setMovLight();
     }
     if (selectn == "169") {
-        document.getElementById("ekey-select").style.visibility = "visible";
-        document.getElementById("finger-select").style.visibility = "visible";
+        setElementVisibility("ekey-select", "visible");
+        setElementVisibility("finger-select", "visible");
         setEkeyUsrFingers();
     }
     if (selectn == "170") {
-        document.getElementById("time-vals").style.visibility = "visible";
-        document.getElementById("day-vals").style.visibility = "visible";
-        document.getElementById("month-vals").style.visibility = "visible";
+        setElementVisibility("time-vals", "visible");
+        setElementVisibility("day-vals", "visible");
+        setElementVisibility("month-vals", "visible");
     }
     if (selectn == "220") {
-        document.getElementById("clim-sens-select").style.visibility = "visible";
-        document.getElementById("clim-mode-select").style.visibility = "visible";
+        setElementVisibility("clim-sens-select", "visible");
+        setElementVisibility("clim-mode-select", "visible");
     }
     if (selectn == "249") {
-        document.getElementById("sys-select").style.visibility = "visible";
+        setElementVisibility("sys-select", "visible");
         setSysTrigger()
     }
 }
@@ -306,16 +306,16 @@ function setSysTrigger() {
     var idx = sys_sel.selectedIndex;
     var selectn = sys_sel[idx].value;
     if (selectn == 249) {
-        document.getElementById("supply-select").style.visibility = "hidden";
-        document.getElementById("syserr-div").style.visibility = "hidden";
+        setElementVisibility("supply-select", "hidden");
+        setElementVisibility("syserr-div", "hidden");
     }
     else if (selectn == 12) {
-        document.getElementById("supply-select").style.visibility = "visible";
-        document.getElementById("syserr-div").style.visibility = "hidden";
+        setElementVisibility("supply-select", "visible");
+        setElementVisibility("syserr-div", "hidden");
     }
     else if (selectn == 101) {
-        document.getElementById("supply-select").style.visibility = "hidden";
-        document.getElementById("syserr-div").style.visibility = "visible";
+        setElementVisibility("supply-select", "hidden");
+        setElementVisibility("syserr-div", "visible");
     }
 }
 

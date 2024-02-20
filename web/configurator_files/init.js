@@ -89,6 +89,16 @@ function setElement(id, valueToSet) {
     selector.value = valueToSet;
 }
 
+function setElementVisibility(idStr, newState) {
+    const elem = document.getElementById(idStr)
+    elem.style.visibility = newState;
+    if (newState == "visible") {
+        if (elem.type == "select-one")
+            if ((elem.childElementCount == 2) & (elem.options[0].value == "") & (elem.selectedIndex == 0))
+                elem.selectedIndex = 1
+    }
+}
+
 function checkFormEntries() {
     const def_form = document.getElementById("automation_def");
     var success = true;
