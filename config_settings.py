@@ -22,6 +22,7 @@ from const import (
     MirrIdx,
     IfDescriptor,
 )
+from configuration import set_cover_name, set_cover_output_name
 
 routes = web.RouteTableDef()
 
@@ -34,7 +35,6 @@ class ConfigSettingsServer:
         self._ip = api_srv.sm_hub._host_ip
         self._port = CONF_PORT
         self.parent = parent
-        self.logger = logging.getLogger(__name__)
         self.app = web.Application()
         self.app.add_routes(routes)
         self.app["parent"] = self.parent
@@ -50,10 +50,6 @@ class ConfigSettingsServer:
         if args[0] == "ModSettings":
             mod_addr = int(args[1])
             return show_settings(request.app["parent"], mod_addr)
-        # if args[0] == "EditAutomtns":
-        #     mod_addr = int(args[1])
-        #     request.app["step"] = 0
-        #     return build_show_automations(request.app, mod_addr, 0)
         elif args[0] == "RtrSettings":
             return show_settings(request.app["parent"], 0)
 
@@ -85,11 +81,11 @@ class ConfigSettingsServer:
         return await show_next_prev(request.app["parent"], args[1])
 
 
-def show_router_overview(app) -> web.Response:
+def show_router_overview(main_app) -> web.Response:
     """Prepare overview page of module."""
-    api_srv = app["api_srv"]
+    api_srv = main_app["api_srv"]
     rtr = api_srv.routers[0]
-    side_menu = activate_side_menu(app["side_menu"], ">Router<")
+    side_menu = activate_side_menu(main_app["side_menu"], ">Router<")
     type_desc = "Smart Router - Kommunikationsschnittstelle zwischen den Modulen"
     if rtr.channels == b"":
         page = fill_page_template(
@@ -162,14 +158,14 @@ def show_router_overview(app) -> web.Response:
     return web.Response(text=page, content_type="text/html")
 
 
-def show_module_overview(app, mod_addr) -> web.Response:
+def show_module_overview(main_app, mod_addr) -> web.Response:
     """Prepare overview page of module."""
-    api_srv = app["api_srv"]
+    api_srv = main_app["api_srv"]
     module = api_srv.routers[0].get_module(mod_addr)
-    side_menu = activate_side_menu(app["side_menu"], ">Module<")
+    side_menu = activate_side_menu(main_app["side_menu"], ">Module<")
     side_menu = activate_side_menu(side_menu, f"module-{module._id}")
     mod_image, type_desc = get_module_image(module._typ)
-    app["module"] = module
+    main_app["module"] = module
     mod_description = get_module_properties(module)
     def_filename = f"module_{mod_addr}.hmd"
     page = fill_page_template(
@@ -186,63 +182,64 @@ def show_module_overview(app, mod_addr) -> web.Response:
     return web.Response(text=page, content_type="text/html")
 
 
-async def show_next_prev(app, args):
+async def show_next_prev(main_app, args):
     """Do the step logic and prepare next page."""
 
     args1 = args.split("-")
     button = args1[0]
     mod_addr = int(args1[1])
-    settings = app["settings"]
+    settings = main_app["settings"]
     if button == "new_finger":
         step = 2
         user_id = settings.users_sel + 1
         finger_id = int(args1[2])
-        await settings.teach_new_finger(app, user_id, finger_id)
-        return show_setting_step(app, mod_addr, step)
+        await settings.teach_new_finger(main_app, user_id, finger_id)
+        return show_setting_step(main_app, mod_addr, step)
     else:
         step = int(args1[2])
     if button == "cancel":
         if mod_addr > 0:
-            return show_module_overview(app, mod_addr)
+            return show_module_overview(main_app, mod_addr)
         else:
-            return show_router_overview(app)
+            return show_router_overview(main_app)
 
     if button == "save":
-        logger = app["logger"]
         if mod_addr > 0:
             module = settings.module
             router = module.get_rtr()
-            await app["api_srv"].block_network_if(module.rt_id, True)
+            await main_app["api_srv"].block_network_if(module.rt_id, True)
             try:
                 await module.set_settings(settings)
-                app["side_menu"] = adjust_side_menu(router.modules, app["is_offline"])
+                main_app["side_menu"] = adjust_side_menu(
+                    router.modules, main_app["is_offline"]
+                )
                 if settings.group != int(settings.group_member):
                     # group membership changed, update in router
-                    router = app["api_srv"].routers[0]
+                    router = main_app["api_srv"].routers[0]
                     await router.set_module_group(mod_addr, int(settings.group_member))
             except Exception as err_msg:
-                logger.error(f"Error while saving module settings: {err_msg}")
-            await app["api_srv"].block_network_if(module.rt_id, False)
-            return show_module_overview(app, mod_addr)
+                main_app.logger.error(f"Error while saving module settings: {err_msg}")
+            await main_app["api_srv"].block_network_if(module.rt_id, False)
+            return show_module_overview(main_app, mod_addr)
         else:
             # Save settings in router
-            router = app["api_srv"].routers[0]
-            await app["api_srv"].block_network_if(router._id, True)
+            router = main_app["api_srv"].routers[0]
+            await main_app["api_srv"].block_network_if(router._id, True)
             try:
                 await router.set_settings(settings)
                 router.set_descriptions(settings)
-                app["side_menu"] = adjust_side_menu(
-                    app["api_srv"].routers[0].modules,
-                    app["is_offline"],
+                main_app["side_menu"] = adjust_side_menu(
+                    main_app["api_srv"].routers[0].modules,
+                    main_app["is_offline"],
                 )
             except Exception as err_msg:
-                logger.error(f"Error while saving router settings: {err_msg}")
-            await app["api_srv"].block_network_if(router._id, False)
-            return show_router_overview(app)
+                main_app.logger.error(f"Error while saving router settings: {err_msg}")
+            await main_app["api_srv"].block_network_if(router._id, False)
+            return show_router_overview(main_app)
     props = settings.properties
-    app["props"] = props
+    main_app["props"] = props
     io_keys = settings.prop_keys
-    app["io_keys"] = io_keys
+    main_app["io_keys"] = io_keys
     no_props = props["no_keys"]
     if button == "next":
         if step < no_props:
@@ -250,43 +247,49 @@ async def show_next_prev(app, args):
     elif button == "back":
         if step > 0:
             step -= 1
-    return show_setting_step(app, mod_addr, step)
+    return show_setting_step(main_app, mod_addr, step)
 
 
-def show_settings(app, mod_addr) -> web.Response:
+def show_settings(main_app, mod_addr) -> web.Response:
     """Prepare settings page of module."""
     if mod_addr > 0:
-        settings = app["api_srv"].routers[0].get_module(mod_addr).get_module_settings()
+        settings = (
+            main_app["api_srv"].routers[0].get_module(mod_addr).get_module_settings()
+        )
         title_str = f"Modul '{settings.name}'"
     else:
-        settings = app["api_srv"].routers[0].get_router_settings()
+        settings = main_app["api_srv"].routers[0].get_router_settings()
         title_str = f"Router '{settings.name}'"
-    app["settings"] = settings
-    app["key"] = ""
-    page = fill_settings_template(app, title_str, "Grundeinstellungen", 0, settings, "")
+    main_app["settings"] = settings
+    main_app["key"] = ""
+    page = fill_settings_template(
+        main_app, title_str, "Grundeinstellungen", 0, settings, ""
+    )
     return web.Response(text=page, content_type="text/html")
 
 
-def show_setting_step(app, mod_addr, step) -> web.Response:
+def show_setting_step(main_app, mod_addr, step) -> web.Response:
     """Prepare overview page of module."""
-    mod_settings = app["settings"]
+    mod_settings = main_app["settings"]
     if mod_addr > 0:
         title_str = f"Modul '{mod_settings.name}'"
     else:
         title_str = f"Router '{mod_settings.name}'"
     if step > 0:
-        key, header, prompt = get_property_kind(app, step)
-        app["prompt"] = prompt
-        app["key"] = key
-        page = fill_settings_template(app, title_str, header, step, mod_settings, key)
+        key, header, prompt = get_property_kind(main_app, step)
+        main_app["prompt"] = prompt
+        main_app["key"] = key
+        page = fill_settings_template(
+            main_app, title_str, header, step, mod_settings, key
+        )
     else:
         page = fill_settings_template(
-            app, title_str, "Grundeinstellungen", 0, mod_settings, ""
+            main_app, title_str, "Grundeinstellungen", 0, mod_settings, ""
         )
     return web.Response(text=page, content_type="text/html")
 
 
-def fill_settings_template(app, title, subtitle, step, settings, key: str) -> str:
+def fill_settings_template(main_app, title, subtitle, step, settings, key: str) -> str:
     """Return settings page."""
     with open(
         WEB_FILES_DIR + SETTINGS_TEMPLATE_FILE, mode="r", encoding="utf-8"
@@ -308,18 +311,18 @@ def fill_settings_template(app, title, subtitle, step, settings, key: str) -> st
             finger_dict_str += f'  {f_i+1}: "{FingerNames[f_i]}",\n'
         finger_dict_str += "}\n"
         page = page.replace("var fngrNames = {}", finger_dict_str)
-        if app["api_srv"].is_offline:
+        if main_app["api_srv"].is_offline:
             page = disable_button("Start", page)
     if step == 0:
         page = disable_button("zurück", page)
         # page = page.replace('form="settings_table"', "")
-        settings_form = prepare_basic_settings(app, settings.id, mod_type)
+        settings_form = prepare_basic_settings(main_app, settings.id, mod_type)
         if settings.properties["no_keys"] == 0:
             page = disable_button("weiter", page)
     else:
-        if step == app["props"]["no_keys"]:
+        if step == main_app["props"]["no_keys"]:
             page = disable_button("weiter", page)
-        settings_form = prepare_table(app, settings.id, step, key)
+        settings_form = prepare_table(main_app, settings.id, step, key)
     page = page.replace("<p>ContentText</p>", settings_form)
     return page
 
@@ -335,9 +338,9 @@ def get_module_properties(mod) -> str:
     return props
 
 
-def prepare_basic_settings(app, mod_addr, mod_type):
+def prepare_basic_settings(main_app, mod_addr, mod_type):
     """Prepare settings page for basic settings, e.g. name."""
-    settings = app["settings"]
+    settings = main_app["settings"]
     tbl = (
         indent(4)
         + f'<form id="settings_table" action="/settings/settings" method="post">\n'
@@ -360,7 +363,7 @@ def prepare_basic_settings(app, mod_addr, mod_type):
             indent(7)
             + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><select name="{id_name}" id="{id_name}">\n'
         )
-        rtr = app["api_srv"].routers[0]
+        rtr = main_app["api_srv"].routers[0]
         groups = rtr.groups
         rt_settings = RouterSettings(rtr)
         grps = rt_settings.groups
@@ -493,12 +496,12 @@ def prepare_basic_settings(app, mod_addr, mod_type):
     return tbl
 
 
-def prepare_table(app, mod_addr, step, key) -> str:
+def prepare_table(main_app, mod_addr, step, key) -> str:
     """Prepare settings table with form of edit fields."""
-    key_prompt = app["prompt"]
-    if hasattr(app["settings"], "covers"):
-        covers = getattr(app["settings"], "covers")
-    tbl_data = getattr(app["settings"], key)
+    key_prompt = main_app["prompt"]
+    if hasattr(main_app["settings"], "covers"):
+        covers = getattr(main_app["settings"], "covers")
+    tbl_data = getattr(main_app["settings"], key)
     tbl = (
         indent(4)
         + f'<form id="settings_table" action="/settings/step" method="post">\n'
@@ -508,7 +511,7 @@ def prepare_table(app, mod_addr, step, key) -> str:
     tbl_enries = dict()
     for ci in range(len(tbl_data)):
         if key == "fingers":
-            user_id = app["settings"].users[app["settings"].users_sel].nmbr
+            user_id = main_app["settings"].users[main_app["settings"].users_sel].nmbr
             if tbl_data[ci].type == user_id:
                 f_nmbr = tbl_data[ci].nmbr
                 tbl_enries.update({f_nmbr: ci})
@@ -563,8 +566,8 @@ def prepare_table(app, mod_addr, step, key) -> str:
                 tbl += f'<td><label for="{id_name}_cvr">Rollladen</label><input type="radio" name="data[{ci},1]" id="{id_name}_cvr" value="cvr" {cvr_chkd}></td>'
         elif key == "covers":
             if covers[ci].type != 0:
-                cov_t = app["settings"].cover_times
-                bld_t = app["settings"].blade_times
+                cov_t = main_app["settings"].cover_times
+                bld_t = main_app["settings"].blade_times
                 if tbl_data[ci].type > 0:
                     ipol_chkd = "checked"
                 else:
@@ -582,7 +585,7 @@ def prepare_table(app, mod_addr, step, key) -> str:
                 )
                 dep_names = ["Keine", "Tag/Nacht", "Alarm", "Tag/Nacht, Alarm"]
                 for dep in range(4):
-                    if dep == app["settings"].mode_dependencies[tbl_data[ci].nmbr]:
+                    if dep == main_app["settings"].mode_dependencies[tbl_data[ci].nmbr]:
                         tbl += (
                             indent(8)
                             + f'<option value="{dep}" selected>{dep_names[dep]}</option>\n'
@@ -596,7 +599,7 @@ def prepare_table(app, mod_addr, step, key) -> str:
         elif key == "users":
             # add radio buttons to select user
             id_name = "users_sel"
-            if ci == app["settings"].users_sel:
+            if ci == main_app["settings"].users_sel:
                 sel_chkd = "checked"
             else:
                 sel_chkd = ""
@@ -676,10 +679,10 @@ def prepare_table(app, mod_addr, step, key) -> str:
     return tbl
 
 
-def parse_response_form(app, form_data):
+def parse_response_form(main_app, form_data):
     """Parse configuration input form and store results in settings."""
-    key = app["key"]
-    settings = app["settings"]
+    key = main_app["key"]
+    settings = main_app["settings"]
     for form_key in list(form_data.keys())[:-1]:
         if form_key == "new_entry":
             # add element
@@ -734,84 +737,93 @@ def parse_response_form(app, form_data):
                     form_key
                 ][0]
             if len(indices) > 1:
-                match app["key"]:
+                match main_app["key"]:
                     case "inputs":
                         if form_data[form_key][0] == "sw":
                             settings.inputs[indices[0]].type = 2
                         else:
                             settings.inputs[indices[0]].type = 1
                     case "outputs":
+                        o_idx = indices[0]
+                        c_idx = settings.out_2_cvr(o_idx)
                         if form_data[form_key][0] == "cvr":
-                            settings.outputs[indices[0]].type = -10
-                            settings.outputs[indices[0] + 1].type = -10
-                            if settings.covers[int(indices[0] / 2)].type == 0:
+                            settings.outputs[o_idx].type = -10
+                            settings.outputs[o_idx + 1].type = -10
+                            outp_name = settings.outputs[o_idx].name
+                            cvr_name = set_cover_name(outp_name)
+                            if settings.covers[c_idx].type == 0:
                                 # needs new setting (polarity, blades)
-                                settings.covers[int(indices[0] / 2)].type = 1
-                                cvr_name = (
-                                    settings.outputs[indices[0]]
-                                    .name.replace("auf", "")
-                                    .replace("ab", "")
-                                    .replace("hoch", "")
-                                    .replace("runter", "")
-                                    .replace("zu", "")
-                                    .replace("up", "")
-                                    .replace("down", "")
+                                settings.covers[c_idx].type = 1
+                                settings.covers[c_idx].name = cvr_name
+                            elif len(settings.covers[c_idx].name) == 0:
+                                settings.covers[c_idx].name = cvr_name
+                            if settings.covers[c_idx].type > 0:
+                                settings.outputs[o_idx].name = set_cover_output_name(
+                                    outp_name, cvr_name, "up"
                                 )
-                                settings.covers[int(indices[0] / 2)].name = cvr_name
-                        elif form_data[form_key][0] == "out":
-                            settings.outputs[indices[0]].type = 1
-                            settings.outputs[indices[0] + 1].type = 1
-                            settings.covers[int(indices[0] / 2)].type = 0
-                            settings.covers[int(indices[0] / 2)].name = ""
-                    case "covers":
-                        if indices[1] == 0:
-                            # look for 'missing' checkbox entry
-                            if not f"data[{indices[0]},3]" in form_data.keys():
-                                settings.covers[indices[0]].type = abs(
-                                    settings.covers[indices[0]].type
-                                ) * (-1)
-                            # names
-                            settings.covers[indices[0]].name = form_data[form_key][0]
-                            if (
-                                settings.outputs[2 * indices[0]].name[
-                                    : len(form_data[form_key][0])
-                                ]
-                                != form_data[form_key][0]
-                            ):
-                                if settings.covers[indices[0]].type > 0:
-                                    settings.outputs[2 * indices[0]].name = (
-                                        form_data[form_key][0] + " auf"
-                                    )
-                                    settings.outputs[2 * indices[0] + 1].name = (
-                                        form_data[form_key][0] + " ab"
-                                    )
-                                else:
-                                    settings.outputs[2 * indices[0]].name = (
-                                        form_data[form_key][0] + " ab"
-                                    )
-                                    settings.outputs[2 * indices[0] + 1].name = (
-                                        form_data[form_key][0] + " auf"
-                                    )
-                        elif indices[1] == 1:
-                            settings.cover_times[indices[0]] = float(
-                                form_data[form_key][0]
-                            )
-                        elif indices[1] == 2:
-                            settings.blade_times[indices[0]] = float(
-                                form_data[form_key][0]
-                            )
-                            if float(form_data[form_key][0]) > 0:
-                                settings.covers[indices[0]].type = int(
-                                    copysign(2, settings.covers[indices[0]].type)
-                                )
-                        elif indices[1] == 3:
-                            if form_data[form_key][0] == "pol_nrm":
-                                settings.covers[indices[0]].type = abs(
-                                    settings.covers[indices[0]].type
+                                settings.outputs[o_idx + 1].name = (
+                                    set_cover_output_name(outp_name, cvr_name, "dwn")
                                 )
                             else:
-                                settings.covers[indices[0]].type = abs(
-                                    settings.covers[indices[0]].type
+                                settings.outputs[o_idx].name = set_cover_output_name(
+                                    outp_name, cvr_name, "dwn"
+                                )
+                                settings.outputs[o_idx + 1].name = (
+                                    set_cover_output_name(outp_name, cvr_name, "up")
+                                )
+                        elif form_data[form_key][0] == "out":
+                            settings.outputs[o_idx].type = 1
+                            settings.outputs[o_idx + 1].type = 1
+                            settings.covers[c_idx].type = 0
+                            settings.covers[c_idx].name = ""
+                    case "covers":
+                        c_idx = indices[0]
+                        o_idx = settings.cvr_2_out(c_idx)
+                        if indices[1] == 0:
+                            # names
+                            cover_name = form_data[form_key][0]
+                            pol_key = f"data[{c_idx},3]"
+                            if pol_key in form_data.keys():
+                                pol = form_data[pol_key][0]
+                            else:
+                                pol = "pol_inv"
+                            settings.covers[c_idx].name = cover_name
+                            outp_name = settings.outputs[o_idx].name
+                            if pol == "pol_nrm":
+                                settings.outputs[o_idx].name = set_cover_output_name(
+                                    outp_name, cover_name, "up"
+                                )
+                                settings.outputs[o_idx + 1].name = (
+                                    set_cover_output_name(outp_name, cover_name, "dwn")
+                                )
+                            else:
+                                settings.outputs[o_idx].name = set_cover_output_name(
+                                    outp_name, cover_name, "dwn"
+                                )
+                                settings.outputs[o_idx + 1].name = (
+                                    set_cover_output_name(outp_name, cover_name, "up")
+                                )
+                                # unchecked 'normal polarity' => no entry in form, so set pol here
+                                settings.covers[c_idx].type = abs(
+                                    settings.covers[c_idx].type
+                                ) * (-1)
+                        elif indices[1] == 1:
+                            settings.cover_times[c_idx] = float(form_data[form_key][0])
+                        elif indices[1] == 2:
+                            settings.blade_times[c_idx] = float(form_data[form_key][0])
+                            if float(form_data[form_key][0]) > 0:
+                                settings.covers[c_idx].type = int(
+                                    copysign(2, settings.covers[c_idx].type)
+                                )
+                        elif indices[1] == 3:
+                            # checked 'normal polarity' => entry in form, so set pol here
+                            if form_data[form_key][0] == "pol_nrm":
+                                settings.covers[c_idx].type = abs(
+                                    settings.covers[c_idx].type
+                                )
+                            else:
+                                settings.covers[c_idx].type = abs(
+                                    settings.covers[c_idx].type
                                 ) * (-1)
                     case "leds" | "buttons" | "dir_cmds":
                         if indices[1] == 0:
@@ -843,18 +855,18 @@ def parse_response_form(app, form_data):
         settings.all_fingers[settings.users[settings.users_sel].nmbr] = settings.fingers
         if "TeachNewFinger" in list(form_data.keys()):
             form_data["ModSettings"] = form_data["TeachNewFinger"]
-    app["settings"] = settings
+    main_app["settings"] = settings
     return form_data["ModSettings"][0]
 
 
-def get_property_kind(app, step):
+def get_property_kind(main_app, step):
     """Return header of property kind."""
     if step == 0:
         return "", "Grundeinstellungen"
     cnt = 0
-    props = app["props"]
-    io_keys = app["io_keys"]
-    settings = app["settings"]
+    props = main_app["props"]
+    io_keys = main_app["io_keys"]
+    settings = main_app["settings"]
     for key in io_keys:
         if props[key] > 0:
             cnt += 1
@@ -898,7 +910,7 @@ def get_property_kind(app, step):
                 ]
             else:
                 settings.fingers = []
-            app["settings"] = settings
+            main_app["settings"] = settings
         case "flags":
             header = "Lokale Merker"
             prompt = "Merker"

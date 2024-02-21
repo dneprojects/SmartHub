@@ -8,7 +8,7 @@ from const import (
     MirrIdx,
     FingerNames,
 )
-from automation import AutomationsSet
+from automation import AutomationDefinition, AutomationsSet
 
 
 class ModuleSettings:
@@ -110,28 +110,20 @@ class ModuleSettings:
             conf[MirrIdx.COVER_POL : MirrIdx.COVER_POL + 2], "little"
         )
         for c_idx in range(len(self.covers)):
-            co_idx = c_idx
-            if self.type[:16] == "Smart Controller":
-                co_idx += 2
-                if co_idx > 4:
-                    co_idx -= 5
+            o_idx = self.cvr_2_out(c_idx)
             if (
                 conf[MirrIdx.COVER_SETTINGS] & (0x01 << c_idx) > 0
             ):  # binary flag for shutters
-                self.cover_times[co_idx] = int(conf[MirrIdx.COVER_T + c_idx]) / 10
-                self.blade_times[co_idx] = int(conf[MirrIdx.BLAD_T + c_idx]) / 10
+                self.cover_times[c_idx] = int(conf[MirrIdx.COVER_T + c_idx]) / 10
+                self.blade_times[c_idx] = int(conf[MirrIdx.BLAD_T + c_idx]) / 10
                 # polarity defined per output, 2 per cover
-                polarity = (covr_pol & (0x01 << (2 * co_idx)) == 0) * 2 - 1
-                tilt = 1 + (self.blade_times[co_idx] > 0)
+                polarity = (covr_pol & (0x01 << (2 * c_idx)) == 0) * 2 - 1
+                tilt = 1 + (self.blade_times[c_idx] > 0)
                 pol = polarity * tilt  # +-1 for shutters, +-2 for blinds
-                cname = self.outputs[2 * co_idx].name.strip()
-                cname = cname.replace("auf", "")
-                cname = cname.replace("ab", "")
-                cname = cname.replace("auf", "")
-                cname = cname.replace("zu", "")
+                cname = set_cover_name(self.outputs[o_idx].name.strip())
                 self.covers[c_idx] = IfDescriptor(cname.strip(), c_idx + 1, pol)
-                self.outputs[2 * co_idx].type = -10  # disable light output
-                self.outputs[2 * co_idx + 1].type = -10
+                self.outputs[o_idx].type = -10  # disable light output
+                self.outputs[o_idx + 1].type = -10
         for l_idx in range(10):
             if conf[MirrIdx.LOGIC + 3 * l_idx] == 5:
                 # counter found
@@ -207,28 +199,23 @@ class ModuleSettings:
         outp_state = 0
         covr_pol = 0
         for c_idx in range(len(self.covers)):
-            cm_idx = c_idx
-            if self.type[:16] == "Smart Controller":
-                cm_idx -= 2
-                if cm_idx < 0:
-                    cm_idx += 5
-            if self.outputs[2 * c_idx].type == -10:
-                outp_state = outp_state | (0x01 << cm_idx)
+            o_idx = self.cvr_2_out(c_idx)
+            if self.outputs[o_idx].type == -10:
+                outp_state = outp_state | (0x01 << int(c_idx))
             status = replace_bytes(
                 status,
                 int.to_bytes(int(self.cover_times[c_idx] * 10)),
-                MirrIdx.COVER_T + cm_idx,
+                MirrIdx.COVER_T + c_idx,
             )
             status = replace_bytes(
                 status,
                 int.to_bytes(int(self.blade_times[c_idx] * 10)),
-                MirrIdx.BLAD_T + cm_idx,
+                MirrIdx.BLAD_T + c_idx,
             )
-            # Todo: Polaritiy bei RC, Cover 0 kommt nicht an, Cover 2-4 OK
             if self.covers[c_idx].type < 0:
-                covr_pol = covr_pol | (0x01 << (2 * cm_idx))
+                covr_pol = covr_pol | (0x01 << (2 * c_idx))
             else:
-                covr_pol = covr_pol | (0x01 << (2 + cm_idx + 1))
+                covr_pol = covr_pol | (0x01 << (2 * c_idx + 1))
 
         outp_bytes = (chr(outp_state & 0xFF)).encode("iso8859-1")
         status = replace_bytes(
@@ -283,7 +270,7 @@ class ModuleSettings:
                     user_id = int(line[1])
                     f_map = int(line[4]) * 256 + int(line[3])
                     self.users.append(IfDescriptor(text, user_id, f_map))
-                    self.all_fingers[user_id]: list[IfDescriptor] = []
+                    self.all_fingers[user_id] = []
                     for fi in range(10):
                         if f_map & (1 << fi):
                             self.all_fingers[user_id].append(
@@ -293,8 +280,8 @@ class ModuleSettings:
                     # Description of commands
                     self.dir_cmds.append(IfDescriptor(text, arg_code, 0))
                 elif int(line[0]) == 254:
-                    # Description of messages
-                    self.messages.append(IfDescriptor(text, arg_code, 0))
+                    # Description of messages with lang code
+                    self.messages.append(IfDescriptor(text, arg_code, line[4]))
                 elif int(line[0]) == 255:
                     try:
                         if arg_code in range(10, 18):
@@ -623,6 +610,26 @@ class ModuleSettings:
             )
             app["settings"] = settings
 
+    def out_2_cvr(self, o_no: int) -> int:
+        """Convert output to cover number based on module type, 0-based."""
+        c_no = int(o_no / 2)
+        if self.typ[0] != 1:
+            return c_no
+        c_no -= 2
+        if c_no < 0:
+            c_no += 5
+        return c_no
+
+    def cvr_2_out(self, c_no: int) -> int:
+        """Convert cover to output number based on module type, 0-based"""
+        o_no = c_no * 2
+        if self.typ[0] != 1:
+            return o_no
+        o_no += 4
+        if c_no > 2:
+            o_no -= 10
+        return o_no
+
 
 class RouterSettings:
     """Object with all router settings."""
@@ -783,3 +790,40 @@ class ModuleSettingsLight(ModuleSettings):
 def replace_bytes(in_bytes: bytes, repl_bytes: bytes, idx: int) -> bytes:
     """Replaces bytes array from idx:idx+len(in_bytes)."""
     return in_bytes[:idx] + repl_bytes + in_bytes[idx + len(repl_bytes) :]
+
+
+def set_cover_output_name(old_name, new_name, state):
+    """ "Set output name accdording to cover's name."""
+    up_names = ["auf", "auf", "hoch", "öffnen", "up", "open"]
+    dwn_names = ["ab", "zu", "runter", "schließen", "down", "close"]
+    if len(old_name.split()) > 1:
+        pf = old_name.split()[-1]
+        base = old_name.replace(pf, "").strip()
+        if pf in up_names:
+            pf_idx = up_names.index(pf)
+        elif pf in dwn_names:
+            pf_idx = dwn_names.index(pf)
+        else:
+            pf_idx = 0
+            base = old_name
+    else:
+        pf_idx = 0
+        base = old_name
+    pf_names = [up_names[pf_idx], dwn_names[pf_idx]]
+    if not new_name == None:
+        base = new_name
+    if state == "up":
+        return base + f" {pf_names[0]}"
+    return base + f" {pf_names[1]}"
+
+
+def set_cover_name(out_name):
+    """Strip postfix from output name."""
+    up_names = ["auf", "auf", "hoch", "öffnen", "up", "open"]
+    dwn_names = ["ab", "zu", "runter", "schließen", "down", "close"]
+    base = out_name
+    for pf in up_names:
+        base = base.replace(pf, "")
+    for pf in dwn_names:
+        base = base.replace(pf, "")
+    return base.strip()

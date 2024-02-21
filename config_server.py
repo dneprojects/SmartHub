@@ -52,7 +52,6 @@ class ConfigServer:
         self.api_srv = api_srv
         self._ip = api_srv.sm_hub._host_ip
         self._port = CONF_PORT
-        self.logger = logging.getLogger(__name__)
         self.conf_running = False
         self.app: web.Application = []
 
@@ -67,7 +66,6 @@ class ConfigServer:
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
         self.site = web.TCPSite(self.runner, self._ip, self._port)
-        self.app["logger"] = self.logger
 
     async def prepare(self):
         """Second initialization after api_srv is initialized."""
@@ -198,52 +196,54 @@ class ConfigServer:
 
     @routes.post("/upload")
     async def root(request: web.Request) -> web.Response:
+        app = request.app
         data = await request.post()
         config_file = data["file"].file
         content = config_file.read()
         content_str = content.decode()
         if "SysUpload" in data.keys():
             content_parts = content_str.split("---\n")
-            request.app["logger"].info(f"Router configuration file uploaded")
-            await send_to_router(request.app, content_parts[0])
-            for mod_addr in request.app["api_srv"].routers[0].mod_addrs:
+            app.logger.info(f"Router configuration file uploaded")
+            await send_to_router(app, content_parts[0])
+            for mod_addr in app["api_srv"].routers[0].mod_addrs:
                 for cont_part in content_parts[1:]:
                     if mod_addr == int(cont_part.split(";")[0]):
                         break
-                await send_to_module(request.app, cont_part, mod_addr)
-                request.app["logger"].info(
+                await send_to_module(app, cont_part, mod_addr)
+                app.logger.info(
                     f"Module configuration file for module {mod_addr} uploaded"
                 )
-            init_side_menu(request.app)
-            return show_modules(request.app)
+            init_side_menu(app)
+            return show_modules(app)
         elif data["ModUpload"] == "ModAddress":
             # router upload
-            request.app["logger"].info(f"Router configuration file uploaded")
-            await send_to_router(request.app, content_str)
-            return show_router_overview(request.app)
+            app.logger.info(f"Router configuration file uploaded")
+            await send_to_router(app, content_str)
+            return show_router_overview(app)
         else:
             mod_addr = int(data["ModUpload"])
             if data["ModUpload"] == content_str.split(";")[0]:
-                await send_to_module(request.app, content_str, mod_addr)
-                request.app["logger"].info(
+                await send_to_module(app, content_str, mod_addr)
+                app.logger.info(
                     f"Module configuration file for module {mod_addr} uploaded"
                 )
             else:
-                request.app["logger"].warning(
+                app.logger.warning(
                     f"Module configuration file does not fit to module number {mod_addr}, upload aborted"
                 )
-            return show_module_overview(request.app, mod_addr)  # web.HTTPNoContent()
+            return show_module_overview(app, mod_addr)  # web.HTTPNoContent()
 
     # @routes.get(path="/{key:.*}")
     # async def _(request):
+    #     app = request.app
     #     warning_txt = f"Route '{request.path}' not yet implemented"
-    #     request.app["logger"].warning(warning_txt)
-    #     mod_image, type_desc = get_module_image(request.app["module"]._typ)
+    #     app.logger.warning(warning_txt)
+    #     mod_image, type_desc = get_module_image(app["module"]._typ)
     #     page = fill_page_template(
-    #         f"Modul '{request.app['module']._name}'",
+    #         f"Modul '{app['module']._name}'",
     #         type_desc,
     #         warning_txt,
-    #         request.app["side_menu"],
+    #         app["side_menu"],
     #         mod_image,
     #         "",
     #     )
@@ -252,14 +252,15 @@ class ConfigServer:
 
     # @routes.post(path="/{key:.*}")
     # async def _(request):
+    #     app = request.app
     #     warning_txt = f"Route '{request.path}' not yet implemented"
-    #     request.app["logger"].warning(warning_txt)
-    #     mod_image, type_desc = get_module_image(request.app["settings"]._typ)
+    #     app.logger.warning(warning_txt)
+    #     mod_image, type_desc = get_module_image(app["settings"]._typ)
     #     page = fill_page_template(
-    #         f"Modul '{request.app['settings'].name}'",
+    #         f"Modul '{app['settings'].name}'",
     #         type_desc,
     #         warning_txt,
-    #         request.app["side_menu"],
+    #         app["side_menu"],
     #         mod_image,
     #         "",
     #     )
@@ -334,7 +335,7 @@ async def send_to_router(app, content: str):
         if len(desc_lines) > 0:
             rtr.unpack_descriptions(desc_lines)
     except Exception as err_msg:
-        app["logger"].error(f"Error while uploading router settings: {err_msg}")
+        app.logger.error(f"Error while uploading router settings: {err_msg}")
     await rtr.api_srv.block_network_if(rtr._id, False)
 
 
@@ -370,23 +371,21 @@ async def send_to_module(app, content: str, mod_addr: int):
                 mod_addr
             )  # module.list_upload
             module.calc_SMC_crc(module.list)
-            app["logger"].debug("Module list upload from configuration server finished")
+            app.logger.debug("Module list upload from configuration server finished")
         else:
-            app["logger"].debug(
+            app.logger.debug(
                 "Module list upload from configuration server finished: Same CRC"
             )
         if stat_update:
             await module.hdlr.send_module_smg(module._id)
             await module.hdlr.get_module_status(module._id)
-            app["logger"].debug(
-                "Module status upload from configuration server finished"
-            )
+            app.logger.debug("Module status upload from configuration server finished")
         else:
-            app["logger"].debug(
+            app.logger.debug(
                 "Module status upload from configuration server finished: Same CRC"
             )
     except Exception as err_msg:
-        app["logger"].error(f"Error while uploading module settings: {err_msg}")
+        app.logger.error(f"Error while uploading module settings: {err_msg}")
     if list_update | stat_update:
         await rtr.api_srv.block_network_if(rtr._id, False)
     module.smg_upload = b""

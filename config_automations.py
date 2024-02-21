@@ -3,7 +3,7 @@ from urllib.parse import parse_qs
 from automation import AutomationDefinition
 from automtn_trigger import AutomationTrigger
 from configuration import ModuleSettings
-from config_commons import get_module_image
+from config_commons import get_module_image, disable_button, indent
 from config_settings import show_module_overview
 import logging
 from const import (
@@ -24,7 +24,6 @@ class ConfigAutomationsServer:
         self._ip = api_srv.sm_hub._host_ip
         self._port = CONF_PORT
         self.parent = parent
-        self.logger = logging.getLogger(__name__)
         self.app = web.Application()
         self.app.add_routes(routes)
         self.app["parent"] = self.parent
@@ -33,15 +32,15 @@ class ConfigAutomationsServer:
     async def root(request: web.Request) -> web.Response:
         args = request.query_string.split("=")
         mod_addr = int(args[1])
-        app = request.app["parent"]
-        app["step"] = 0
-        return build_show_automations(app, mod_addr, 0)
+        main_app = request.app["parent"]
+        main_app["step"] = 0
+        return build_show_automations(main_app, mod_addr, 0)
 
     @routes.post("/automtns")
     async def root(request: web.Request) -> web.Response:
         resp = await request.text()
         form_data = parse_qs(resp)
-        app = request.app["parent"]
+        main_app = request.app["parent"]
         if "ModSettings" in form_data.keys():
             args = form_data["ModSettings"][0].split("-")
             action = args[0]
@@ -49,27 +48,27 @@ class ConfigAutomationsServer:
             step = int(args[2])
             match action:
                 case "cancel":
-                    return show_module_overview(app, mod_addr)
+                    return show_module_overview(main_app, mod_addr)
                 case "save":
-                    settings = app["settings"]
+                    settings = main_app["settings"]
                     module = settings.module
-                    await app["api_srv"].block_network_if(module.rt_id, True)
+                    await main_app["api_srv"].block_network_if(module.rt_id, True)
                     try:
                         await module.set_automations(settings)
                     except Exception as err_msg:
-                        app["logger"].error(
+                        main_app.logger.error(
                             f"Error while saving module automations: {err_msg}"
                         )
-                    await app["api_srv"].block_network_if(module.rt_id, False)
-                    return show_module_overview(app, mod_addr)
+                    await main_app["api_srv"].block_network_if(module.rt_id, False)
+                    return show_module_overview(main_app, mod_addr)
                 case "next":
                     step += 1
                 case "back":
                     step -= 1
-            app["step"] = step
-            return show_automations(app, step)
+            main_app["step"] = step
+            return show_automations(main_app, step)
         else:
-            settings = app["settings"]
+            settings = main_app["settings"]
             if "EditAutomtn" in form_data.keys():
                 atm_mode = form_data["EditAutomtn"][0]
             elif "NewAutomtn" in form_data.keys():
@@ -84,46 +83,52 @@ class ConfigAutomationsServer:
                 automtn_selctn = int(form_data["sel_automtn"][0].split("-")[1])
             else:
                 automtn_selctn = None
-            app["automations_def"].selected = automtn_selctn
-            app["atm_mode"] = atm_mode
+            main_app["automations_def"].selected = automtn_selctn
+            main_app["atm_mode"] = atm_mode
 
             if atm_mode == "delete":
                 if automtn_selctn != None:
-                    if app["step"] == 0:
-                        del app["automations_def"].local[automtn_selctn]
+                    if main_app["step"] == 0:
+                        del main_app["automations_def"].local[automtn_selctn]
                     else:
-                        l_ext = len(app["automations_def"].external)
+                        l_ext = len(main_app["automations_def"].external)
                         if automtn_selctn < l_ext:
-                            del app["automations_def"].external[automtn_selctn]
+                            del main_app["automations_def"].external[automtn_selctn]
                         else:
-                            del app["automations_def"].forward[automtn_selctn - l_ext]
-                return show_automations(app, app["step"])
+                            del main_app["automations_def"].forward[
+                                automtn_selctn - l_ext
+                            ]
+                return show_automations(main_app, main_app["step"])
 
             if automtn_selctn == None:
                 if atm_mode == "change":
-                    return show_automations(app, app["step"])
+                    return show_automations(main_app, main_app["step"])
                 else:
                     sel_atmtn = AutomationDefinition(
-                        None, app["automations_def"].autmn_dict, settings
+                        None, main_app["automations_def"].autmn_dict, settings
                     )
-            elif app["step"] == 0:
-                if len(app["automations_def"].local) > 0:
-                    sel_atmtn = app["automations_def"].local[automtn_selctn]
+            elif main_app["step"] == 0:
+                if len(main_app["automations_def"].local) > 0:
+                    sel_atmtn = main_app["automations_def"].local[automtn_selctn]
                     if atm_mode == "new":
                         sel_atmtn = sel_atmtn.make_automtn_copy()
             else:
                 if (
-                    (app["step"] == 1) & (len(app["automations_def"].external) == 0)
-                ) | ((app["step"] == 2) & (len(app["automations_def"].forward) == 0)):
+                    (main_app["step"] == 1)
+                    & (len(main_app["automations_def"].external) == 0)
+                ) | (
+                    (main_app["step"] == 2)
+                    & (len(main_app["automations_def"].forward) == 0)
+                ):
                     sel_atmtn = AutomationDefinition(
-                        None, app["automations_def"].autmn_dict, settings
+                        None, main_app["automations_def"].autmn_dict, settings
                     )
                 else:
-                    l_ext = len(app["automations_def"].external)
+                    l_ext = len(main_app["automations_def"].external)
                     if automtn_selctn < l_ext:
-                        sel_atmtn = app["automations_def"].external[automtn_selctn]
+                        sel_atmtn = main_app["automations_def"].external[automtn_selctn]
                     else:
-                        sel_atmtn = app["automations_def"].forward[
+                        sel_atmtn = main_app["automations_def"].forward[
                             automtn_selctn - l_ext
                         ]
                 if "src_module" in form_data.keys():
@@ -136,32 +141,32 @@ class ConfigAutomationsServer:
                 sel_atmtn = sel_atmtn.make_automtn_copy()
                 if atm_mode == "new":
                     src_rt = sel_atmtn.src_rt
-                    rtr = app["api_srv"].routers[src_rt - 1]
+                    rtr = main_app["api_srv"].routers[src_rt - 1]
                     sel_atmtn = prepare_src_mod_trigger(sel_atmtn, rtr, src_mod)
 
-            app["base_automation"] = sel_atmtn
+            main_app["base_automation"] = sel_atmtn
             return show_edit_automation(
-                app,
+                main_app,
                 sel_atmtn,
                 automtn_selctn,
                 atm_mode,
-                app["step"],
+                main_app["step"],
             )
 
     @routes.post("/automtn_def")
     async def root(request: web.Request) -> web.Response:
         resp = await request.text()
         form_data = parse_qs(resp)
-        app = request.app["parent"]
+        main_app = request.app["parent"]
         if "cancel_atm_edit" in form_data.keys():
             # Cancel
-            return show_automations(app, app["step"])
+            return show_automations(main_app, main_app["step"])
         elif "ok_result" in form_data.keys():
             if form_data["ok_result"][0] == "ok":
-                app["automations_def"].save_changed_automation(
-                    app, form_data, app["step"]
+                main_app["automations_def"].save_changed_automation(
+                    main_app, form_data, main_app["step"]
                 )
-                return show_automations(app, app["step"])
+                return show_automations(main_app, main_app["step"])
             else:
                 return web.HTTPNoContent()
         elif "trigger_sel" in form_data.keys():
@@ -170,30 +175,30 @@ class ConfigAutomationsServer:
             return web.HTTPNoContent()
 
 
-def build_show_automations(app, mod_addr, step) -> web.Response:
+def build_show_automations(main_app, mod_addr, step) -> web.Response:
     """Prepare automations page of module."""
-    settings = app["api_srv"].routers[0].get_module(mod_addr).get_module_settings()
-    app["automations_def"] = settings.automtns_def
-    app["settings"] = settings
-    return show_automations(app, step)
+    settings = main_app["api_srv"].routers[0].get_module(mod_addr).get_module_settings()
+    main_app["automations_def"] = settings.automtns_def
+    main_app["settings"] = settings
+    return show_automations(main_app, step)
 
 
-def show_automations(app, step) -> web.Response:
+def show_automations(main_app, step) -> web.Response:
     """Prepare automations page of module."""
-    title_str = f"Modul '{app['settings'].name}'"
+    title_str = f"Modul '{main_app['settings'].name}'"
     if step == 0:
         subtitle = "Lokale Automatisierungen"
     elif step == 1:
         subtitle = "Externe Automatisierungen"
     else:
         subtitle = "Weiterleitungsautomatisierungen"
-    page = fill_automations_template(app, title_str, subtitle, step)
+    page = fill_automations_template(main_app, title_str, subtitle, step)
     return web.Response(text=page, content_type="text/html")
 
 
-def show_edit_automation(app, sel_automtn, sel, mode, step) -> web.Response:
+def show_edit_automation(main_app, sel_automtn, sel, mode, step) -> web.Response:
     """Prepare automations page of module."""
-    title_str = f"Modul '{app['settings'].name}'"
+    title_str = f"Modul '{main_app['settings'].name}'"
     if mode == "new":
         subtitle = "Neue Automatisierung anlegen"
     else:
@@ -202,16 +207,16 @@ def show_edit_automation(app, sel_automtn, sel, mode, step) -> web.Response:
         WEB_FILES_DIR + AUTOMATIONEDIT_TEMPLATE_FILE, mode="r", encoding="utf-8"
     ) as tplf_id:
         page = tplf_id.read()
-    mod_image, mod_type = get_module_image(app["settings"].typ)
+    mod_image, mod_type = get_module_image(main_app["settings"].typ)
     page = (
         page.replace("ContentTitle", title_str)
         .replace("ContentSubtitle", subtitle)
         .replace("controller.jpg", mod_image)
-        .replace("ModAddress", f'{app["settings"].id}-{step}')
+        .replace("ModAddress", f'{main_app["settings"].id}-{step}')
     )
     if step > 0:
         src_mod = sel_automtn.src_mod
-        if src_mod in app["api_srv"].routers[sel_automtn.src_rt - 1].mod_addrs:
+        if src_mod in main_app["api_srv"].routers[sel_automtn.src_rt - 1].mod_addrs:
             src_mod_name = sel_automtn.trigger.settings.name
             page = page.replace(
                 "<h3>Auslöser</h3>",
@@ -228,49 +233,40 @@ def show_edit_automation(app, sel_automtn, sel, mode, step) -> web.Response:
             page = page.replace('id="ok_button"', 'disabled id="ok_button"')
             return web.Response(text=page, content_type="text/html")
 
-    page = sel_automtn.trigger.prepare_trigger_lists(app, page, step)
-    page = sel_automtn.condition.prepare_condition_lists(app, page)
-    page = sel_automtn.action.prepare_action_lists(app, page)
+    page = sel_automtn.trigger.prepare_trigger_lists(main_app, page, step)
+    page = sel_automtn.condition.prepare_condition_lists(main_app, page)
+    page = sel_automtn.action.prepare_action_lists(main_app, page)
     return web.Response(text=page, content_type="text/html")
 
 
-def fill_automations_template(app, title, subtitle, step) -> str:
+def fill_automations_template(main_app, title, subtitle, step) -> str:
     """Return automations page."""
     with open(
         WEB_FILES_DIR + AUTOMATIONS_TEMPLATE_FILE, mode="r", encoding="utf-8"
     ) as tplf_id:
         page = tplf_id.read()
-    mod_image, mod_type = get_module_image(app["settings"].typ)
+    mod_image, mod_type = get_module_image(main_app["settings"].typ)
     page = (
         page.replace("ContentTitle", title)
         .replace("ContentSubtitle", subtitle)
         .replace("controller.jpg", mod_image)
-        .replace("ModAddress", f'{app["settings"].id}-{step}')
+        .replace("ModAddress", f'{main_app["settings"].id}-{step}')
     )
     if step == 0:
         page = disable_button("zurück", page)
     if step == 1:
-        page = enable_new_popup(app["settings"], page)
-        if len(app["api_srv"].routers) < 2:
+        page = enable_new_popup(main_app["settings"], page)
+        if len(main_app["api_srv"].routers) < 2:
             page = disable_button("weiter", page)
     if step == 2:
         # if (len(app["automations_def"].external) == 0) & (
         #     len(app["automations_def"].forward) == 0
         # ):
         page = disable_button("weiter", page)
-    settings_form = prepare_automations_list(app, step)
-    page = disable_chg_del_button(app, step, page)
+    settings_form = prepare_automations_list(main_app, step)
+    page = disable_chg_del_button(main_app, step, page)
     page = page.replace("<p>ContentText</p>", settings_form)
     return page
-
-
-def indent(level):
-    """Return sequence of tabs according to level."""
-    return "\t" * level
-
-
-def disable_button(key: str, page) -> str:
-    return page.replace(f">{key}<", f" disabled>{key}<")
 
 
 def enable_new_popup(settings, page: str) -> str:
@@ -293,26 +289,26 @@ def enable_new_popup(settings, page: str) -> str:
     return page
 
 
-def disable_chg_del_button(app, step, page: str) -> str:
+def disable_chg_del_button(main_app, step, page: str) -> str:
     """Disable buttons 'change' 'delete' if list empty."""
-    if (step == 0) & (len(app["automations_def"].local) > 0):
+    if (step == 0) & (len(main_app["automations_def"].local) > 0):
         return page
-    if (step == 1) & (len(app["automations_def"].external) > 0):
+    if (step == 1) & (len(main_app["automations_def"].external) > 0):
         return page
-    if (step == 2) & (len(app["automations_def"].forward) > 0):
+    if (step == 2) & (len(main_app["automations_def"].forward) > 0):
         return page
     page = page.replace('id="change_button"', 'id="change_button" disabled')
     page = page.replace('id="del_button"', 'id="del_button" disabled')
     return page
 
 
-def prepare_automations_list(app, step):
+def prepare_automations_list(main_app, step):
     """Prepare automations list page."""
     curr_mod = 0
     if step == 0:
-        automations = app["automations_def"].local
+        automations = main_app["automations_def"].local
     else:
-        automations = app["automations_def"].external
+        automations = main_app["automations_def"].external
         last_source_header = ""
     tbl = (
         indent(4)
@@ -325,7 +321,7 @@ def prepare_automations_list(app, step):
                 tbl += indent(5) + '<table id="atm-table">\n'
                 tbl += indent(6) + "<thead>\n"
             if src_mod != curr_mod:
-                rtr = app["api_srv"].routers[0]
+                rtr = main_app["api_srv"].routers[0]
                 if src_mod in rtr.mod_addrs:
                     smod_name = rtr.modules[rtr.mod_addrs.index(src_mod)]._name
                     source_header = f"von Modul {src_mod}: '{smod_name}'"
@@ -358,7 +354,7 @@ def prepare_automations_list(app, step):
         actn_desc = automations[at_i].action.description
         id_name = f"atmn_tbl"
         sel_chkd = ""
-        if at_i == app["automations_def"].selected:
+        if at_i == main_app["automations_def"].selected:
             sel_chkd = "checked"
         tbl += (
             indent(7)
