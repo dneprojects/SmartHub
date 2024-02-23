@@ -14,8 +14,10 @@ class AdminHdlr(HdlrBase):
         rt = self._p4
         mod = self._p5
         match self._spec:
-            case spec.SMHUB_READY:
-                self.response = "OK"
+            # case spec.SMHUB_READY:
+            #     self.response = "OK"
+            case spec.SMHUB_REINIT:
+                self.response = await self.api_srv.reinit_opr_mode(rt, self._p5)
             case spec.SMHUB_INFO:
                 self.response = self.api_srv.sm_hub.get_info()
             case spec.SMHUB_RESTART:

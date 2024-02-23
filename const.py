@@ -227,7 +227,7 @@ class API_SETUP:
 class API_ADMIN:
     """Command descriptors for admin API."""
 
-    SMHUB_READY = 256 * 0 + 0
+    SMHUB_REINIT = 256 * 0 + 0
     SMHUB_INFO = 256 * 0 + 1
     SMHUB_RESTART = 256 * 0 + 2
     SMHUB_REBOOT = 256 * 0 + 3

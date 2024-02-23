@@ -2,6 +2,7 @@ import logging
 import json
 import os
 import websockets
+from websockets import ConnectionClosedOK
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from const import DATA_FILES_DIR, HA_EVENTS
 from forward_hdlr import ForwardHdlr
@@ -92,7 +93,7 @@ class EventServer:
         """Opens web socket connection to home assistant."""
 
         if (not (self.websck == None)) & (not (self.websck == [])):
-            # websocket object registered
+            # websocket object registered if neither None nor []
             return
 
         if self.api_srv.is_addon:
@@ -134,7 +135,8 @@ class EventServer:
                 self.websck = await websockets.connect(self._uri)
             resp = await self.websck.recv()
         except Exception as err_msg:
-            self.logger.error(f"Websocket connect failed: {err_msg}")
+            self.logger.error(f"Websocket connect failed: {err_msg}, trying to close")
+            await self.websck.close()
             self.websck = []
             return
         if json.loads(resp)["type"] == "auth_required":
@@ -166,7 +168,7 @@ class EventServer:
     async def watch_rt_events(self, rt_rd):
         """Task for handling router responses and events in api mode"""
 
-        self.logger.info("Event server running")
+        self.logger.info("Event server started")
         self.evnt_running = True
 
         await self.open_websocket()
@@ -438,6 +440,14 @@ class EventServer:
             resp = await self.websck.recv()
             self.logger.debug(f"Notify returned {resp}")
 
+        except ConnectionClosedOK as err_msg:
+            self.logger.warning(
+                f"Connection closed by HA server, terminating event server task"
+            )
+            self.evnt_running = False
+            self.api_srv._ev_srv_task.cancel()
+            self.api_srv._ev_srv_task = []
+            await self.api_srv.stop_opr_mode(100)
         except Exception as error_msg:
             # Use to get cancel event in api_server
             self.logger.error(f"Could not connect to event server: {error_msg}")
