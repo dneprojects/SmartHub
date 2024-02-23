@@ -265,6 +265,9 @@ class ApiServer:
         # Disable mirror first, then stop event handler
         # Serial reader still used by event server
         await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.SET_SRV_MODE)
+        if self.hdlr.rt_msg._resp_buffer[3] == 133:
+            print("")
+
         # waiting for event server to receive response and shut down
         t_wait = 0.0
         if self._ev_srv_task == []:
@@ -285,7 +288,6 @@ class ApiServer:
         self._opr_mode = False
         await asyncio.sleep(0.01)
 
-        print("")
         self.logger.info("Switched to Client/Server mode")
         return not self._opr_mode
 
