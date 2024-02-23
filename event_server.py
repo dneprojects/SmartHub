@@ -168,7 +168,7 @@ class EventServer:
     async def watch_rt_events(self, rt_rd):
         """Task for handling router responses and events in api mode"""
 
-        self.logger.info("Event server started")
+        self.logger.debug("Event server started")
         self.evnt_running = True
 
         await self.open_websocket()
@@ -228,15 +228,15 @@ class EventServer:
                         )
                     elif (rt_event[4] == 133) & (rt_event[5] == 1):
                         # Response should have been received before, not in event watcher
-                        self.logger.warning(
+                        self.logger.debug(
                             "Warning, router event message: Operate mode started, should have been received in Srv mode"
                         )
-                        self.logger.info(f"     Complete meassage sent: {rt_event}")
+                        self.logger.debug(f"     Complete meassage sent: {rt_event}")
                         self.api_srv._opr_mode = True
                         tail = self.extract_rest_msg(rt_event, 9)
                     elif (rt_event[4] == 133) & (rt_event[5] == 0):
                         # Last response in Opr mode, shut down event watcher
-                        self.logger.info(
+                        self.logger.debug(
                             "API mode router message: Mirror/events stopped, stopping router event watcher"
                         )
                         if len(rt_rd._buffer) > 0:
@@ -385,6 +385,15 @@ class EventServer:
                             f"API mode router message, response discarded: {rt_event}"
                         )
                         pass
+            except RuntimeError as err_msg:
+                self.logger.error(
+                    f"Event server runtime error: {err_msg.args[0]}, websocket closed, event server terminated"
+                )
+                self.evnt_running = False
+                await self.websck.close()
+                self.websck = []
+                await self.api_srv.stop_opr_mode(100)
+                await self.api_srv.start_opr_mode(100)
             except Exception as error_msg:
                 # Use to get cancel event in api_server
                 self.logger.error(
