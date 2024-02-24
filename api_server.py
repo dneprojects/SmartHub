@@ -56,6 +56,7 @@ class ApiServer:
         self.logger.info(
             f"API server, router, and {len(self.routers[0].modules)} modules initialized"
         )
+        self._init_mode = False
 
     async def handle_api_command(self, ip_reader, ip_writer):
         """Network server handler to receive api commands."""
@@ -292,9 +293,9 @@ class ApiServer:
 
     async def set_initial_srv_mode(self, rt_no):
         """Turn on config mode: disable router events"""
-        self._opr_mode = False
         self._ev_srv_task = []
         self._init_mode = True
 
         await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.SET_SRV_MODE)
+        self._opr_mode = False
         self.logger.debug("API mode turned off initially")
