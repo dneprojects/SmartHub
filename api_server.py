@@ -178,6 +178,7 @@ class ApiServer:
         # Client ip needed for event handling;
         # method "get_extra_info" is only implemented for writer object
         if self._init_mode:
+            self.logger.debug("Skipping set Opr mode due to init_mode")
             return
         if not "ip_writer" in self.__dir__():
             # no command received yet
