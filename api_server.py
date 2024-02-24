@@ -56,7 +56,6 @@ class ApiServer:
         self.logger.info(
             f"API server, router, and {len(self.routers[0].modules)} modules initialized"
         )
-        self._init_mode = False
 
     async def handle_api_command(self, ip_reader, ip_writer):
         """Network server handler to receive api commands."""
