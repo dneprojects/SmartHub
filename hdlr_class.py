@@ -55,16 +55,16 @@ class HdlrBase:
             self.response = err_msg
             self.logger.error(err_msg)
 
-    def check_router_no(self, rt_no: int) -> (bool, str):
+    def check_router_no(self, rt_no: int):
         """Check of router no 1..64."""
         self.check_arg(
             rt_no,
             [1],
-            "Error: currently only one router supported, id must be 1"
+            "Error: currently only one router supported, id must be 1",
             # rt_no,range(1, 65),"Error: router no out of range 1..64"
         )
 
-    def check_router_module_no(self, rt_no: int, mod_no: int) -> (bool, str):
+    def check_router_module_no(self, rt_no: int, mod_no: int):
         """Check of router no 1..64 and module no 1..250."""
         self.check_router_no(rt_no)
         self.check_arg(mod_no, range(1, 251), "Error: module no out of range 1..250")
@@ -78,12 +78,12 @@ class HdlrBase:
         self.rt_msg._resp_buffer = b"\0\0"
         if not self.api_srv._opr_mode:
             await self.rt_msg.rt_recv()
-        else:
-            # no response possible
-            self.logger.warning(
-                f"handle_router_cmd_resp called in Opr mode, return 0 0, msg: {self.rt_msg._buffer.encode('iso8859-1')}"
-            )
-        return self.rt_msg._resp_msg
+            return self.rt_msg._resp_msg
+        # no response possible
+        self.logger.warning(
+            f"handle_router_cmd_resp called in Opr mode, return 0 0, msg: {self.rt_msg._buffer.encode('iso8859-1')}"
+        )
+        return b"\0\0"
 
     async def handle_router_cmd(self, rt_no: int, cmd: RT_CMDS) -> None:
         """Sends router command via serial interface and get response."""

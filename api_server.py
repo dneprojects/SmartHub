@@ -299,7 +299,6 @@ class ApiServer:
         """Turn on config mode: disable router events"""
         self._ev_srv_task = []
         self._init_mode = True
-
-        await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.SET_SRV_MODE)
         self._opr_mode = False
+        await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.SET_SRV_MODE)
         self.logger.debug("API mode turned off initially")
