@@ -262,6 +262,9 @@ class ApiServer:
         """Turn on server mode: disable router events"""
         if not (self._opr_mode):
             return True
+        if self._init_mode:
+            self.logger.debug("Skipping set Srv mode due to init_mode")
+            return
 
         # Disable mirror first, then stop event handler
         # Serial reader still used by event server
