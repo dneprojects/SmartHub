@@ -243,23 +243,43 @@ class ActionsHdlr(HdlrBase):
 
             case spec.OUTP_RBG_OFF | spec.OUTP_RBG_ON:
                 self.check_router_module_no(rt, mod)
+                self.check_arg(
+                    self._args[0],
+                    [1, 2, 3, 4, 5],
+                    "Error: led no out of range 1..8, corners 41..44, all 100",
+                )
                 if self.args_err:
                     return
+                inp_code = self._args[0]
                 if self._spec == spec.OUTP_RBG_OFF:
                     rt_cmd = RT_CMDS.SWOFF_RGB_CORNR
+                    if inp_code == 5:
+                        rt_cmd = RT_CMDS.SWOFF_RGB_AMB
+                elif inp_code == 5:
+                    rt_cmd = RT_CMDS.SET_RGB_AMB_COL
                 else:
                     rt_cmd = RT_CMDS.SET_RGB_CORNR
+                rt_cmd = (
+                    rt_cmd.replace("<r>", chr(30))
+                    .replace("<g>", chr(30))
+                    .replace("<b>", chr(30))
+                )
+                if inp_code < 5:
+                    inp_code += 40
+                elif inp_code == 5:
+                    inp_code = 100
                 self._rt_command = (
                     rt_cmd.replace("<rtr>", chr(rt))
                     .replace("<mod>", chr(mod))
-                    .replace("<tsk>", chr(task))
+                    .replace("<cnr>", chr(inp_code))
                 )
 
             case spec.OUTP_RBG_VAL:
+
                 self.check_router_module_no(rt, mod)
                 self.check_arg(
                     self._args[0],
-                    [1, 2, 3, 4, 5, 6, 7, 8, 41, 42, 43, 44, 100],
+                    [1, 2, 3, 4, 5],
                     "Error: led no out of range 1..8, corners 41..44, all 100",
                 )
                 if self.args_err:
@@ -275,10 +295,11 @@ class ActionsHdlr(HdlrBase):
                     .replace("<mod>", chr(mod))
                     .replace("<tsk>", chr(task))
                     .replace("<inp>", chr(inp_code))
+                    .replace("<md>", chr(2))
                     .replace("<r>", chr(self._args[1]))
                     .replace("<g>", chr(self._args[2]))
                     .replace("<b>", chr(self._args[3]))
-                    .replace("<tl>", chr(10))
+                    .replace("<tl>", chr(3))
                     .replace("<th>", chr(0))
                 )
                 self.logger.debug(
