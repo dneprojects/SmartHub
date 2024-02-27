@@ -79,7 +79,12 @@ class HbtnRouter:
         for mod_addr in self.mod_addrs:
             try:
                 self.modules.append(
-                    HbtnModule(mod_addr, self._id, ModHdlr(mod_addr, self.api_srv), self.api_srv)
+                    HbtnModule(
+                        mod_addr,
+                        self._id,
+                        ModHdlr(mod_addr, self.api_srv),
+                        self.api_srv,
+                    )
                 )
                 self.logger.debug(f"Module {mod_addr} instantiated")
                 await self.modules[-1].initialize()
@@ -146,6 +151,8 @@ class HbtnRouter:
 
     async def set_config_mode(self, set_not_reset: bool):
         """Switches to config mode and back."""
+        if self.api_srv._init_mode:
+            return
         if set_not_reset:
             if not self.api_srv._opr_mode:
                 # already in Srv mode, config mode is set in router

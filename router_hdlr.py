@@ -227,7 +227,9 @@ class RtHdlr(HdlrBase):
 
     async def get_rt_status(self):
         """Get router system status."""
+        self.logger.debug("Getting status now")
         await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.GET_RT_STATUS)
+        self.logger.debug("Router status is back")  # {self.rt_msg._resp_buffer[4:-1]}")
         if len(self.rt_msg._resp_msg) < 40:
             # Something went wrong, return buffer as is
             self.logger.warning(
@@ -235,9 +237,10 @@ class RtHdlr(HdlrBase):
             )
             return self.rtr.chan_status
         # Deal with option "L", makes 1 byte difference: take value relative to the end
-        if self.rt_msg._resp_buffer[-42] != 0:
+        if self.rt_msg._resp_buffer[5] != 0:
             # mode 0 not zero, should be 'K', config while reading status
-            return self.rt_msg._resp_buffer[-43:-1]
+            self.logger.debug("Returned valid router status")
+            return self.rt_msg._resp_buffer[4:-1]
         self.logger.warning(
             "Router channel status with mode 0 = 0, return stored value"
         )

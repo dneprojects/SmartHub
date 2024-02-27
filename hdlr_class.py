@@ -69,7 +69,7 @@ class HdlrBase:
         self.check_router_no(rt_no)
         self.check_arg(mod_no, range(1, 251), "Error: module no out of range 1..250")
 
-    async def handle_router_cmd_resp(self, rt_no: int, cmd: RT_CMDS) -> bytes:
+    async def handle_router_cmd_resp(self, rt_no: int, cmd: RT_CMDS) -> None:
         """Sends router command via serial interface and get response"""
         self.rt_msg = RtMessage(self, rt_no, cmd)
         await self.rt_msg.rt_send()
@@ -78,12 +78,13 @@ class HdlrBase:
         self.rt_msg._resp_buffer = b"\0\0"
         if not self.api_srv._opr_mode:
             await self.rt_msg.rt_recv()
-            return self.rt_msg._resp_msg
+            self.logger.debug("Received response, returning")
+            return
         # no response possible
         self.logger.warning(
             f"handle_router_cmd_resp called in Opr mode, return 0 0, msg: {self.rt_msg._buffer.encode('iso8859-1')}"
         )
-        return b"\0\0"
+        return
 
     async def handle_router_cmd(self, rt_no: int, cmd: RT_CMDS) -> None:
         """Sends router command via serial interface and get response."""
@@ -94,7 +95,7 @@ class HdlrBase:
         """Waits for router response without sending."""
         self.rt_msg = RtMessage(self, rt_no, "")
         await self.rt_msg.rt_recv()
-        return self.rt_msg._resp_msg
+        return
 
     async def send_api_response(self, msg: str, flag: int):
         """Send additional API status response."""

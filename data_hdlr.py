@@ -147,16 +147,21 @@ class DataHdlr(HdlrBase):
                     return
                 if self.api_srv._opr_mode:
                     # return previously stored status and trigger to get update
+                    self.logger.debug(
+                        "Query router and return previously stored status"
+                    )
                     await self.api_srv.routers[rt - 1].hdlr.query_rt_status()
                     self.response = (
                         chr(rt).encode("iso8859-1")
                         + self.api_srv.routers[rt - 1].chan_status
                     )
                 else:
+                    self.logger.debug("Get router status")
                     self.response = (
                         chr(rt).encode("iso8859-1")
                         + await self.api_srv.routers[rt - 1].get_status()
                     )
+                self.logger.debug(f"Length of response: {len(self.response)}")
 
             case spec.DESC_PCREAD:
                 self.response = self.api_srv.routers[rt - 1].descriptions
