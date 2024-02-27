@@ -145,12 +145,14 @@ class ApiServer:
         self.api_msg.resp_prepare_std(response)
         self.logger.debug(f"API network response: {self.api_msg._rbuffer}")
         self.ip_writer.write(self.api_msg._rbuffer)
+        await self.ip_writer.drain()
 
     async def send_status_to_client(self):
         """Send api status response"""
 
         self.logger.debug(f"API network response: {self.api_msg._rbuffer}")
         self.ip_writer.write(self.api_msg._rbuffer)
+        await self.ip_writer.drain()
 
     async def block_network_if(self, rt_no, set_block):
         """Set or reset API mode pause."""
