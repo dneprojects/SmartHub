@@ -227,24 +227,24 @@ class RtHdlr(HdlrBase):
 
     async def get_rt_status(self):
         """Get router system status."""
-        self.logger.debug("Getting status now")
+        if self.api_srv._init_mode & (len(self.rtr.chan_status) > 40):
+            self.logger.debug("Returning stored channel status")
+            return self.rtr.chan_status
         await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.GET_RT_STATUS)
-        self.logger.debug("Router status is back")  # {self.rt_msg._resp_buffer[4:-1]}")
         if len(self.rt_msg._resp_msg) < 40:
             # Something went wrong, return buffer as is
             self.logger.warning(
                 f"Router channel status with wrong length {len(self.rt_msg._resp_msg)}, return stored value"
             )
             return self.rtr.chan_status
-        # Deal with option "L", makes 1 byte difference: take value relative to the end
-        if self.rt_msg._resp_buffer[5] != 0:
+        if self.rt_msg._resp_buffer[5] == 0:
             # mode 0 not zero, should be 'K', config while reading status
-            self.logger.debug("Returned valid router status")
-            return self.rt_msg._resp_buffer[4:-1]
-        self.logger.warning(
-            "Router channel status with mode 0 = 0, return stored value"
-        )
-        return self.rtr.chan_status
+            self.logger.warning(
+                "Router channel status with mode 0 = 0, return stored value"
+            )
+            return self.rtr.chan_status
+        self.logger.debug("Return valid router status")
+        return self.rt_msg._resp_buffer[4:-1]
 
     async def get_rt_modules(self):
         """Get all modules connected to router."""
