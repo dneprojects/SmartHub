@@ -322,6 +322,14 @@ class ModuleSettings:
                         elif arg_code in range(120, 136):
                             # Description of flags
                             self.flags.append(IfDescriptor(text, arg_code - 119, 0))
+                        elif arg_code in range(140, 173):
+                            # Description of vis commands (max 32)
+
+                            self.vis_cmds.append(
+                                IfDescriptor(
+                                    text[2:], ord(text[1]) * 256 + ord(text[0]), 0
+                                )
+                            )
                         elif self.type[0:9] == "Smart Out":
                             # Description of outputs in Out modules
                             self.outputs[arg_code - 60] = IfDescriptor(
@@ -391,9 +399,10 @@ class ModuleSettings:
                     # local flag (Merker)
                     self.flags.append(IfDescriptor(entry_name, entry_no, 0))
                 elif int(line[2]) == 4:
-                    # local visualization command
+                    # local visualization command, needed if not stored in smc
                     entry_no = int.from_bytes(resp[3:5], "little")
-                    self.vis_cmds.append(IfDescriptor(entry_name, entry_no, 0))
+                    if len(self.vis_cmds) == 0:
+                        self.vis_cmds.append(IfDescriptor(entry_name, entry_no, 0))
                 elif int(line[2]) == 5:
                     # logic element, needed if not stored in smc
                     for lgc in self.logic:
@@ -575,6 +584,16 @@ class ModuleSettings:
             desc = flg.name
             desc += " " * (32 - len(desc))
             new_list.append(f"\xff\0\xeb{chr(119 + flg.nmbr)}\1\x23\0\xeb" + desc)
+        cnt = 0
+        for vis in self.vis_cmds:
+            desc = vis.name
+            desc += " " * (32 - len(desc))
+            n_high = chr(vis.nmbr >> 8)
+            n_low = chr(vis.nmbr & 0xFF)
+            new_list.append(
+                f"\xff\0\xeb{chr(140 + cnt)}\1\x23\0\xeb" + n_low + n_high + desc[:-2]
+            )
+            cnt += 1
         for uid in self.users:
             desc = uid.name
             fgr_low = abs(uid.type) & 0xFF

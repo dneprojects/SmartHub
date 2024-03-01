@@ -1,8 +1,9 @@
 import struct
 import const
 import asyncio
+from asyncio.streams import StreamReader, StreamWriter
 
-from const import RT_CMDS, SYS_MODES, API_CATEGS
+from const import RT_CMDS, API_CATEGS
 import logging
 from messages import ApiMessage
 from data_hdlr import DataHdlr
@@ -28,13 +29,12 @@ class ApiServer:
         self.loop = loop
         self.sm_hub = sm_hub
         self.logger = logging.getLogger(__name__)
-        self._rt_serial: (StreamReader, StreamWriter) = rt_serial
+        self._rt_serial: tuple[StreamReader, StreamWriter] = rt_serial
         self._opr_mode: bool = True  # Allows explicitly setting operate mode off
         self.hdlr = []
         self.routers = []
         self.routers.append(HbtnRouter(self, 1))
         self.evnt_srv = []
-        self._ev_srv_task = []
         self.api_msg = ApiMessage(self, const.def_cmd, const.def_len)
         self._running = True
         self._client_ip = ""
@@ -58,12 +58,17 @@ class ApiServer:
         )
         self._init_mode = False
 
-    async def handle_api_command(self, ip_reader, ip_writer):
+    async def handle_api_command(
+        self, ip_reader: StreamReader, ip_writer: StreamWriter
+    ):
         """Network server handler to receive api commands."""
         self.ip_writer = ip_writer
+        rt = 1
 
         while self._running:
             self._api_cmd_processing = False
+            # if self._auto_restart_opr & (not self._opr_mode) & (not self._init_mode):
+            #     await self.start_opr_mode(rt)
             self._auto_restart_opr = False
             block_time = 0
             while self._netw_blocked:
@@ -87,7 +92,7 @@ class ApiServer:
             if self.api_msg._crc_ok:
                 rt = self.api_msg.get_router_id()
                 self.logger.debug(
-                    f"Processing network API command: {self.api_msg._cmd_grp} {struct.pack('<h', self.api_msg._cmd_spec)[1]} {struct.pack('<h', self.api_msg._cmd_spec)[0]}"
+                    f"Processing network API command: {self.api_msg._cmd_grp} {struct.pack('<h', self.api_msg._cmd_spec)[1]} {struct.pack('<h', self.api_msg._cmd_spec)[0]}  Module: {self.api_msg._cmd_p5}  Args: {self.api_msg._cmd_data}"
                 )
                 match self.api_msg._cmd_grp:
                     case API_CATEGS.DATA:
@@ -123,10 +128,8 @@ class ApiServer:
                 self.logger.debug(f"API call returned: {response}")
             else:
                 self.logger.warning(f"API call failed: {response}")
-
-            await self.respond_client(response)
-            if self._auto_restart_opr & (not self._opr_mode) & (not self._init_mode):
-                await self.start_opr_mode(rt)
+            self.respond_client(response)  # Aknowledge the api command at last
+            await asyncio.sleep(0.1)  # pause for other processes to be scheduled
 
         self.sm_hub.restart_hub(False)
 
@@ -139,13 +142,12 @@ class ApiServer:
         self._running = False
         self._auto_restart_opr = False
 
-    async def respond_client(self, response):
+    def respond_client(self, response):
         """Send api command response"""
 
         self.api_msg.resp_prepare_std(response)
         self.logger.debug(f"API network response: {self.api_msg._rbuffer}")
         self.ip_writer.write(self.api_msg._rbuffer)
-        await self.ip_writer.drain()
 
     async def send_status_to_client(self):
         """Send api status response"""
@@ -189,39 +191,23 @@ class ApiServer:
         self._client_ip = self.ip_writer.get_extra_info("peername")[0]
         self.is_addon = self._client_ip == self.sm_hub.get_host_ip()
         # SmartHub running with Home Assistant, use internal websocket
+        if self._opr_mode & self.evnt_srv.running():
+            return True
         if self._opr_mode:
-            if self._ev_srv_task != []:
-                if self._ev_srv_task._state != "FINISHED":
-                    return True
-        if self._opr_mode:
-            print("")
             self.logger.debug("Already in Opr mode, recovering event server")
-            if self._ev_srv_task == []:
-                self.logger.debug("No EventSrv registered, start event server task")
-                self._ev_srv_task = self.loop.create_task(
-                    self.evnt_srv.watch_rt_events(self._rt_serial[0])
-                )
-                await asyncio.sleep(0.1)
-            elif self._ev_srv_task._state == "FINISHED":
-                self.logger.warning("EventSrv 'finished', restart event server task")
-                self._ev_srv_task = self.loop.create_task(
-                    self.evnt_srv.watch_rt_events(self._rt_serial[0])
-                )
-        else:
+            self.evnt_srv.start()
+            await asyncio.sleep(0.1)
+        elif not self._init_mode:
             m_chr = chr(int(self.mirror_mode_enabled))
             e_chr = chr(int(self.event_mode_enabled))
             cmd = RT_CMDS.SET_OPR_MODE.replace("<mirr>", m_chr).replace("<evnt>", e_chr)
             await self.hdlr.handle_router_cmd_resp(rt_no, cmd)
-            if self.hdlr.rt_msg._resp_buffer[3] == 133:
-                print("")
-                self.logger.info("Switched to Operation mode")
+            if self.hdlr.rt_msg._resp_code == 133:
+                self.logger.info("--- Switched to Operation mode")
                 self._opr_mode = True
             # Start event handler
-            if self._ev_srv_task == []:
-                self.logger.debug("Start EventSrv task")
-                self._ev_srv_task = self.loop.create_task(
-                    self.evnt_srv.watch_rt_events(self._rt_serial[0])
-                )
+            self.evnt_srv.start()
+            await asyncio.sleep(0.1)
         return self._opr_mode
 
     async def reinit_opr_mode(self, rt_no, mode):
@@ -229,6 +215,7 @@ class ApiServer:
         if not mode:
             # Start of re-init with mode == 0
             self._init_mode = True
+            self.logger.info("--- Starting intialization")
             self.logger.debug(
                 "Stopping EventSrv task, setting Srv mode for initialization, doing rollover"
             )
@@ -236,29 +223,22 @@ class ApiServer:
             self.logger.debug(
                 "Stopping EventSrv task, setting Srv mode for initialization, rollover done"
             )
-            self._opr_mode = True
-            await self.stop_opr_mode(rt_no)
+            await asyncio.sleep(0.5)  # wait for anything async to complete
             await self.set_initial_srv_mode(rt_no)
+            return "Init mode set"
         else:
             # finishing re-init with mode == 1
             self._init_mode = False
             self.logger.debug("Re-initializing EventSrv task")
-            if self._ev_srv_task != []:
-                self._ev_srv_task.cancel()
-                self.logger.debug("EventSrv cancelled, forced to Srv mode")
-                self._ev_srv_task = []
-            try:
-                await self.evnt_srv.websck.close()
-                self.evnt_srv.websck = []
-                self.logger.debug("Websocket entry deleted for reinit")
-            except Exception as err_msg:
-                self.logger.debug("No websocket found")
-            self.logger.debug("Starting new EventSrv task")
-            self._ev_srv_task = self.loop.create_task(
-                self.evnt_srv.watch_rt_events(self._rt_serial[0])
-            )
+            await self.evnt_srv.stop()
+            await self.evnt_srv.close_websocket()
+            self.logger.debug("Websocket entry deleted for reinit")
+            self.evnt_srv.start()
+            await asyncio.sleep(0.1)
             self._opr_mode = False
             await self.start_opr_mode(rt_no)
+            self.logger.info("--- Initialization finished")
+            return "Init mode reset"
 
     async def stop_opr_mode(self, rt_no):
         """Turn on server mode: disable router events"""
@@ -266,41 +246,20 @@ class ApiServer:
             return True
         if self._init_mode:
             self.logger.debug("Skipping set Srv mode due to init_mode")
-            return
+            return True
 
         # Disable mirror first, then stop event handler
         # Serial reader still used by event server
         await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.SET_SRV_MODE)
-        if self.hdlr.rt_msg._resp_buffer[3] == 133:
-            print("")
-
-        # waiting for event server to receive response and shut down
-        t_wait = 0.0
-        if self._ev_srv_task == []:
-            self.logger.debug("No EventSrv running, already cancelled")
-        else:
-            while (self._ev_srv_task._state != "FINISHED") & (t_wait < 1.0):
-                await asyncio.sleep(0.1)
-                t_wait += 0.1
-            if t_wait < 1.0:
-                self.logger.debug(
-                    f"EventSrv terminated successfully after {round(t_wait,1)} sec"
-                )
-            else:
-                self._ev_srv_task.cancel()
-                self.logger.debug("EventSrv cancelled after 1 sec")
-        self._ev_srv_task = []
-
+        await self.evnt_srv.stop()
         self._opr_mode = False
-        await asyncio.sleep(0.01)
-
-        self.logger.info("Switched to Client/Server mode")
+        self.logger.info("--- Switched to Client/Server mode")
         return not self._opr_mode
 
     async def set_initial_srv_mode(self, rt_no):
         """Turn on config mode: disable router events"""
-        self._ev_srv_task = []
-        self._init_mode = True
         self._opr_mode = False
         await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.SET_SRV_MODE)
+        await self.evnt_srv.stop()
+        self._init_mode = True
         self.logger.debug("API mode turned off initially")

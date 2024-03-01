@@ -1,4 +1,5 @@
 import asyncio
+from asyncio.streams import StreamReader, StreamWriter
 import logging
 from logging import config
 import yaml
@@ -125,7 +126,7 @@ class SmartHub:
         os.system("sudo reboot")
 
     def restart_hub(self, skip_init):
-        """Restart SmartIP software."""
+        """Restart SmartHub software."""
         self.skip_init = skip_init > 0
         self.restart = True
         self.logger.warning("Restart of sm_hub process requested")
@@ -271,7 +272,7 @@ class SmartHub:
         return info_str
 
     async def run_api_server(self, loop, api_srv):
-        """Main server for serving Smart IP calls."""
+        """Main server for serving Smart Hub calls."""
         self.server = await asyncio.start_server(
             api_srv.handle_api_command, self._host_ip, SMHUB_PORT
         )
@@ -280,7 +281,7 @@ class SmartHub:
             try:
                 await self.server.serve_forever()
             except:
-                self.logger.warning("Server stopped, restarting Smart IP ...")
+                self.logger.warning("Server stopped, restarting Smart Hub ...")
                 return self.skip_init
 
 
@@ -296,7 +297,7 @@ def setup_logging():
     return logging.getLogger(__name__)
 
 
-async def open_serial_interface(device, logger) -> (any, any):
+async def open_serial_interface(device, logger) -> tuple[StreamReader, StreamWriter]:
     """Open serial connection of given device."""
 
     logger.info(f"Try to open serial connection: {device}")
@@ -351,7 +352,7 @@ async def init_serial(logger):
                 resp_buf = reading.result()
                 if len(resp_buf) < 4:
                     # sometimes just 0xff comes, needs another read
-                    logger.warning(f"Unexpected short test response: {resp_buf}")
+                    logger.debug(f"Unexpected short test response: {resp_buf}")
                     new_query = False
                 elif new_query & (resp_buf[4] == 0x87):
                     logger.info(f"Router available")

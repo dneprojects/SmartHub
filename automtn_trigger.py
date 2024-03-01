@@ -448,6 +448,12 @@ class AutomationTrigger:
                 self.event_arg_name = self.get_dict_entry("coll_cmds", event_arg)
                 trig_command = f"Sammelereignis {self.event_arg_name}"
                 event_desc = ""
+            elif self.event_code in EventsSets[SelTrgCodes["viscmd"]]:
+                self.event_arg_name = self.get_dict_entry(
+                    "vis_cmds", self.event_arg1 + 256 * self.event_arg2
+                )
+                trig_command = f"Visualisierungsereignis {self.event_arg_name}"
+                event_desc = ""
             elif self.event_code in EventsSets[SelTrgCodes["climate"]]:
                 trig_command = self.name
                 if self.event_arg1 == 1:
@@ -809,6 +815,7 @@ class AutomationTrigger:
             self.event_arg1 = self.automation.get_sel(form_data, "trigger_collcmd")
             self.event_arg2 = 0
         elif self.event_code in EventsSets[SelTrgCodes["viscmd"]]:
+            self.src_rt = 199
             self.event_code = 31
             self.event_arg1 = int(form_data["trigger_viscmd"][0]) >> 8
             self.event_arg2 = int(form_data["trigger_viscmd"][0]) & 0xFF

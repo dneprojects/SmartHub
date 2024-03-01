@@ -448,7 +448,7 @@ class HbtnModule:
                 props["logic"] = 10
                 props["flags"] = 16
                 props["dir_cmds"] = 25
-                props["vis_cmds"] = 16
+                props["vis_cmds"] = 65280
             case 10:
                 match type_code[1]:
                     case 1 | 50 | 51:
@@ -482,7 +482,7 @@ class HbtnModule:
                         props["logic"] = 10
                         props["flags"] = 16
                         props["dir_cmds"] = 0
-                        props["vis_cmds"] = 16
+                        props["vis_cmds"] = 65280
                     case 20 | 21 | 22:
                         props["buttons"] = 0
                         props["leds"] = 0
@@ -498,7 +498,7 @@ class HbtnModule:
                         props["logic"] = 10
                         props["flags"] = 16
                         props["dir_cmds"] = 0
-                        props["vis_cmds"] = 16
+                        props["vis_cmds"] = 65280
             case 11:
                 match type_code[1]:
                     case 1:
@@ -581,8 +581,8 @@ class HbtnModule:
                 props["covers"] = 0
                 props["logic"] = 10
                 props["flags"] = 16
-                props["dir_cmds"] = 0
-                props["vis_cmds"] = 16
+                props["dir_cmds"] = 25
+                props["vis_cmds"] = 65280
             case 80:
                 props["buttons"] = 0
                 props["leds"] = 0
@@ -615,6 +615,7 @@ class HbtnModule:
             "fingers",
             "flags",
             "dir_cmds",
+            "vis_cmds",
         ]
         no_keys = 0
         for key in keys:

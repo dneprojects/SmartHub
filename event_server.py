@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import json
 import os
@@ -58,6 +59,7 @@ class EventServer:
         self._client_ip = api_srv._client_ip
         self._uri = ""
         self.logger = logging.getLogger(__name__)
+        self.ev_srv_task = []
         self.websck = []
         self.token = None
         self.notify_id = 1
@@ -89,12 +91,12 @@ class EventServer:
             )
             return None
 
-    async def open_websocket(self):
+    async def open_websocket(self, retry=False) -> bool:
         """Opens web socket connection to home assistant."""
 
         if (not (self.websck == None)) & (not (self.websck == [])):
             # websocket object registered if neither None nor []
-            return
+            return True
 
         if self.api_srv.is_addon:
             # SmartHub running with Home Assistant, use internal websocket
@@ -105,13 +107,13 @@ class EventServer:
         else:
             # Stand-alone SmartHub, use external websocket connection to host ip
             self.logger.info("Open websocket to home assistant.")
+            self.token = self.get_ident()
             self._client_ip = self.api_srv._client_ip
             self._uri = "ws://<ip>:8123/api/websocket".replace("<ip>", self._client_ip)
             self.logger.debug(f"URI: {self._uri}")
             # token for local docker:    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjMWI1ZjgyNmUxMDg0MjFhYWFmNTZlYWQ0ZThkZGNiZSIsImlhdCI6MTY5NDUzNTczOCwiZXhwIjoyMDA5ODk1NzM4fQ.0YZWyuQn5DgbCAfEWZXbQZWaViNBsR4u__LjC4Zf2lY"
             # token for 192.168.178.133: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlYjQ2MTA4ZjUxOTU0NTY3Yjg4ZjUxM2Q5ZjBkZWRlYSIsImlhdCI6MTY5NDYxMDEyMywiZXhwIjoyMDA5OTcwMTIzfQ.3LtGwhonmV2rAbRnKqEy3WYRyqiS8DTh3ogx06pNz1g"
             # token for 192.168.178.160: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI4OTNlZDJhODU2ZmY0ZDQ3YmVlZDE2MzIyMmU1ODViZCIsImlhdCI6MTcwMjgyMTYxNiwiZXhwIjoyMDE4MTgxNjE2fQ.NT-WSwkG9JN8f2cCt5fXlP4A8FEOAgDTrS1sdhB0ioo"
-            self.token = self.get_ident()
 
         if self.token == None:
             if self.api_srv.is_addon:
@@ -123,22 +125,30 @@ class EventServer:
                     "Websocket stored token is none, open_websocket failed."
                 )
             self.websck = None
-            return
+            return False
 
-        try:
-            if self.api_srv.is_addon:
-                self.websck = await websockets.connect(
-                    self._uri,
-                    extra_headers={"Authorization": f"Bearer {self.token}"},
-                )
-            else:
-                self.websck = await websockets.connect(self._uri)
-            resp = await self.websck.recv()
-        except Exception as err_msg:
-            self.logger.error(f"Websocket connect failed: {err_msg}, trying to close")
-            await self.websck.close()
-            self.websck = []
-            return
+        connected = 0
+        while connected == 0:
+            try:
+                if self.api_srv.is_addon:
+                    self.websck = await websockets.connect(
+                        self._uri,
+                        extra_headers={"Authorization": f"Bearer {self.token}"},
+                    )
+                else:
+                    self.websck = await websockets.connect(self._uri)
+                resp = await self.websck.recv()
+                connected = 1
+            except Exception as err_msg:
+                await self.close_websocket()
+                if retry:
+                    self.logger.error("Websocket connect failed, retry in 1 seconds")
+                    await asyncio.sleep(1)
+                else:
+                    self.logger.error(f"Websocket connect failed: {err_msg}")
+                    connected = -1
+        if connected == -1:
+            return False
         if json.loads(resp)["type"] == "auth_required":
             try:
                 msg = WEBSOCK_MSG.auth_msg
@@ -150,11 +160,11 @@ class EventServer:
                 )
             except Exception as err_msg:
                 self.logger.error(f"Websocket connect failed: {err_msg}")
-                self.websck = []
-                return
+                await self.close_websocket()
+                return False
         else:
             self.logger.info(f"Websocket connected to {self._uri}, response: {resp}")
-        return
+        return True
 
     def extract_rest_msg(self, rt_event, msg_len):
         """Check for more appended messages."""
@@ -171,11 +181,12 @@ class EventServer:
         self.logger.debug("Event server started")
         self.evnt_running = True
 
-        await self.open_websocket()
+        success = await self.open_websocket(retry=True)
 
         recvd_byte = b"\00"  # Initialization for resync
         while self.evnt_running:
             # Fast loop, immediate checks here without message/handler
+            await asyncio.sleep(0.02)  # short break for other processes
             try:
                 # Get prefix
                 if self.msg_appended:
@@ -257,6 +268,11 @@ class EventServer:
                                 "API mode router message: Router channel status with mode=0, discarded"
                             )
                         tail = self.extract_rest_msg(rt_event, 48)
+                    elif rt_event[4] == 50:
+                        self.logger.debug(
+                            f"API mode router message, collective command: {rt_event[5]}"
+                        )
+                        tail = self.extract_rest_msg(rt_event, 7)
                     elif rt_event[4] == 68:
                         self.logger.debug(
                             f"API mode router message, direct command: Module {rt_event[5]} - Command {rt_event[6:-1]}"
@@ -386,14 +402,17 @@ class EventServer:
                         )
                         pass
             except RuntimeError as err_msg:
-                self.logger.error(
-                    f"Event server runtime error: {err_msg.args[0]}, websocket closed, event server terminated"
-                )
-                self.evnt_running = False
-                await self.websck.close()
-                self.websck = []
-                await self.api_srv.stop_opr_mode(100)
-                await self.api_srv.start_opr_mode(100)
+                self.logger.error(f"Event server runtime error: {err_msg.args[0]}")
+                await self.close_websocket()
+                if not await self.ping_pong_reconnect():
+                    self.logger.warning(
+                        "Webwocket reconnect failed, websocket closed, event server terminated"
+                    )
+                    self.evnt_running = False
+                    await self.close_websocket()
+                    await self.stop()
+                    await self.api_srv.stop_opr_mode(100)
+                    await self.api_srv.start_opr_mode(100)
             except Exception as error_msg:
                 # Use to get cancel event in api_server
                 self.logger.error(
@@ -421,11 +440,11 @@ class EventServer:
             else:
                 await self.notify_event(rtr_id, m_event)
 
-    async def notify_event(self, rtr: int, event: [int]):
+    async def notify_event(self, rtr: int, event: list[int]):
         """Trigger event on remote host (e.g. home assistant)"""
 
         if (self.websck == []) | (self.websck == None):
-            await self.open_websocket()
+            success = await self.open_websocket(retry=True)
         if event == None:
             return
         try:
@@ -454,8 +473,7 @@ class EventServer:
                 f"Connection closed by HA server, terminating event server task"
             )
             self.evnt_running = False
-            self.api_srv._ev_srv_task.cancel()
-            self.api_srv._ev_srv_task = []
+            self.stop()
             await self.api_srv.stop_opr_mode(100)
         except Exception as error_msg:
             # Use to get cancel event in api_server
@@ -469,8 +487,8 @@ class EventServer:
 
     async def ping_pong_reconnect(self) -> bool:
         """Check for living websocket connection, reconnect if needed."""
-        await self.open_websocket()
-        if self.websck != []:
+        success = await self.open_websocket(retry=False)
+        if success:
             try:
                 event_cmd = WEBSOCK_MSG.ping_msg
                 self.notify_id += 1
@@ -487,7 +505,64 @@ class EventServer:
                     return False
             except Exception as error_msg:
                 self.logger.error(f"Could not send ping to event server: {error_msg}")
-                self.websck = []
+                await self.close_websocket()
                 return False
         self.logger.error(f"Could not reconnect to event server")
         return False
+
+    async def close_websocket(self):
+        """Close websocket, if object still available."""
+        if self.websck != []:
+            try:
+                await self.websck.close()
+                self.websck = []
+                self.logger.debug("Websocket closed")
+            except Exception as err_msg:
+                self.logger.warning(f"Websocket close failed: {err_msg}")
+
+    def start(self):
+        """Start event server task."""
+        if self.running():
+            return
+        self.logger.debug("Starting new EventSrv task")
+        self.ev_srv_task = self.api_srv.loop.create_task(
+            self.watch_rt_events(self.api_srv._rt_serial[0])
+        )
+
+    async def stop(self):
+        """Stop running event server task."""
+        if not self.running():
+            return
+        self.logger.debug("Stopping EventSrv task")
+        self.evnt_running = False
+        # waiting for event server to receive response and shut down
+        t_wait = 0.0
+        t_max = 2.0
+        if self.ev_srv_task == []:
+            self.logger.debug("No EventSrv running, already stopped")
+        else:
+            while (self.ev_srv_task._state != "FINISHED") & (t_wait < t_max):
+                await asyncio.sleep(0.1)
+                t_wait += 0.1
+            if t_wait < 2:
+                self.logger.debug(
+                    f"EventSrv terminated successfully after {round(t_wait,1)} sec"
+                )
+            else:
+                await self.ev_srv_task.cancel()
+                self.logger.debug(f"EventSrv stoppped after {t_max} sec")
+            self.ev_srv_task = []
+            await self.close_websocket()
+
+    def running(self) -> bool:
+        """Return status of event server task."""
+        if self.ev_srv_task == []:
+            self.logger.debug("No EventSrv object instantiated")
+            return False
+        if self.ev_srv_task.done():
+            self.logger.debug("EventSrv 'done'")
+            return False
+        if self.ev_srv_task.cancelled():
+            self.logger.debug("EventSrv 'cancelled'")
+            return False
+        return True

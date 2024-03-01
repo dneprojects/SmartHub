@@ -110,9 +110,9 @@ class ActionsHdlr(HdlrBase):
                 )
                 if self.args_err:
                     return
-                if self._args[2] == 1:  # shutter command
+                if self._args[2] == 1:  # temperature 1
                     sel = 83
-                elif self._args[2] == 2:  # blind command
+                elif self._args[2] == 2:  # temperature 1
                     sel = 87
                 else:
                     sel = 100
@@ -132,9 +132,8 @@ class ActionsHdlr(HdlrBase):
                 if self.args_err:
                     return
                 self._rt_command = (
-                    RT_CMDS.SET_TEMP.replace("<rtr>", chr(rt))
+                    RT_CMDS.CALL_VIS_CMD.replace("<rtr>", chr(rt))
                     .replace("<mod>", chr(mod))
-                    .replace("<sel>", chr(sel))
                     .replace("<cmdl>", chr(self._args[2]))
                     .replace("<cmdh>", chr(self._args[3]))
                 )
@@ -149,12 +148,10 @@ class ActionsHdlr(HdlrBase):
                 )
                 if self.args_err:
                     return
-                self._rt_command = RT_CMDS.SET_TEMP.replace(
+                self._rt_command = RT_CMDS.CALL_COLL_CMD.replace(
                     "<rtr>", chr(self._p4)
                 ).replace("<cmd>", chr(self._p5))
-                self.logger.debug(
-                    f"Router {rt}, module {mod}: collective command {self._args[2]+256*self._args[3]}"
-                )
+                self.logger.debug(f"Router {rt}, collective command {self._p5}")
 
             case spec.FLAG_SET | spec.FLAG_RESET:
                 self.check_router_no(self._p4)

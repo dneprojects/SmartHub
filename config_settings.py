@@ -610,6 +610,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
         "flags",
         "groups",
         "dir_cmds",
+        "vis_cmds",
         "coll_cmds",
         "logic",
         "users",
@@ -639,6 +640,8 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             max_new = 16
         elif key in ["dir_cmds"]:
             max_new = 25
+        elif key in ["vis_cmds"]:
+            max_new = 65280
         elif key in ["groups"]:
             max_new = 80
             min_del = max(1, min_del)

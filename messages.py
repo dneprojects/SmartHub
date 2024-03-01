@@ -45,7 +45,7 @@ class ApiMessage(BaseMessage):
         """Validates received api message."""
         return ModbusCheckCRC(self._buffer[:-3], self._crc)
 
-    def calc_CRC(self, buf) -> (chr, chr):
+    def calc_CRC(self, buf) -> tuple[chr, chr]:
         """Compute CRC for api message."""
         cmd_crc = ModbusComputeCRC(buf)
         crc_low = cmd_crc & 0xFF
@@ -112,6 +112,9 @@ class RtMessage(BaseMessage):
         self._buffer: bytes = b""
         self.rt_prepare()
         self._length = ord(self._buffer[2])
+        self._resp_msg = b"\0"
+        self._resp_buffer = b"\0\0"
+        self._resp_code = 0
 
     def rt_prepare(self):
         """Set current router, encode, and calc crc"""
@@ -138,6 +141,7 @@ class RtMessage(BaseMessage):
     async def rt_send(self) -> None:
         """Sends router command via serial interface"""
         len = self.ser_writer.write(self._buffer.encode("iso8859-1"))
+        await self.ser_writer.drain()
         self.logger.debug(f"Sent to router: {self._buffer.encode('iso8859-1')}")
 
     async def rt_recv(self) -> None:

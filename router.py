@@ -8,7 +8,6 @@ from const import (
 )
 from router_hdlr import RtHdlr
 from module import HbtnModule
-from module_hdlr import ModHdlr
 from configuration import RouterSettings
 
 
@@ -67,6 +66,7 @@ class HbtnRouter:
 
     async def get_full_system_status(self):
         """Startup procedure: wait for router #1, get router info, start modules."""
+        from module_hdlr import ModHdlr
 
         # await self.hdlr.rt_reboot()
         # self.logger.info("Router reboot finished")
