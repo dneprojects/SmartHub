@@ -369,7 +369,8 @@ async def init_serial(logger):
                     await asyncio.sleep(5)
                     new_query = True
                 else:
-                    logger.warning(f"Unexpected test response: {resp_buf}")
+                    logger.info("Retry to connect router")
+                    logger.debug(f"Unexpected test response: {resp_buf}")
                     new_query = True
             else:
                 raise Exception(f"No test response received")

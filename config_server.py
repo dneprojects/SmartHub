@@ -302,17 +302,31 @@ def format_hmd(status, list: bytes) -> str:
 
 
 def seperate_upload(upload_str: str) -> tuple[bytes, bytes]:
-    """Seperate smg and list from data, remove ';' and lf, and convert to bytes"""
+    """Seperate smg and list from data, remove ';' and lf, correct counts, and convert to bytes"""
     lines = upload_str.split("\n")
+    l_l = len(lines)
+    for l_i in range(l_l):
+        # count backwards to keep line count after deletion
+        if lines[l_l - l_i - 1].strip() == "":
+            del lines[l_l - l_i - 1]
     smg_bytes = b""
     for byt in lines[0].split(";"):
         if len(byt) > 0:
             smg_bytes += int.to_bytes(int(byt))
+    no_list_lines = len(lines) - 2
+    no_list_chars = 0
     smc_bytes = b""
     for line in lines[1:]:
         for byt in line.split(";"):
             if len(byt) > 0:
                 smc_bytes += int.to_bytes(int(byt))
+                no_list_chars += 1
+    smc_bytes = (
+        chr(no_list_lines & 0xFF)
+        + chr(no_list_lines >> 8)
+        + chr(no_list_chars & 0xFF)
+        + chr(no_list_chars >> 8)
+    ).encode("iso8859-1") + smc_bytes[4:]
     return smg_bytes, smc_bytes
 
 
