@@ -100,7 +100,7 @@ class HbtnRouter:
 
     async def get_status(self) -> str:
         """Returns router channel status"""
-        opr_off = await self.api_srv.stop_opr_mode(self._id)
+        opr_off = await self.api_srv.set_server_mode(self._id)
         self.chan_status = await self.hdlr.get_rt_status()
         return self.chan_status
 
@@ -159,7 +159,7 @@ class HbtnRouter:
                 return
             if self.api_srv._opr_mode:
                 self.logger.error("Not in Srv mode when switching to config mode!")
-                await self.api_srv.stop_opr_mode(self._id)
+                await self.api_srv.set_server_mode(self._id)
         return
 
     async def flush_buffer(self):

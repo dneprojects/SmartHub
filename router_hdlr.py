@@ -173,7 +173,7 @@ class RtHdlr(HdlrBase):
     async def get_rt_full_status(self):
         """Get full router status."""
         # Create continuous status byte array and indices
-        await self.rt_msg.api_hdlr.api_srv.stop_opr_mode(1)
+        await self.rt_msg.api_hdlr.api_srv.set_server_mode()
         # await asyncio.sleep(0.3)
         # await self.handle_router_cmd_resp(
         #     1, RT_CMDS.SET_GLOB_MODE.replace("<md>", chr(75))
@@ -221,7 +221,7 @@ class RtHdlr(HdlrBase):
         return rt_stat
 
     async def query_rt_status(self):
-        """Get router system status. Used in Opr mode"""
+        """Get router system status. Used in Operate mode"""
         await self.handle_router_cmd(self.rt_id, RT_CMDS.GET_RT_STATUS)
         return "OK"
 
@@ -248,7 +248,7 @@ class RtHdlr(HdlrBase):
 
     async def get_rt_modules(self):
         """Get all modules connected to router."""
-        await self.rt_msg.api_hdlr.api_srv.stop_opr_mode(1)
+        await self.rt_msg.api_hdlr.api_srv.set_server_mode()
         await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.GET_RT_MODULES)
         return self.rt_msg._resp_msg
 
@@ -632,7 +632,7 @@ class RtHdlr(HdlrBase):
         resp_msg = RtResponse(self, rt_resp)
         if not (resp_msg._crc_ok):
             self.logger.warning(
-                f"Invalid Opr mode router message crc, message: {resp_msg.resp_data}"
+                f"Invalid Operate mode router message crc, message: {resp_msg.resp_data}"
             )
             return
         if resp_msg.resp_cmd == RT_RESP.MIRR_STAT:

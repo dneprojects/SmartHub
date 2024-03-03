@@ -51,7 +51,7 @@ class ApiServer:
         """Starts router object and reads complete system status"""
         self.hdlr = DataHdlr(self)
         self.evnt_srv = EventServer(self)
-        await self.set_initial_srv_mode(1)
+        await self.set_initial_server_mode()
         await self.routers[0].get_full_system_status()
         self.logger.info(
             f"API server, router, and {len(self.routers[0].modules)} modules initialized"
@@ -68,7 +68,7 @@ class ApiServer:
         while self._running:
             self._api_cmd_processing = False
             # if self._auto_restart_opr & (not self._opr_mode) & (not self._init_mode):
-            #     await self.start_opr_mode(rt)
+            #     await self.set_operate_mode(rt)
             self._auto_restart_opr = False
             block_time = 0
             while self._netw_blocked:
@@ -103,16 +103,16 @@ class ApiServer:
                         self._auto_restart_opr = True
                     case API_CATEGS.ACTIONS:
                         self.hdlr = ActionsHdlr(self)
-                        await self.start_opr_mode(rt)
+                        await self.set_operate_mode(rt)
                     case API_CATEGS.FILES:
                         self.hdlr = FilesHdlr(self)
-                        await self.stop_opr_mode(rt)
+                        await self.set_server_mode(rt)
                     case API_CATEGS.SETUP:
                         self.hdlr = SetupHdlr(self)
-                        await self.stop_opr_mode(rt)
+                        await self.set_server_mode(rt)
                     case API_CATEGS.ADMIN:
                         self.hdlr = AdminHdlr(self)
-                        await self.stop_opr_mode(rt)
+                        await self.set_server_mode(rt)
                     case API_CATEGS.FORWARD:
                         self.hdlr = ForwardHdlr(self)
                     case _:
@@ -136,7 +136,7 @@ class ApiServer:
     async def shutdown(self, rt, restart_flg):
         """Terminating all tasks and self."""
         await self.sm_hub.conf_srv.runner.cleanup()
-        await self.stop_opr_mode(rt)
+        await self.set_server_mode(rt)
         await self.routers[rt - 1].flush_buffer()
         self.sm_hub.q_srv._q_running = False
         self._running = False
@@ -170,19 +170,19 @@ class ApiServer:
                 self.logger.debug(
                     f"Waited for {api_time} seconds for finishing API command"
                 )
-            await self.stop_opr_mode(rt_no)
+            await self.set_server_mode(rt_no)
             self.logger.debug("Block API mode")
         if not set_block:
             self._netw_blocked = False
-            await self.start_opr_mode(rt_no)
+            await self.set_operate_mode(rt_no)
             self.logger.debug("Release API mode block")
 
-    async def start_opr_mode(self, rt_no):
+    async def set_operate_mode(self, rt_no=1):
         """Turn on operate mode: enable router events."""
         # Client ip needed for event handling;
         # method "get_extra_info" is only implemented for writer object
         if self._init_mode:
-            self.logger.debug("Skipping set Opr mode due to init_mode")
+            self.logger.debug("Skipping set Operate mode due to init_mode")
             return
         if not "ip_writer" in self.__dir__():
             # no command received yet
@@ -194,7 +194,7 @@ class ApiServer:
         if self._opr_mode & self.evnt_srv.running():
             return True
         if self._opr_mode:
-            self.logger.debug("Already in Opr mode, recovering event server")
+            self.logger.debug("Already in Operate mode, recovering event server")
             self.evnt_srv.start()
             await asyncio.sleep(0.1)
         elif not self._init_mode:
@@ -211,7 +211,7 @@ class ApiServer:
         return self._opr_mode
 
     async def reinit_opr_mode(self, rt_no, mode):
-        """Force stop opr and restart."""
+        """Force stop operate mode and restart."""
         if not mode:
             # Start of re-init with mode == 0
             self._init_mode = True
@@ -224,7 +224,7 @@ class ApiServer:
                 "Stopping EventSrv task, setting Srv mode for initialization, rollover done"
             )
             await asyncio.sleep(0.5)  # wait for anything async to complete
-            await self.set_initial_srv_mode(rt_no)
+            await self.set_initial_server_mode()
             return "Init mode set"
         else:
             # finishing re-init with mode == 1
@@ -236,16 +236,16 @@ class ApiServer:
             self.evnt_srv.start()
             await asyncio.sleep(0.1)
             self._opr_mode = False
-            await self.start_opr_mode(rt_no)
+            await self.set_operate_mode(rt_no)
             self.logger.info("--- Initialization finished")
             return "Init mode reset"
 
-    async def stop_opr_mode(self, rt_no):
-        """Turn on server mode: disable router events"""
+    async def set_server_mode(self, rt_no=1):
+        """Turn on client/server mode: disable router events"""
         if not (self._opr_mode):
             return True
         if self._init_mode:
-            self.logger.debug("Skipping set Srv mode due to init_mode")
+            self.logger.debug("Skipping set Client/Server mode due to init_mode")
             return True
 
         # Disable mirror first, then stop event handler
@@ -256,8 +256,8 @@ class ApiServer:
         self.logger.info("--- Switched to Client/Server mode")
         return not self._opr_mode
 
-    async def set_initial_srv_mode(self, rt_no):
-        """Turn on config mode: disable router events"""
+    async def set_initial_server_mode(self, rt_no=1):
+        """Turn on server mode: disable router events"""
         self._opr_mode = False
         await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.SET_SRV_MODE)
         await self.evnt_srv.stop()

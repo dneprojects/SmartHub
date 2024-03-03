@@ -300,7 +300,7 @@ def setup_logging():
 async def open_serial_interface(device, logger) -> tuple[StreamReader, StreamWriter]:
     """Open serial connection of given device."""
 
-    logger.info(f"Try to open serial connection: {device}")
+    logger.info(f"Open serial connection: {device}")
     ser_rd, ser_wr = await serial_asyncio.open_serial_connection(
         url=device,
         baudrate=RT_BAUDRATE,
