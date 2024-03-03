@@ -70,6 +70,11 @@ class AutomationsSet:
                     self.local.append(
                         AutomationDefinition(line, self.autmn_dict, settings)
                     )
+                elif src_rt in range(200, 225):
+                    # time trigger, also local automation
+                    self.local.append(
+                        AutomationDefinition(line, self.autmn_dict, settings)
+                    )
                 elif (src_rt == settings.module.rt_id) | (src_rt == 250):
                     self.external.append(
                         ExtAutomationDefinition(line, self.autmn_dict, settings)
