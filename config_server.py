@@ -387,16 +387,16 @@ async def send_to_module(app, content: str, mod_addr: int):
             module.calc_SMC_crc(module.list)
             app.logger.debug("Module list upload from configuration server finished")
         else:
-            app.logger.debug(
-                "Module list upload from configuration server finished: Same CRC"
+            app.logger.info(
+                "Module list upload from configuration server skipped: Same CRC"
             )
         if stat_update:
             await module.hdlr.send_module_smg(module._id)
             await module.hdlr.get_module_status(module._id)
             app.logger.debug("Module status upload from configuration server finished")
         else:
-            app.logger.debug(
-                "Module status upload from configuration server finished: Same CRC"
+            app.logger.info(
+                "Module status upload from configuration server skipped: Same CRC"
             )
     except Exception as err_msg:
         app.logger.error(f"Error while uploading module settings: {err_msg}")

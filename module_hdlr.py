@@ -204,10 +204,11 @@ class ModHdlr(HdlrBase):
 
     async def send_module_list(self, mod_addr: int):
         """Send SMC data from Smart Hub to router/module."""
-        await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.STOP_MIRROR)
+        await self.api_srv.stop_opr_mode(self.rt_id)
         mod_list = self.mod.list_upload
         resp_flg = 0
         l_len = len(mod_list)
+        no_lines = int.from_bytes(mod_list[0:2], "little")
         l_cnt = 0
         flg = chr(6)
         cnt = 1
@@ -248,9 +249,14 @@ class ModHdlr(HdlrBase):
                 f"List upload (SMC) returned: Count {resp_cnt} Flag {resp_flg}"
             )
             # await asyncio.sleep(0.1)
-        self.logger.info(
-            f"List upload (SMC) terminated: Count {resp_cnt} Flag {resp_flg}"
-        )
+        if resp_flg == 8:
+            self.logger.info(
+                f"List upload terminated successfully, loaded {l_len} bytes of {no_lines} definitions to module"
+            )
+        else:
+            self.logger.info(
+                f"List upload (SMC) terminated: Count {resp_cnt} Flag {resp_flg}"
+            )
         return
 
     async def set_module_language(self):
