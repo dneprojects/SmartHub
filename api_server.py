@@ -67,8 +67,6 @@ class ApiServer:
 
         while self._running:
             self._api_cmd_processing = False
-            # if self._auto_restart_opr & (not self._opr_mode) & (not self._init_mode):
-            #     await self.set_operate_mode(rt)
             self._auto_restart_opr = False
             block_time = 0
             while self._netw_blocked:
@@ -129,6 +127,8 @@ class ApiServer:
             else:
                 self.logger.warning(f"API call failed: {response}")
             self.respond_client(response)  # Aknowledge the api command at last
+            if self._auto_restart_opr & (not self._opr_mode) & (not self._init_mode):
+                await self.set_operate_mode(rt)
             await asyncio.sleep(0.1)  # pause for other processes to be scheduled
 
         self.sm_hub.restart_hub(False)
