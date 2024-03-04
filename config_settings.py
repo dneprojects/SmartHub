@@ -508,18 +508,25 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
     )
     tbl += "\n" + indent(5) + "<table>\n"
 
-    tbl_enries = dict()
+    tbl_entries = dict()
     for ci in range(len(tbl_data)):
         if key == "fingers":
             user_id = main_app["settings"].users[main_app["settings"].users_sel].nmbr
             if tbl_data[ci].type == user_id:
                 f_nmbr = tbl_data[ci].nmbr
-                tbl_enries.update({f_nmbr: ci})
+                tbl_entries.update({f_nmbr: ci})
         else:
-            tbl_enries.update({tbl_data[ci].nmbr: ci})
-    tbl_enries = sorted(tbl_enries.items())
+            tbl_entries.update({tbl_data[ci].nmbr: ci})
+    tbl_entries = sorted(tbl_entries.items())
+    if key in ["leds"]:
+        if main_app["settings"].typ[0] == 1:
+            # For SC skip night light
+            tbl_entries = tbl_entries[1:]
+        if main_app["settings"].typ[0] == 50:
+            # For small SC skip ambient light
+            tbl_entries = tbl_entries[:-1]
     ci = 0
-    for entry in tbl_enries:
+    for entry in tbl_entries:
         ci = entry[1]
         id_name = key[:-1] + str(ci)
         prompt = key_prompt + f"&nbsp;{tbl_data[ci].nmbr}"

@@ -620,11 +620,13 @@ class AutomationTrigger:
         for outp in self.settings.outputs:
             if len(outp.name.strip()) > 0:
                 opt_str += f'<option value="{outp.nmbr}">{outp.name}</option>'
-        for outp in self.settings.leds:
-            if len(outp.name.strip()) > 0:
-                opt_str += f'<option value="{outp.nmbr + 16}">LED {outp.name}</option>'
+        for led in self.settings.leds:
+            if (self.settings.typ[0] == 1) & (led.nmbr == 0):
+                opt_str += f'<option value="16">Nachtlicht</option>'
+            elif len(led.name.strip()) > 0:
+                opt_str += f'<option value="{led.nmbr + 16}">LED {led.name}</option>'
             else:
-                opt_str += f'<option value="{outp.nmbr + 16}">LED {outp.nmbr}</option>'
+                opt_str += f'<option value="{led.nmbr + 16}">LED {led.nmbr}</option>'
         page = page.replace(
             '<option value="">-- Ausgang oder LED wählen --</option>', opt_str
         )
@@ -930,7 +932,7 @@ class AutomationTrigger:
 
     def get_output_desc(self, arg: int, time_function: bool) -> str:
         """Return string description for output arg."""
-        if arg < 17:
+        if arg < 16:
             unit_no = arg
             out_desc = f"Ausgang {self.get_dict_entry('outputs', unit_no)}"
             return out_desc

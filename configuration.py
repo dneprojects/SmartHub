@@ -42,7 +42,12 @@ class ModuleSettings:
 
     def get_io_interfaces(self):
         """Parse config files to extract names, etc."""
-        self.leds = [IfDescriptor("", i + 1, 1) for i in range(self.properties["leds"])]
+        if self.typ[0] == 1:
+            self.leds = [IfDescriptor("", i, 1) for i in range(self.properties["leds"])]
+        else:
+            self.leds = [
+                IfDescriptor("", i + 1, 1) for i in range(self.properties["leds"])
+            ]
         self.buttons = [
             IfDescriptor("", i + 1, 1) for i in range(self.properties["buttons"])
         ]
@@ -300,7 +305,11 @@ class ModuleSettings:
                                 self.inputs[arg_code - 10].nmbr = arg_code - 9
                         elif arg_code in range(18, 26):
                             # Description of module LEDs
-                            if self.type[0:9] != "Smart Out":
+                            if self.typ[0] == 1:  # SC
+                                self.leds[arg_code - 17] = IfDescriptor(
+                                    text, arg_code - 17, 0
+                                )
+                            elif self.typ[0] == 50:  # Smart Controller Mini
                                 self.leds[arg_code - 18] = IfDescriptor(
                                     text, arg_code - 17, 0
                                 )
@@ -352,6 +361,8 @@ class ModuleSettings:
             self.dimmers[1].name = self.outputs[11].name
             self.outputs[10].type = 2
             self.outputs[11].type = 2
+            self.leds[0].name = "Nachtlicht"
+            self.leds[0].nmbr = 0
             return True
         if self.type[:10] == "Smart Dimm":
             self.dimmers[0].name = self.outputs[0].name
@@ -562,10 +573,13 @@ class ModuleSettings:
                 desc += " " * (32 - len(desc))
                 new_list.append(f"\xff\0\xeb{chr(9 + btn.nmbr)}\1\x23\0\xeb" + desc)
         for led in self.leds:
-            desc = led.name
-            if len(desc.strip()) > 0:
-                desc += " " * (32 - len(desc))
-                new_list.append(f"\xff\0\xeb{chr(17 + led.nmbr)}\1\x23\0\xeb" + desc)
+            if led.nmbr > 0:
+                desc = led.name
+                if len(desc.strip()) > 0:
+                    desc += " " * (32 - len(desc))
+                    new_list.append(
+                        f"\xff\0\xeb{chr(17 + led.nmbr)}\1\x23\0\xeb" + desc
+                    )
         for inpt in self.inputs:
             desc = inpt.name
             if len(desc.strip()) > 0:

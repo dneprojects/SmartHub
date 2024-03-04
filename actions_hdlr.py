@@ -1,3 +1,4 @@
+import asyncio
 import struct
 from const import API_ACTIONS as spec
 from const import RT_CMDS
@@ -270,6 +271,21 @@ class ActionsHdlr(HdlrBase):
                     .replace("<mod>", chr(mod))
                     .replace("<cnr>", chr(inp_code))
                 )
+                # Code for setting output on/off flag, not needed later
+                await self.handle_router_cmd(rt, self._rt_command)
+                await asyncio.sleep(0.1)
+                if self._spec == spec.OUTP_RBG_OFF:
+                    rt_cmd = RT_CMDS.SET_OUT_OFF
+                else:
+                    rt_cmd = RT_CMDS.SET_OUT_ON
+                out_msk_8 = 1 << (self._args[0] + 1)
+                self._rt_command = (
+                    rt_cmd.replace("<rtr>", chr(rt))
+                    .replace("<mod>", chr(mod))
+                    .replace("<outl>", chr(out_msk_8))
+                    .replace("<outm>", chr(0))
+                    .replace("<outh>", chr(0))
+                )
 
             case spec.OUTP_RBG_VAL:
 
@@ -298,6 +314,21 @@ class ActionsHdlr(HdlrBase):
                     .replace("<b>", chr(self._args[3]))
                     .replace("<tl>", chr(3))
                     .replace("<th>", chr(0))
+                )
+                # Code for setting output on/off flag, not needed later
+                await self.handle_router_cmd(rt, self._rt_command)
+                await asyncio.sleep(0.1)
+                if sum(self._args[1:4]) == 0:
+                    rt_cmd = RT_CMDS.SET_OUT_OFF
+                else:
+                    rt_cmd = RT_CMDS.SET_OUT_ON
+                out_msk_8 = 1 << (self._args[0] + 1)
+                self._rt_command = (
+                    rt_cmd.replace("<rtr>", chr(rt))
+                    .replace("<mod>", chr(mod))
+                    .replace("<outl>", chr(out_msk_8))
+                    .replace("<outm>", chr(0))
+                    .replace("<outh>", chr(0))
                 )
                 self.logger.debug(
                     f"Router {rt}, module {mod}, led {inp_code}: turn LED to R:{self._args[1]} G:{self._args[2]} B:{self._args[3]}"

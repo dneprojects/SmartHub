@@ -203,7 +203,7 @@ class ApiServer:
             cmd = RT_CMDS.SET_OPR_MODE.replace("<mirr>", m_chr).replace("<evnt>", e_chr)
             await self.hdlr.handle_router_cmd_resp(rt_no, cmd)
             if self.hdlr.rt_msg._resp_code == 133:
-                self.logger.info("--- Switched to Operation mode")
+                self.logger.info("--- Switched to Operate mode")
                 self._opr_mode = True
             # Start event handler
             self.evnt_srv.start()

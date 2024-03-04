@@ -429,12 +429,26 @@ class HbtnModule:
         """Return number of inputs, outputs, etc."""
         type_code = self._typ
         props: dict = {}
+        props["buttons"] = 0
+        props["inputs"] = 0
+        props["inputs_230V"] = 0
+        props["inputs_24V"] = 0
+        props["outputs"] = 0
+        props["outputs_230V"] = 0
+        props["outputs_dimm"] = 0
+        props["outputs_24V"] = 0
+        props["outputs_relais"] = 0
+        props["leds"] = 0
+        props["covers"] = 0
+        props["logic"] = 0
+        props["flags"] = 0
+        props["dir_cmds"] = 0
+        props["vis_cmds"] = 0
         props["users"] = 0
         props["fingers"] = 0
         match type_code[0]:
             case 1:
                 props["buttons"] = 8
-                props["leds"] = 8
                 props["inputs"] = 10
                 props["inputs_230V"] = 4
                 props["inputs_24V"] = 6
@@ -443,7 +457,7 @@ class HbtnModule:
                 props["outputs_dimm"] = 2
                 props["outputs_24V"] = 2
                 props["outputs_relais"] = 1
-                props["leds"] = 8
+                props["leds"] = 9
                 props["covers"] = 5
                 props["logic"] = 10
                 props["flags"] = 16
@@ -452,157 +466,48 @@ class HbtnModule:
             case 10:
                 match type_code[1]:
                     case 1 | 50 | 51:
-                        props["buttons"] = 0
-                        props["leds"] = 0
-                        props["inputs"] = 0
-                        props["inputs_230V"] = 0
-                        props["inputs_24V"] = 0
                         props["outputs"] = 8
-                        props["outputs_230V"] = 0
-                        props["outputs_dimm"] = 0
-                        props["outputs_24V"] = 0
                         props["outputs_relais"] = 8
                         props["covers"] = 4
                         props["logic"] = 10
                         props["flags"] = 16
-                        props["dir_cmds"] = 0
                         props["vis_cmds"] = 16
                     case 2:
-                        props["buttons"] = 0
-                        props["leds"] = 0
-                        props["inputs"] = 0
-                        props["inputs_230V"] = 0
-                        props["inputs_24V"] = 0
                         props["outputs"] = 8
                         props["outputs_230V"] = 8
-                        props["outputs_dimm"] = 0
-                        props["outputs_24V"] = 0
-                        props["outputs_relais"] = 0
                         props["covers"] = 4
                         props["logic"] = 10
                         props["flags"] = 16
-                        props["dir_cmds"] = 0
                         props["vis_cmds"] = 65280
                     case 20 | 21 | 22:
-                        props["buttons"] = 0
-                        props["leds"] = 0
-                        props["inputs"] = 0
-                        props["inputs_230V"] = 0
-                        props["inputs_24V"] = 0
                         props["outputs"] = 4
-                        props["outputs_230V"] = 0
                         props["outputs_dimm"] = 4
-                        props["outputs_24V"] = 0
-                        props["outputs_relais"] = 0
-                        props["covers"] = 0
                         props["logic"] = 10
                         props["flags"] = 16
-                        props["dir_cmds"] = 0
                         props["vis_cmds"] = 65280
             case 11:
                 match type_code[1]:
                     case 1:
-                        props["buttons"] = 0
-                        props["leds"] = 0
                         props["inputs"] = 8
                         props["inputs_230V"] = 8
-                        props["inputs_24V"] = 0
-                        props["outputs"] = 0
-                        props["outputs_230V"] = 0
-                        props["outputs_dimm"] = 0
-                        props["outputs_24V"] = 0
-                        props["outputs_relais"] = 0
-                        props["covers"] = 0
-                        props["logic"] = 0
-                        props["flags"] = 0
-                        props["dir_cmds"] = 0
-                        props["vis_cmds"] = 0
                     case 30 | 31:
-                        props["buttons"] = 0
-                        props["leds"] = 0
                         props["inputs"] = 8
-                        props["inputs_230V"] = 0
                         props["inputs_24V"] = 8
-                        props["outputs"] = 0
-                        props["outputs_230V"] = 0
-                        props["outputs_dimm"] = 0
-                        props["outputs_24V"] = 0
-                        props["outputs_relais"] = 0
-                        props["covers"] = 0
-                        props["logic"] = 0
-                        props["flags"] = 0
-                        props["dir_cmds"] = 0
-                        props["vis_cmds"] = 0
-            case 20:
-                props["buttons"] = 0
-                props["leds"] = 0
-                props["inputs"] = 0
-                props["inputs_230V"] = 0
-                props["inputs_24V"] = 0
-                props["outputs"] = 0
-                props["outputs_230V"] = 0
-                props["outputs_dimm"] = 0
-                props["outputs_24V"] = 0
-                props["outputs_relais"] = 0
-                props["covers"] = 0
-                props["logic"] = 0
-                props["flags"] = 0
-                props["dir_cmds"] = 0
-                props["vis_cmds"] = 0
             case 30:
-                props["buttons"] = 0
-                props["leds"] = 0
-                props["inputs"] = 0
-                props["inputs_230V"] = 0
-                props["inputs_24V"] = 0
-                props["outputs"] = 0
-                props["outputs_230V"] = 0
-                props["outputs_dimm"] = 0
-                props["outputs_24V"] = 0
-                props["outputs_relais"] = 0
-                props["covers"] = 0
-                props["logic"] = 0
                 props["users"] = 256
                 props["fingers"] = props["users"] * 10
-                props["flags"] = 0
-                props["dir_cmds"] = 0
-                props["vis_cmds"] = 0
             case 50:
                 props["buttons"] = 2
-                props["leds"] = 4
                 props["inputs"] = 4
                 props["inputs_230V"] = 0
                 props["inputs_24V"] = 4
                 props["outputs"] = 2
-                props["outputs_230V"] = 0
-                props["outputs_dimm"] = 0
                 props["outputs_24V"] = 2
-                props["outputs_relais"] = 0
-                props["covers"] = 0
+                props["leds"] = 5
                 props["logic"] = 10
                 props["flags"] = 16
                 props["dir_cmds"] = 25
                 props["vis_cmds"] = 65280
-            case 80:
-                props["buttons"] = 0
-                props["leds"] = 0
-                props["inputs"] = 0
-                props["inputs_230V"] = 0
-                props["inputs_24V"] = 0
-                props["outputs"] = 0
-                props["outputs_230V"] = 0
-                props["outputs_dimm"] = 0
-                props["outputs_24V"] = 0
-                props["outputs_relais"] = 0
-                props["covers"] = 0
-                props["logic"] = 0
-                props["flags"] = 0
-                props["dir_cmds"] = 0
-                props["vis_cmds"] = 0
-                props["logic"] = 0
-                props["flags"] = 0
-                props["dir_cmds"] = 0
-                props["vis_cmds"] = 0
 
         keys = [
             "buttons",

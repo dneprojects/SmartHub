@@ -213,7 +213,7 @@ class AutomationDefinition:
 
     def get_output_desc(self, arg: int, time_function: bool) -> str:
         """Return string description for output arg."""
-        if arg < 17:
+        if arg < 16:
             unit_no = arg
             out_desc = f"Ausgang {self.get_dict_entry('outputs', unit_no)}"
             return out_desc
