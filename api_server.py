@@ -247,7 +247,6 @@ class ApiServer:
             # self.logger.debug("Websocket entry deleted for reinit")
             await self.evnt_srv.start()
             await asyncio.sleep(0.1)
-            self._opr_mode = False
             await self.set_operate_mode(rt_no)
             self.logger.info("--- Initialization finished")
             return "Init mode reset"

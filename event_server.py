@@ -532,7 +532,7 @@ class EventServer:
         """Close websocket, if object still available."""
         if self.websck != []:
             try:
-                await self.websck.close(close_timeout=1)
+                await self.websck.close()
                 self.websck = []
                 self.logger.debug("Websocket closed")
             except Exception as err_msg:
