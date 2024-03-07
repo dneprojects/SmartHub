@@ -42,12 +42,9 @@ class ModuleSettings:
 
     def get_io_interfaces(self):
         """Parse config files to extract names, etc."""
-        if self.typ[0] == 1:
-            self.leds = [IfDescriptor("", i, 1) for i in range(self.properties["leds"])]
-        else:
-            self.leds = [
-                IfDescriptor("", i + 1, 1) for i in range(self.properties["leds"])
-            ]
+        self.leds = [
+            IfDescriptor("", i, 1) for i in range(self.properties["leds"])
+        ]  # 0 for ambient light (sc mini) / night light led (sc)
         self.buttons = [
             IfDescriptor("", i + 1, 1) for i in range(self.properties["buttons"])
         ]
@@ -305,14 +302,9 @@ class ModuleSettings:
                                 self.inputs[arg_code - 10].nmbr = arg_code - 9
                         elif arg_code in range(18, 26):
                             # Description of module LEDs
-                            if self.typ[0] == 1:  # SC
-                                self.leds[arg_code - 17] = IfDescriptor(
-                                    text, arg_code - 17, 0
-                                )
-                            elif self.typ[0] == 50:  # Smart Controller Mini
-                                self.leds[arg_code - 18] = IfDescriptor(
-                                    text, arg_code - 17, 0
-                                )
+                            self.leds[arg_code - 17] = IfDescriptor(
+                                text, arg_code - 17, 0
+                            )
                         elif arg_code in range(40, 50):
                             # Description of Inputs
                             if self.type == "Smart Controller Mini":
@@ -355,6 +347,8 @@ class ModuleSettings:
             list = list[line_len : len(list)]  # Strip processed line
 
         if self.type == "Smart Controller Mini":
+            self.leds[0].name = "Ambient"
+            self.leds[0].nmbr = 0
             return True
         if self.type[:16] == "Smart Controller":
             self.dimmers[0].name = self.outputs[10].name

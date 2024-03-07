@@ -65,6 +65,7 @@ class EventServer:
         self.notify_id = 1
         self.evnt_running = False
         self.msg_appended = False
+        self.busy_starting = False
 
     def get_ident(self) -> str:
         """Return token"""
@@ -97,6 +98,9 @@ class EventServer:
         if (not (self.websck == None)) & (not (self.websck == [])):
             # websocket object registered if neither None nor []
             return True
+        if self.api_srv._netw_blocked:
+            # First run, don't start websocket, HA is not ready
+            return False
 
         if self.api_srv.is_addon:
             # SmartHub running with Home Assistant, use internal websocket
@@ -127,27 +131,19 @@ class EventServer:
             self.websck = None
             return False
 
-        connected = 0
-        while connected == 0:
-            try:
-                if self.api_srv.is_addon:
-                    self.websck = await websockets.connect(
-                        self._uri,
-                        extra_headers={"Authorization": f"Bearer {self.token}"},
-                    )
-                else:
-                    self.websck = await websockets.connect(self._uri)
-                resp = await self.websck.recv()
-                connected = 1
-            except Exception as err_msg:
-                await self.close_websocket()
-                if retry:
-                    self.logger.error("Websocket connect failed, retry in 1 seconds")
-                    await asyncio.sleep(1)
-                else:
-                    self.logger.error(f"Websocket connect failed: {err_msg}")
-                    connected = -1
-        if connected == -1:
+        try:
+            if self.api_srv.is_addon:
+                self.websck = await websockets.connect(
+                    self._uri,
+                    extra_headers={"Authorization": f"Bearer {self.token}"},
+                    open_timeout=1,
+                )
+            else:
+                self.websck = await websockets.connect(self._uri, open_timeout=1)
+            resp = await self.websck.recv()
+        except Exception as err_msg:
+            await self.close_websocket()
+            self.logger.error(f"Websocket connect failed: {err_msg}")
             return False
         if json.loads(resp)["type"] == "auth_required":
             try:
@@ -159,7 +155,7 @@ class EventServer:
                     f"Websocket connected to {self._uri}, response: {resp}"
                 )
             except Exception as err_msg:
-                self.logger.error(f"Websocket connect failed: {err_msg}")
+                self.logger.error(f"Websocket authentification failed: {err_msg}")
                 await self.close_websocket()
                 return False
         else:
@@ -179,12 +175,14 @@ class EventServer:
         """Task for handling router responses and events in api mode"""
 
         self.logger.debug("Event server started")
+        self.busy_starting = True
         self.evnt_running = True
-
-        success = await self.open_websocket(retry=True)
+        rtr_id = 100  # inital value, will be taken from event messages
+        success = await self.open_websocket()
 
         recvd_byte = b"\00"  # Initialization for resync
         while self.evnt_running:
+            self.busy_starting = False
             # Fast loop, immediate checks here without message/handler
             await asyncio.sleep(0.02)  # short break for other processes
             try:
@@ -232,175 +230,18 @@ class EventServer:
                         self.msg_appended = False
 
                     rt_event = prefix + tail
-
                     if len(tail) == 1:
                         self.logger.info(
                             f"API mode router message too short, tail: {tail}"
                         )
-                    elif (rt_event[4] == 133) & (rt_event[5] == 1):
-                        # Response should have been received before, not in event watcher
-                        self.logger.debug(
-                            "Warning, router event message: Operate mode started, should have been received in Srv mode"
-                        )
-                        self.logger.debug(f"     Complete meassage sent: {rt_event}")
-                        self.api_srv._opr_mode = True
-                        tail = self.extract_rest_msg(rt_event, 9)
-                    elif (rt_event[4] == 133) & (rt_event[5] == 0):
-                        # Last response in Opr mode, shut down event watcher
-                        self.logger.debug(
-                            "API mode router message: Mirror/events stopped, stopping router event watcher"
-                        )
-                        if len(rt_rd._buffer) > 0:
-                            prefix = await rt_rd.readexactly(4)
-                            tail = await rt_rd.readexactly(prefix[3] - 3)
-                            rt_event = prefix + tail
-                        self.evnt_running = False
-                    elif rt_event[4] == 100:  # router chan status
-                        if rt_event[6] != 0:
-                            self.api_srv.routers[rtr_id - 1].chan_status = rt_event[
-                                5:47
-                            ]
-                            self.logger.debug(
-                                f"API mode router message: Router channel status, mode 0: {rt_event[6]}"
-                            )
-                        else:
-                            self.logger.warning(
-                                "API mode router message: Router channel status with mode=0, discarded"
-                            )
-                        tail = self.extract_rest_msg(rt_event, 48)
-                    elif rt_event[4] == 50:
-                        self.logger.debug(
-                            f"API mode router message, collective command: {rt_event[5]}"
-                        )
-                        tail = self.extract_rest_msg(rt_event, 7)
-                    elif rt_event[4] == 68:
-                        self.logger.debug(
-                            f"API mode router message, direct command: Module {rt_event[5]} - Command {rt_event[6:-1]}"
-                        )
-                        tail = self.extract_rest_msg(rt_event, rt_event[8] + 8)
-                    elif rt_event[4] == 87:
-                        # Forward command response
-                        self.logger.info(
-                            f"API mode router message, forward response: {rt_event[4:-1]}"
-                        )
-                        if self.fwd_hdlr is None:
-                            # Instantiate once if needed
-                            self.fwd_hdlr = ForwardHdlr(self.api_srv)
-                            self.logger.info("Forward handler instantiated")
-                        await self.fwd_hdlr.send_forward_response(rt_event[4:-1])
-                        self.msg_appended = False
-                    elif rt_event[4] == 134:  # 0x86: System event
-                        ev_list = None
-                        if rt_event[5] == 254:
-                            self.logger.info("Event mode started")
-                            m_len = 8
-                        elif rt_event[5] == 255:
-                            self.logger.info("Event mode stopped")
-                            m_len = 8
-                        elif rt_event[6] == 163:
-                            self.logger.warning(
-                                f"Unknown event command 163: {rt_event[6:-1]}"
-                            )
-                            m_len = 7
-                        elif rt_event[3] == 6:
-                            self.logger.warning(
-                                f"Unknown event command: {rt_event[6:-1]}"
-                            )
-                            m_len = 7
-                        else:
-                            mod_id = rt_event[5]
-                            event_id = rt_event[6]
-                            args = rt_event[7:-1]
-                            self.logger.debug(
-                                f"New router event type {event_id} from module {mod_id}: {args}"
-                            )
-                            m_len = 9
-                            match event_id:
-                                case EVENT_IDS.BTN_SHORT:
-                                    ev_list = [mod_id, HA_EVENTS.BUTTON, args[0], 1]
-                                case EVENT_IDS.BTN_LONG:
-                                    ev_list = [mod_id, HA_EVENTS.BUTTON, args[0], 2]
-                                case EVENT_IDS.BTN_LONG_END:
-                                    ev_list = [mod_id, HA_EVENTS.BUTTON, args[0], 3]
-                                case EVENT_IDS.SW_ON:
-                                    ev_list = [mod_id, HA_EVENTS.SWITCH, args[0], 1]
-                                case EVENT_IDS.SW_OFF:
-                                    ev_list = [mod_id, HA_EVENTS.SWITCH, args[0], 0]
-                                case EVENT_IDS.OUT_ON:
-                                    ev_list = [mod_id, HA_EVENTS.OUTPUT, args[0], 1]
-                                case EVENT_IDS.OUT_OFF:
-                                    ev_list = [mod_id, HA_EVENTS.OUTPUT, args[0], 0]
-                                case EVENT_IDS.EKEY_FNGR:
-                                    m_len += 1
-                                    ev_list = [
-                                        mod_id,
-                                        HA_EVENTS.FINGER,
-                                        args[0],
-                                        args[1],
-                                    ]
-                                case EVENT_IDS.IRDA_SHORT:
-                                    m_len += 1
-                                    ev_list = [
-                                        mod_id,
-                                        HA_EVENTS.IR_CMD,
-                                        args[0],
-                                        args[1],
-                                    ]
-                                case EVENT_IDS.FLG_CHG:
-                                    m_len += 1
-                                    ev_list = [mod_id, HA_EVENTS.FLAG, args[0], args[1]]
-                                case EVENT_IDS.LOGIC_CHG:
-                                    m_len += 1
-                                    ev_list = [
-                                        mod_id,
-                                        HA_EVENTS.COUNTER,
-                                        args[0],
-                                        args[1],
-                                    ]
-                                case EVENT_IDS.DIR_CMD:
-                                    ev_list = [mod_id, HA_EVENTS.DIR_CMD, args[0], 0]
-                                case EVENT_IDS.SYS_ERR:
-                                    m_len += 1
-                                    ev_list = [0, HA_EVENTS.SYS_ERR, args[0], args[1]]
-                                case 68:
-                                    m_len = rt_event[8] + 7
-                                    self.logger.warning(f"Event 68: {rt_event}")
-                                case other:
-                                    self.logger.warning(f"Unknown event id: {event_id}")
-                                    return
-                            await self.notify_event(rtr_id, ev_list)
-                        tail = self.extract_rest_msg(rt_event, m_len)
-
-                    elif rt_event[4] == 135:  # 0x87: System mirror
-                        # rt_hdlr parses msg, initiates module status update, get events
-                        mirr_events = self.api_srv.routers[rtr_id - 1].hdlr.parse_event(
-                            rt_event[1:]
-                        )
-                        if mirr_events != None:
-                            # send event to IP client
-                            await self.handle_mirror_events(mirr_events, rtr_id)
-
-                        tail = self.extract_rest_msg(rt_event, 232)
-                    elif rt_event[4] == 137:  # System mode
-                        if (rt_event[3] == 6) & (rt_event[5] != 75):
-                            self.api_srv.routers[rtr_id - 1].mode0 = rt_event[5]
-                            self.logger.debug(
-                                f"API mode router message, system mode: {rt_event[5]}"
-                            )
-                        elif rt_event[3] != 6:
-                            self.logger.warning(
-                                f"API mode router message, invalid system mode length: {rt_event}"
-                            )
-                        else:
-                            self.logger.debug(
-                                f"API mode router message, system mode: 'Config'"
-                            )
                     else:
-                        # Discard resonse of API command
-                        self.logger.warning(
-                            f"API mode router message, response discarded: {rt_event}"
+                        msg_len = await self.parse_event_message(
+                            rt_event, rt_rd, rtr_id
                         )
-                        pass
+                    if msg_len:
+                        # Looks if message is longer than expexted msg_len
+                        tail = self.extract_rest_msg(rt_event, msg_len)
+
             except RuntimeError as err_msg:
                 self.logger.error(f"Event server runtime error: {err_msg.args[0]}")
                 await self.close_websocket()
@@ -408,18 +249,110 @@ class EventServer:
                     self.logger.warning(
                         "Webwocket reconnect failed, websocket closed, event server terminated"
                     )
-                    self.evnt_running = False
-                    await self.close_websocket()
+                    await self.api_srv.stop_opr_mode(rtr_id)
                     await self.stop()
-                    await self.api_srv.stop_opr_mode(100)
-                    await self.api_srv.start_opr_mode(100)
+                    await self.api_srv.start_opr_mode(rtr_id)
             except Exception as error_msg:
                 # Use to get cancel event in api_server
                 self.logger.error(
                     f"Event server exception: {error_msg}, event server still running"
                 )
 
-    async def handle_mirror_events(self, mirr_events, rtr_id):
+    async def parse_event_message(self, rt_event, rt_rd, rtr_id) -> int:
+        """Parse event code."""
+
+        m_len = 0  # Correct length of parsed message, will be returned
+
+        if (rt_event[4] == 133) & (rt_event[5] == 1):
+            # Response should have been received before, not in event watcher
+            self.logger.debug(
+                "Warning, router event message: Operate mode started, should have been received in Srv mode"
+            )
+            self.logger.debug(f"     Complete meassage sent: {rt_event}")
+            self.api_srv._opr_mode = True
+            m_len = 9
+
+        elif (rt_event[4] == 133) & (rt_event[5] == 0):
+            # Last response in Opr mode, shut down event watcher
+            self.logger.debug(
+                "API mode router message: Mirror/events stopped, stopping router event watcher"
+            )
+            # if len(rt_rd._buffer) > 0:
+            #     prefix = await rt_rd.readexactly(4)
+            #     tail = await rt_rd.readexactly(prefix[3] - 3)
+            #     rt_event = prefix + tail
+            self.evnt_running = False
+
+        elif rt_event[4] == 100:  # router chan status
+            if rt_event[6] != 0:
+                self.api_srv.routers[rtr_id - 1].chan_status = rt_event[5:47]
+                self.logger.debug(
+                    f"API mode router message: Router channel status, mode 0: {rt_event[6]}"
+                )
+            else:
+                self.logger.warning(
+                    "API mode router message: Router channel status with mode=0, discarded"
+                )
+            m_len = 48
+
+        elif rt_event[4] == 50:
+            self.logger.debug(
+                f"API mode router message, collective command: {rt_event[5]}"
+            )
+            m_len = 7
+
+        elif rt_event[4] == 68:
+            self.logger.debug(
+                f"API mode router message, direct command: Module {rt_event[5]} - Command {rt_event[6:-1]}"
+            )
+            m_len = rt_event[8] + 8
+
+        elif rt_event[4] == 87:
+            # Forward command response
+            self.logger.info(
+                f"API mode router message, forward response: {rt_event[4:-1]}"
+            )
+            if self.fwd_hdlr is None:
+                # Instantiate once if needed
+                self.fwd_hdlr = ForwardHdlr(self.api_srv)
+                self.logger.info("Forward handler instantiated")
+            await self.fwd_hdlr.send_forward_response(rt_event[4:-1])
+            self.msg_appended = False
+
+        elif rt_event[4] == 134:  # 0x86: System event
+            m_len = await self.notify_system_events(rt_event, rtr_id)
+
+        elif rt_event[4] == 135:  # 0x87: System mirror
+            # rt_hdlr parses msg, initiates module status update, get events
+            mirr_events = self.api_srv.routers[rtr_id - 1].hdlr.parse_event(
+                rt_event[1:]
+            )
+            if mirr_events != None:
+                # send event to IP client
+                await self.notify_mirror_events(mirr_events, rtr_id)
+            m_len = 232
+
+        elif rt_event[4] == 137:  # System mode
+            if (rt_event[3] == 6) & (rt_event[5] != 75):
+                self.api_srv.routers[rtr_id - 1].mode0 = rt_event[5]
+                self.logger.debug(
+                    f"API mode router message, system mode: {rt_event[5]}"
+                )
+            elif rt_event[3] != 6:
+                self.logger.warning(
+                    f"API mode router message, invalid system mode length: {rt_event}"
+                )
+            else:
+                self.logger.debug(f"API mode router message, system mode: 'Config'")
+
+        else:
+            # Discard resonse of API command
+            self.logger.warning(
+                f"API mode router message, response discarded: {rt_event}"
+            )
+        return m_len
+
+    async def notify_mirror_events(self, mirr_events, rtr_id):
         """Check for multiple events and call notify."""
         for m_event in mirr_events:
             if (m_event[1] == HA_EVENTS.FLAG) & (m_event[2] > 999):
@@ -440,11 +373,96 @@ class EventServer:
             else:
                 await self.notify_event(rtr_id, m_event)
 
+    async def notify_system_events(self, rt_event, rtr_id) -> int:
+        """Parse received event message and call notify."""
+
+        ev_list = None
+        if rt_event[5] == 254:
+            self.logger.info("Event mode started")
+            m_len = 8
+        elif rt_event[5] == 255:
+            self.logger.info("Event mode stopped")
+            m_len = 8
+        elif rt_event[6] == 163:
+            self.logger.warning(f"Unknown event command 163: {rt_event[6:-1]}")
+            m_len = 7
+        elif rt_event[3] == 6:
+            self.logger.warning(f"Unknown event command: {rt_event[6:-1]}")
+            m_len = 7
+        else:
+            mod_id = rt_event[5]
+            event_id = rt_event[6]
+            args = rt_event[7:-1]
+            self.logger.debug(
+                f"New router event type {event_id} from module {mod_id}: {args}"
+            )
+            m_len = 9
+            match event_id:
+                case EVENT_IDS.BTN_SHORT:
+                    ev_list = [mod_id, HA_EVENTS.BUTTON, args[0], 1]
+                case EVENT_IDS.BTN_LONG:
+                    ev_list = [mod_id, HA_EVENTS.BUTTON, args[0], 2]
+                case EVENT_IDS.BTN_LONG_END:
+                    ev_list = [mod_id, HA_EVENTS.BUTTON, args[0], 3]
+                case EVENT_IDS.SW_ON:
+                    ev_list = [mod_id, HA_EVENTS.SWITCH, args[0], 1]
+                case EVENT_IDS.SW_OFF:
+                    ev_list = [mod_id, HA_EVENTS.SWITCH, args[0], 0]
+                case EVENT_IDS.OUT_ON:
+                    ev_list = [mod_id, HA_EVENTS.OUTPUT, args[0], 1]
+                case EVENT_IDS.OUT_OFF:
+                    ev_list = [mod_id, HA_EVENTS.OUTPUT, args[0], 0]
+                case EVENT_IDS.EKEY_FNGR:
+                    m_len += 1
+                    ev_list = [
+                        mod_id,
+                        HA_EVENTS.FINGER,
+                        args[0],
+                        args[1],
+                    ]
+                case EVENT_IDS.IRDA_SHORT:
+                    m_len += 1
+                    ev_list = [
+                        mod_id,
+                        HA_EVENTS.IR_CMD,
+                        args[0],
+                        args[1],
+                    ]
+                case EVENT_IDS.FLG_CHG:
+                    m_len += 1
+                    ev_list = [mod_id, HA_EVENTS.FLAG, args[0], args[1]]
+                case EVENT_IDS.LOGIC_CHG:
+                    m_len += 1
+                    ev_list = [
+                        mod_id,
+                        HA_EVENTS.COUNTER,
+                        args[0],
+                        args[1],
+                    ]
+                case EVENT_IDS.DIR_CMD:
+                    ev_list = [mod_id, HA_EVENTS.DIR_CMD, args[0], 0]
+                case EVENT_IDS.SYS_ERR:
+                    m_len += 1
+                    ev_list = [0, HA_EVENTS.SYS_ERR, args[0], args[1]]
+                case 68:
+                    m_len = rt_event[8] + 7
+                    self.logger.warning(f"Event 68: {rt_event}")
+                case other:
+                    self.logger.warning(f"Unknown event id: {event_id}")
+                    return m_len
+            await self.notify_event(rtr_id, ev_list)
+            return m_len
+
     async def notify_event(self, rtr: int, event: list[int]):
         """Trigger event on remote host (e.g. home assistant)"""
 
         if (self.websck == []) | (self.websck == None):
-            success = await self.open_websocket(retry=True)
+            success = await self.open_websocket()
+        else:
+            success = True
+        if not success:
+            self.logger.warning("Failed to send event via websocket, open failed")
+            return
         if event == None:
             return
         try:
@@ -487,7 +505,7 @@ class EventServer:
 
     async def ping_pong_reconnect(self) -> bool:
         """Check for living websocket connection, reconnect if needed."""
-        success = await self.open_websocket(retry=False)
+        success = await self.open_websocket()
         if success:
             try:
                 event_cmd = WEBSOCK_MSG.ping_msg
@@ -514,16 +532,22 @@ class EventServer:
         """Close websocket, if object still available."""
         if self.websck != []:
             try:
-                await self.websck.close()
+                await self.websck.close(close_timeout=1)
                 self.websck = []
                 self.logger.debug("Websocket closed")
             except Exception as err_msg:
                 self.logger.warning(f"Websocket close failed: {err_msg}")
 
-    def start(self):
+    async def start(self):
         """Start event server task."""
         if self.running():
             return
+        if self.api_srv._init_mode:
+            return
+        if self.busy_starting:
+            self.logger.debug("New EventSrv task is aleady starting")
+            return
+        self.busy_starting = True
         self.logger.debug("Starting new EventSrv task")
         self.ev_srv_task = self.api_srv.loop.create_task(
             self.watch_rt_events(self.api_srv._rt_serial[0])
@@ -531,6 +555,7 @@ class EventServer:
 
     async def stop(self):
         """Stop running event server task."""
+        self.evnt_running = False
         if not self.running():
             return
         self.logger.debug("Stopping EventSrv task")
@@ -544,7 +569,7 @@ class EventServer:
             while (self.ev_srv_task._state != "FINISHED") & (t_wait < t_max):
                 await asyncio.sleep(0.1)
                 t_wait += 0.1
-            if t_wait < 2:
+            if t_wait < t_max:
                 self.logger.debug(
                     f"EventSrv terminated successfully after {round(t_wait,1)} sec"
                 )
@@ -557,12 +582,14 @@ class EventServer:
     def running(self) -> bool:
         """Return status of event server task."""
         if self.ev_srv_task == []:
-            self.logger.debug("No EventSrv object instantiated")
+            self.logger.debug(
+                "Event server not running, no EventSrv object instantiated"
+            )
             return False
         if self.ev_srv_task.done():
-            self.logger.debug("EventSrv 'done'")
+            self.logger.debug("Event server not running, EventSrv 'done'")
             return False
         if self.ev_srv_task.cancelled():
-            self.logger.debug("EventSrv 'cancelled'")
+            self.logger.debug("Event server not running, EventSrv 'cancelled'")
             return False
         return True

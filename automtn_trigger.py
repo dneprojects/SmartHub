@@ -621,8 +621,8 @@ class AutomationTrigger:
             if len(outp.name.strip()) > 0:
                 opt_str += f'<option value="{outp.nmbr}">{outp.name}</option>'
         for led in self.settings.leds:
-            if (self.settings.typ[0] == 1) & (led.nmbr == 0):
-                opt_str += f'<option value="16">Nachtlicht</option>'
+            if led.nmbr == 0:
+                opt_str += f'<option value="16">{led.name}</option>'
             elif len(led.name.strip()) > 0:
                 opt_str += f'<option value="{led.nmbr + 16}">LED {led.name}</option>'
             else:

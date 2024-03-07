@@ -46,6 +46,7 @@ class ApiServer:
         self._netw_blocked = False  # For blocking of network api server request
         self._auto_restart_opr = False  # For automatic restart of Opr after api call
         self._init_mode = True
+        self._first_api_cmd = True
 
     async def get_initial_status(self):
         """Starts router object and reads complete system status"""
@@ -69,7 +70,7 @@ class ApiServer:
             self._api_cmd_processing = False
             self._auto_restart_opr = False
             block_time = 0
-            while self._netw_blocked:
+            while self._netw_blocked | self.evnt_srv.busy_starting:
                 # wait for end of block
                 await asyncio.sleep(1)
                 block_time += 1
@@ -83,6 +84,12 @@ class ApiServer:
             self._api_cmd_processing = True
             c_len = int(pre[2] << 8) + int(pre[1])
             request = await ip_reader.readexactly(c_len - 3)
+
+            # Block api commands until everthing is setup the first time
+            if self._first_api_cmd:
+                self._netw_blocked = True
+                self._first_api_cmd = False
+                self.logger.debug("Network blocked for first initialization")
 
             # Create and process message object
             self.api_msg = ApiMessage(self, pre + request, c_len)
@@ -130,6 +137,9 @@ class ApiServer:
             if self._auto_restart_opr & (not self._opr_mode) & (not self._init_mode):
                 await self.set_operate_mode(rt)
             await asyncio.sleep(0.1)  # pause for other processes to be scheduled
+            if self._netw_blocked:
+                self._netw_blocked = False
+                self.logger.debug("Network block released")
 
         self.sm_hub.restart_hub(False)
 
@@ -195,19 +205,20 @@ class ApiServer:
             return True
         if self._opr_mode:
             self.logger.debug("Already in Operate mode, recovering event server")
-            self.evnt_srv.start()
+            await self.evnt_srv.start()
             await asyncio.sleep(0.1)
-        elif not self._init_mode:
-            m_chr = chr(int(self.mirror_mode_enabled))
-            e_chr = chr(int(self.event_mode_enabled))
-            cmd = RT_CMDS.SET_OPR_MODE.replace("<mirr>", m_chr).replace("<evnt>", e_chr)
-            await self.hdlr.handle_router_cmd_resp(rt_no, cmd)
-            if self.hdlr.rt_msg._resp_code == 133:
-                self.logger.info("--- Switched to Operate mode")
-                self._opr_mode = True
-            # Start event handler
-            self.evnt_srv.start()
-            await asyncio.sleep(0.1)
+            return self._opr_mode
+        # Send command to router
+        m_chr = chr(int(self.mirror_mode_enabled))
+        e_chr = chr(int(self.event_mode_enabled))
+        cmd = RT_CMDS.SET_OPR_MODE.replace("<mirr>", m_chr).replace("<evnt>", e_chr)
+        await self.hdlr.handle_router_cmd_resp(rt_no, cmd)
+        # if self.hdlr.rt_msg._resp_code == 133:
+        self.logger.info("--- Switched to Operate mode")
+        self._opr_mode = True
+        # Start event handler
+        await self.evnt_srv.start()
+        await asyncio.sleep(0.1)
         return self._opr_mode
 
     async def reinit_opr_mode(self, rt_no, mode):
@@ -219,6 +230,7 @@ class ApiServer:
             self.logger.debug(
                 "Stopping EventSrv task, setting Srv mode for initialization, doing rollover"
             )
+            await asyncio.sleep(0.1)
             logging.root.handlers[1].doRollover()  # Open new log file
             self.logger.debug(
                 "Stopping EventSrv task, setting Srv mode for initialization, rollover done"
@@ -230,10 +242,10 @@ class ApiServer:
             # finishing re-init with mode == 1
             self._init_mode = False
             self.logger.debug("Re-initializing EventSrv task")
-            await self.evnt_srv.stop()
-            await self.evnt_srv.close_websocket()
-            self.logger.debug("Websocket entry deleted for reinit")
-            self.evnt_srv.start()
+            # await self.evnt_srv.stop()
+            # await self.evnt_srv.close_websocket()
+            # self.logger.debug("Websocket entry deleted for reinit")
+            await self.evnt_srv.start()
             await asyncio.sleep(0.1)
             self._opr_mode = False
             await self.set_operate_mode(rt_no)
@@ -258,8 +270,8 @@ class ApiServer:
 
     async def set_initial_server_mode(self, rt_no=1):
         """Turn on server mode: disable router events"""
+        self._init_mode = True
         self._opr_mode = False
         await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.SET_SRV_MODE)
         await self.evnt_srv.stop()
-        self._init_mode = True
         self.logger.debug("API mode turned off initially")

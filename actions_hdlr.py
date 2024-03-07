@@ -243,7 +243,7 @@ class ActionsHdlr(HdlrBase):
                 self.check_router_module_no(rt, mod)
                 self.check_arg(
                     self._args[0],
-                    [1, 2, 3, 4, 5],
+                    range(5),
                     "Error: led no out of range 1..8, corners 41..44, all 100",
                 )
                 if self.args_err:
@@ -251,9 +251,9 @@ class ActionsHdlr(HdlrBase):
                 inp_code = self._args[0]
                 if self._spec == spec.OUTP_RBG_OFF:
                     rt_cmd = RT_CMDS.SWOFF_RGB_CORNR
-                    if inp_code == 5:
+                    if inp_code == 0:
                         rt_cmd = RT_CMDS.SWOFF_RGB_AMB
-                elif inp_code == 5:
+                elif inp_code == 0:
                     rt_cmd = RT_CMDS.SET_RGB_AMB_COL
                 else:
                     rt_cmd = RT_CMDS.SET_RGB_CORNR
@@ -262,10 +262,10 @@ class ActionsHdlr(HdlrBase):
                     .replace("<g>", chr(30))
                     .replace("<b>", chr(30))
                 )
-                if inp_code < 5:
-                    inp_code += 40
-                elif inp_code == 5:
+                if inp_code == 0:
                     inp_code = 100
+                else:
+                    inp_code += 40
                 self._rt_command = (
                     rt_cmd.replace("<rtr>", chr(rt))
                     .replace("<mod>", chr(mod))
@@ -278,13 +278,15 @@ class ActionsHdlr(HdlrBase):
                     rt_cmd = RT_CMDS.SET_OUT_OFF
                 else:
                     rt_cmd = RT_CMDS.SET_OUT_ON
-                out_msk_8 = 1 << (self._args[0] + 1)
+                #  out_msk = 1 << (self._args[0] + 16)
+                #  quick fix: use outputs 2..6, change also in Habitron module.py
+                out_msk = 1 << (self._args[0] + 2)
                 self._rt_command = (
                     rt_cmd.replace("<rtr>", chr(rt))
                     .replace("<mod>", chr(mod))
-                    .replace("<outl>", chr(out_msk_8))
-                    .replace("<outm>", chr(0))
-                    .replace("<outh>", chr(0))
+                    .replace("<outl>", chr(out_msk & 0xFF))
+                    .replace("<outm>", chr((out_msk >> 8) & 0xFF))
+                    .replace("<outh>", chr((out_msk >> 16) & 0xFF))
                 )
 
             case spec.OUTP_RBG_VAL:
@@ -292,17 +294,17 @@ class ActionsHdlr(HdlrBase):
                 self.check_router_module_no(rt, mod)
                 self.check_arg(
                     self._args[0],
-                    [1, 2, 3, 4, 5],
+                    range(5),
                     "Error: led no out of range 1..8, corners 41..44, all 100",
                 )
                 if self.args_err:
                     return
                 task = 0x01
                 inp_code = self._args[0]
-                if inp_code < 5:
-                    inp_code += 40
-                elif inp_code == 5:
+                if inp_code == 0:
                     inp_code = 100
+                else:
+                    inp_code += 40
                 self._rt_command = (
                     RT_CMDS.SET_RGB_LED.replace("<rtr>", chr(rt))
                     .replace("<mod>", chr(mod))
@@ -322,13 +324,15 @@ class ActionsHdlr(HdlrBase):
                     rt_cmd = RT_CMDS.SET_OUT_OFF
                 else:
                     rt_cmd = RT_CMDS.SET_OUT_ON
-                out_msk_8 = 1 << (self._args[0] + 1)
+                #  out_msk = 1 << (self._args[0] + 16)
+                #  quick fix: use outputs 2..6, change also in Habitron module.py
+                out_msk = 1 << (self._args[0] + 2)
                 self._rt_command = (
                     rt_cmd.replace("<rtr>", chr(rt))
                     .replace("<mod>", chr(mod))
-                    .replace("<outl>", chr(out_msk_8))
-                    .replace("<outm>", chr(0))
-                    .replace("<outh>", chr(0))
+                    .replace("<outl>", chr(out_msk & 0xFF))
+                    .replace("<outm>", chr((out_msk >> 8) & 0xFF))
+                    .replace("<outh>", chr((out_msk >> 16) & 0xFF))
                 )
                 self.logger.debug(
                     f"Router {rt}, module {mod}, led {inp_code}: turn LED to R:{self._args[1]} G:{self._args[2]} B:{self._args[3]}"
