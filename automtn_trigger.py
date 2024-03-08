@@ -450,7 +450,7 @@ class AutomationTrigger:
                 event_desc = ""
             elif self.event_code in EventsSets[SelTrgCodes["viscmd"]]:
                 self.event_arg_name = self.get_dict_entry(
-                    "vis_cmds", self.event_arg1 + 256 * self.event_arg2
+                    "vis_cmds", self.event_arg1 * 256 + self.event_arg2
                 )
                 trig_command = f"Visualisierungsereignis {self.event_arg_name}"
                 event_desc = ""
@@ -668,7 +668,7 @@ class AutomationTrigger:
                 )
 
         opt_str = '<option value="">-- Befehl wählen --</option>'
-        if len(self.settings.vis_cmds) > 0:
+        if (len(self.settings.vis_cmds) > 0) & (step == 0):
             for cmd in self.settings.vis_cmds:
                 opt_str += f'<option value="{cmd.nmbr}">{cmd.name}</option>\n'
             page = page.replace(

@@ -81,6 +81,10 @@ class HdlrBase:
                 await asyncio.wait_for(self.rt_msg.rt_recv(), timeout=1)
             except TimeoutError:
                 self.logger.warning("Timeout receiving router response, returning 0 0")
+            except Exception as err_msg:
+                self.logger.warning(
+                    f"Error receiving router response: {err_msg}, returning 0 0"
+                )
             return
         # no response possible
         self.logger.warning(

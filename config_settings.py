@@ -519,12 +519,8 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             tbl_entries.update({tbl_data[ci].nmbr: ci})
     tbl_entries = sorted(tbl_entries.items())
     if key in ["leds"]:
-        if main_app["settings"].typ[0] == 1:
-            # For SC skip night light
-            tbl_entries = tbl_entries[1:]
-        if main_app["settings"].typ[0] == 50:
-            # For small SC skip ambient light
-            tbl_entries = tbl_entries[:-1]
+        # For SC skip night light, for small SC skip ambient light
+        tbl_entries = tbl_entries[1:]
     ci = 0
     for entry in tbl_entries:
         ci = entry[1]

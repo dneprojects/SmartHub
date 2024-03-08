@@ -364,7 +364,7 @@ class RT_CMDS:
     SET_DIMM_VAL = "\x2a<rtr>\x0a\x44<mod>\x06\x0f<out><val>\xff"
     SET_COVER_POS = "\x2a<rtr>\x0c\x44<mod>\x08\x12\x45<sob><out><val>\xff"
     SET_TEMP = "\x2a<rtr>\x0b\x44<mod>\x07\xdc<sel><tmpl><tmph>\xff"
-    CALL_VIS_CMD = "\x2a<rtr>\x0d\x44<mod>\x09\x1f\xc7\x00\x1f<cmdl><cmdh>\xff"
+    CALL_VIS_CMD = "\x2a<rtr>\x0d\x44<mod>\x09\x1f\xc7\x00\x1f<cmdh><cmdl>\xff"  # hi/lo
     CALL_COLL_CMD = "\x2a<rtr>\x06\x32<cmd>\xff"
 
     SET_LOGIC_UNIT = "\x2a<rtr>\x0d\x44<mod>\x09\x06\x01\x53<lno><md><act>\xff"

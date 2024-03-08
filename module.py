@@ -138,7 +138,7 @@ class HbtnModule:
             "Smart In 8/230V",
             "Fanekey",
         ]:
-            pass
+            pass  # Don't track update changes for these modules
         else:
             if self._type in [
                 "Smart Detect 180",
@@ -173,7 +173,7 @@ class HbtnModule:
                 i0 = MirrIdx.DIM_1
                 i1 = MirrIdx.T_SHORT
                 i2 = MirrIdx.LOGIC
-                i3 = MirrIdx.LOGIC_OUT
+                i3 = MirrIdx.FLAG_LOC + 2
                 i_diff = self.compare_status(
                     self.status[i2:i3], new_status[i2:i3], i_diff, i2 - i0
                 )

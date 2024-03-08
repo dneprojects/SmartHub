@@ -325,7 +325,6 @@ class ModuleSettings:
                             self.flags.append(IfDescriptor(text, arg_code - 119, 0))
                         elif arg_code in range(140, 173):
                             # Description of vis commands (max 32)
-
                             self.vis_cmds.append(
                                 IfDescriptor(
                                     text[2:], ord(text[1]) * 256 + ord(text[0]), 0
