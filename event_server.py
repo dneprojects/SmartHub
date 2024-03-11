@@ -581,7 +581,7 @@ class EventServer:
                 self.ev_srv_task.cancel()
                 self.logger.debug(f"EventSrv stoppped after {t_max} sec")
             self.ev_srv_task = []
-            await self.close_websocket()
+            # await self.close_websocket()
 
     def running(self) -> bool:
         """Return status of event server task."""

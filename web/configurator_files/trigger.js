@@ -65,7 +65,7 @@ function initTrigElements(trg_code, trg_arg1, trg_arg2, trg_time) {
     }
     else if (viscmd_trg.has(trg_code)) {
         setElement("trigger-select", 31);
-        setElement("dircmd-select", trg_arg1 * 256 + trg_arg2);
+        setElement("viscmd-select", trg_arg1 * 256 + trg_arg2);
     }
     else if (logic_trg.has(trg_code)) {
         setElement("trigger-select", 6);

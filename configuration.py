@@ -12,7 +12,7 @@ from automation import AutomationDefinition, AutomationsSet
 
 
 class ModuleSettings:
-    """Object with all module settings."""
+    """Object with all module settings, including automations."""
 
     def __init__(self, module):
         """Fill all properties with module's values."""
@@ -401,11 +401,12 @@ class ModuleSettings:
                 # entry for local module
                 if int(line[2]) == 1:
                     # local flag (Merker)
-                    self.flags.append(IfDescriptor(entry_name, entry_no, 0))
+                    if self.unit_not_exists(self.flags, entry_name):
+                        self.flags.append(IfDescriptor(entry_name, entry_no, 0))
                 elif int(line[2]) == 4:
                     # local visualization command, needed if not stored in smc
                     entry_no = int.from_bytes(resp[3:5], "little")
-                    if len(self.vis_cmds) == 0:
+                    if self.unit_not_exists(self.vis_cmds, entry_name):
                         self.vis_cmds.append(IfDescriptor(entry_name, entry_no, 0))
                 elif int(line[2]) == 5:
                     # logic element, needed if not stored in smc
@@ -657,6 +658,14 @@ class ModuleSettings:
         return o_no
 
 
+    def unit_not_exists(self, mod_units: IfDescriptor, entry_name: str) -> bool:
+        """Check for existing unit based on name."""
+        for exist_unit in mod_units:
+            if exist_unit.name == entry_name:
+                return False
+        return True
+
+
 class RouterSettings:
     """Object with all router settings."""
 
@@ -785,7 +794,7 @@ class RouterSettings:
 
 
 class ModuleSettingsLight(ModuleSettings):
-    """Object with all module settings, including automations."""
+    """Object with all module settings, without automations."""
 
     def __init__(self, module):
         """Fill all properties with module's values."""

@@ -552,7 +552,6 @@ body,
    z-index: 3;
    padding-right: 10px;
    padding-left: 10px;
-   background: url(design/dehn.png) repeat-y center top;
 }
 
 
@@ -571,7 +570,6 @@ a:hover {
    position: relative;
    height: 280px;
    z-index: 10;
-   background: url(design/header_bg.png) repeat-x left top;
    margin-bottom: -150px;
 }
 
@@ -705,18 +703,6 @@ body.produkte.sub #right h1 {
    padding-bottom: 0px;
 }
 
-body.produkte.sub #right .ce_text a {
-   padding-left: 23px;
-   line-height: 50px;
-   background: url(images/icon_pdf.png) no-repeat left center;
-   display: block;
-   height: 50px;
-}
-
-.downloadicon span a {
-   padding-left: 23px;
-   background: url(images/icon_pdf.png) no-repeat left center;
-}
 
 #right .ce_text {
    padding-right: 25px;
@@ -728,7 +714,6 @@ body.produkte.sub #right .ce_text a {
    margin-top: 25px;
    margin-right: 189px;
    margin-left: 189px;
-   background: url(footer_inside_bg.png) repeat-x left top;
 }
 
 .ce_text li {
@@ -900,15 +885,6 @@ table.schnellzugriff td.even {
 
 /* ---------------------------------------------------------Design Fullwidth---------------------------- */
 
-body.fullwidth #content, 
-body.fullwidth #mitte, 
-body.fullwidth #mitte_automtn,
-body.start #content,
-body.start #mitte,
-body.start #mitte_automtn {
-   background: url(design/dehn_fullwidth.png) repeat-y center top;
-}
-
 body.fullwidth #right {
    left: 0px;
    top: 0px;
@@ -922,12 +898,6 @@ body.fullwidth #mitte_automtn {
 }
 
 /* ---------------------------------------------------------Design Accordion_Seiten---------------------------- */
-
-body.acc #content,
-body.acc #mitte,
-body.acc #mitte_automtn {
-   background: url(design/dehn_fullwidth.png) repeat-y center top;
-}
 
 body.acc #right {
    float: right;
