@@ -9,9 +9,9 @@ class AutomationsSet:
 
     def __init__(self, settings):
         """Initialize set of automations."""
-        self.local: list(AutomationDefinition) = []
-        self.external: list(AutomationDefinition) = []
-        self.forward: list(AutomationDefinition) = []
+        self.local: list[AutomationDefinition] = []
+        self.external: list[AutomationDefinition] = []
+        self.forward: list[AutomationDefinition] = []
         self.logger = logging.getLogger(__name__)
         self.settings = settings
         self.get_autmn_dict(settings)
@@ -64,7 +64,7 @@ class AutomationsSet:
                 line = list[0:line_len]
                 src_rt = int(line[0])
                 src_mod = int(line[1])
-                if ((src_rt == 0) | (src_rt == 250)) & (
+                if ((src_rt == 0) | (src_rt == 199) | (src_rt == 250)) & (
                     src_mod == 0
                 ):  # local automation
                     self.local.append(

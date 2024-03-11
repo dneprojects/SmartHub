@@ -3,6 +3,7 @@ requirements.txt
 *.bin
 *.pem
 *.log
+*.set
 *.smb
 *.smc
 *.smg
@@ -11,7 +12,6 @@ requirements.txt
 *.1
 *.2
 *.3
-*.set
 __pycache__/
 nul
 launch.json

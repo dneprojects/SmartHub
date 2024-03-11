@@ -22,6 +22,8 @@ HOMEPAGE = "configurator.html"
 HUB_HOMEPAGE = "hub.html"
 CONF_HOMEPAGE = "home.html"
 SIDE_MENU_FILE = "side-menu.html"
+LICENSE_PAGE = "licenses.html"
+LICENSE_TABLE = "license_table.html"
 CONFIG_TEMPLATE_FILE = "config_template.html"
 SETTINGS_TEMPLATE_FILE = "settings_template.html"
 AUTOMATIONS_TEMPLATE_FILE = "automations_template.html"
@@ -74,7 +76,7 @@ class API_DATA:
 
     SMHUB_BOOTQUEST = 256 * 6 + 1
     SMHUB_GETINFO = 256 * 6 + 2
-    SMHUB_GETVERSION = 256 * 6 + 3
+    SMHUB_UPDATE = 256 * 6 + 3
 
     DESC_PCREAD = 256 * 7 + 1
 

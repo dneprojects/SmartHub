@@ -163,7 +163,7 @@ class SmartHub:
         return SMHUB_INFO.TYPE
 
     def get_info(self):
-        """Return information on Smart Gateway hardware and software"""  # Get cpu statistics
+        """Return information on Smart Hub hardware and software"""  # Get cpu statistics
 
         if self._serial == "":
             get_all = True
@@ -263,6 +263,39 @@ class SmartHub:
         info_str = info_str + f"  type: {SMHUB_INFO.TYPE}\n"
         info_str = info_str + f"  version: {SMHUB_INFO.SW_VERSION}\n"
 
+        # Get logging levels
+        log_level_cons = self.logger.root.handlers[0].level
+        log_level_file = self.logger.root.handlers[1].level
+        info_str = info_str + "  loglevel:\n"
+        info_str = info_str + f"    console: {log_level_cons}\n"
+        info_str = info_str + f"    file: {log_level_file}\n"
+        return info_str
+
+    def get_update(self):
+        """Return updated information on Smart Hub sensors and status."""  # Get cpu statistics
+
+        info_str = "hardware:\n"
+        info_str = info_str + "  cpu:\n"
+        info_str = (
+            info_str + "    frequency current: " + str(psutil.cpu_freq()[0]) + "MHz\n"
+        )
+        info_str = info_str + "    load: " + str(psutil.cpu_percent()) + "%\n"
+        info_str = (
+            info_str
+            + "    temperature: "
+            + str(round(psutil.sensors_temperatures()["cpu_thermal"][0].current, 1))
+            + "°C\n"
+        )
+        # Calculate memory information
+        memory = psutil.virtual_memory()
+        info_str = info_str + "  memory:\n"
+        info_str = info_str + "    percent: " + str(memory.percent) + "%\n"
+        # Calculate disk information
+        disk = psutil.disk_usage("/")
+        info_str = info_str + "  disk:\n"
+        info_str = info_str + "    percent: " + str(disk.percent) + "%\n"
+
+        info_str = info_str + "software:\n"
         # Get logging levels
         log_level_cons = self.logger.root.handlers[0].level
         log_level_file = self.logger.root.handlers[1].level

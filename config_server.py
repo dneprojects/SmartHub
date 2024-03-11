@@ -25,6 +25,8 @@ from const import (
     MODULE_CODES,
     WEB_FILES_DIR,
     HOMEPAGE,
+    LICENSE_PAGE,
+    LICENSE_TABLE,
     CONF_HOMEPAGE,
     HUB_HOMEPAGE,
     CONF_PORT,
@@ -233,39 +235,54 @@ class ConfigServer:
                 )
             return show_module_overview(app, mod_addr)  # web.HTTPNoContent()
 
-    # @routes.get(path="/{key:.*}")
-    # async def _(request):
-    #     app = request.app
-    #     warning_txt = f"Route '{request.path}' not yet implemented"
-    #     app.logger.warning(warning_txt)
-    #     mod_image, type_desc = get_module_image(app["module"]._typ)
-    #     page = fill_page_template(
-    #         f"Modul '{app['module']._name}'",
-    #         type_desc,
-    #         warning_txt,
-    #         app["side_menu"],
-    #         mod_image,
-    #         "",
-    #     )
-    #     page = adjust_settings_button(page, "", f"{0}")
-    #     return web.Response(text=page, content_type="text/html", charset="utf-8")
+    @routes.get(path="/{key:.*}.txt")
+    async def root(request: web.Request) -> web.Response:
+        lic_file = open("web/" + request.path)
+        lic_text = lic_file.read()
+        header = lic_text.split("\n")[0].strip()
+        lic_text = lic_text.replace(f"{header}\n", "").replace("\n", "<br>").strip()
+        lic_file.close()
+        html_str = (
+            get_html(LICENSE_PAGE)
+            .replace("Smart Hub", header)
+            .replace("<table></table>", f"<p>{lic_text}</p>")
+        )
+        return web.Response(text=html_str, content_type="text/html", charset="utf-8")
 
-    # @routes.post(path="/{key:.*}")
-    # async def _(request):
-    #     app = request.app
-    #     warning_txt = f"Route '{request.path}' not yet implemented"
-    #     app.logger.warning(warning_txt)
-    #     mod_image, type_desc = get_module_image(app["settings"]._typ)
-    #     page = fill_page_template(
-    #         f"Modul '{app['settings'].name}'",
-    #         type_desc,
-    #         warning_txt,
-    #         app["side_menu"],
-    #         mod_image,
-    #         "",
-    #     )
-    #     page = adjust_settings_button(page, "", f"{0}")
-    #     return web.Response(text=page, content_type="text/html", charset="utf-8")
+
+# @routes.get(path="/{key:.*}")
+# async def _(request):
+#     app = request.app
+#     warning_txt = f"Route '{request.path}' not yet implemented"
+#     app.logger.warning(warning_txt)
+#     mod_image, type_desc = get_module_image(app["module"]._typ)
+#     page = fill_page_template(
+#         f"Modul '{app['module']._name}'",
+#         type_desc,
+#         warning_txt,
+#         app["side_menu"],
+#         mod_image,
+#         "",
+#     )
+#     page = adjust_settings_button(page, "", f"{0}")
+#     return web.Response(text=page, content_type="text/html", charset="utf-8")
+
+# @routes.post(path="/{key:.*}")
+# async def _(request):
+#     app = request.app
+#     warning_txt = f"Route '{request.path}' not yet implemented"
+#     app.logger.warning(warning_txt)
+#     mod_image, type_desc = get_module_image(app["settings"]._typ)
+#     page = fill_page_template(
+#         f"Modul '{app['settings'].name}'",
+#         type_desc,
+#         warning_txt,
+#         app["side_menu"],
+#         mod_image,
+#         "",
+#     )
+#     page = adjust_settings_button(page, "", f"{0}")
+#     return web.Response(text=page, content_type="text/html", charset="utf-8")
 
 
 def format_smc(buf: bytes) -> str:
@@ -415,15 +432,15 @@ async def terminate_delayed(api_srv):
 
 def show_license_table(app):
     """Return html page with license table."""
-    page = get_html("licenses.html")
-    table = get_html("license_table.html").split("\n")
+    page = get_html(LICENSE_PAGE)
+    table = get_html(LICENSE_TABLE).split("\n")
     table_str = build_lic_table(table, "hub")
     table_end = "  </tbody>\n</table>\n"
     tablesort_str = (
         "    <tr>\n"
         + "      <td>tablesort</td>\n"
         + "      <td>5.3.0</td>\n"
-        + "      <td>Personal License</td>\n"
+        + set_license_link("      <td>T Brown License</td>\n")
         + "      <td>Tristen Brown</td>\n"
         + '      <td><a href="https://github.com/tristen/tablesort">github.com/tristen/tablesort</a></td>\n'
         + "      <td>A small & simple sorting component for tables written in JavaScript</td>\n"
@@ -444,11 +461,12 @@ def show_license_table(app):
 
 def build_lic_table(table, spec) -> str:
     """Build html table string from table line list."""
+
     table_str = ""
     for line in table:
         if line.find("<table>") >= 0:
             line = line.replace("<table>", f'<table id="lic-{spec}-table">')
-        elif line.find("<th>Version") > 0:
+        elif line.find("<th>Vs.") > 0:
             line = line.replace("<th>", '<th data-sort-method="none">')
         elif line.find("<th>Author") > 0:
             line = line.replace("<th>", '<th data-sort-method="none">')
@@ -472,5 +490,26 @@ def build_lic_table(table, spec) -> str:
             line = line.replace(
                 f"<td>{h_link}", f'<td><a href="{h_link}">{short_link}</a>'
             )
+        line = set_license_link(line)
         table_str += line + "\n"
     return table_str
+
+
+def set_license_link(line: str) -> str:
+    """Check for know license and set html link to local text file."""
+
+    f_path = "/license_files/"
+    known_licenses = {
+        "Apache Software License": "Apache_2_0.txt",
+        "MIT License": "MIT_license.txt",
+        "BSD License": "BSD_license.txt",
+        "T Brown License": "Tristen_Brown.txt",
+    }
+
+    for l_key in known_licenses.keys():
+        if line.find(l_key) > 0:
+            line = line.replace(
+                l_key, f'<a href="{f_path}{known_licenses[l_key]}">{l_key}</a>'
+            )
+            break
+    return line
