@@ -150,7 +150,7 @@ input,
 button,
 textarea,
 select {
-   *font-size: 100%;
+   font-size: 100%;
 }
 
 select,
@@ -163,8 +163,8 @@ button {
 
 body {
    font: 13px/1.231 arial, helvetica, clean, sans-serif;
-   *font-size: small;
-   *font: x-small;
+   font-size: small;
+   font: x-small;
    text-align: center;
    margin-bottom: 10px;
    z-index: 1;
@@ -186,7 +186,7 @@ code,
 kbd,
 samp,
 tt {
-   *font-size: 108%;
+   font-size: 108%;
    line-height: 100%;
 }
 
