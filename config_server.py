@@ -26,6 +26,7 @@ from const import (
     WEB_FILES_DIR,
     HOMEPAGE,
     LICENSE_PAGE,
+    LICENSE_PATH,
     LICENSE_TABLE,
     CONF_HOMEPAGE,
     HUB_HOMEPAGE,
@@ -237,17 +238,7 @@ class ConfigServer:
 
     @routes.get(path="/{key:.*}.txt")
     async def root(request: web.Request) -> web.Response:
-        lic_file = open("web/" + request.path)
-        lic_text = lic_file.read()
-        header = lic_text.split("\n")[0].strip()
-        lic_text = lic_text.replace(f"{header}\n", "").replace("\n", "<br>").strip()
-        lic_file.close()
-        html_str = (
-            get_html(LICENSE_PAGE)
-            .replace("Smart Hub", header)
-            .replace("<table></table>", f"<p>{lic_text}</p>")
-        )
-        return web.Response(text=html_str, content_type="text/html", charset="utf-8")
+        return show_license_text(request)
 
 
 # @routes.get(path="/{key:.*}")
@@ -466,39 +457,22 @@ def build_lic_table(table, spec) -> str:
     for line in table:
         if line.find("<table>") >= 0:
             line = line.replace("<table>", f'<table id="lic-{spec}-table">')
-        elif line.find("<th>Vs.") > 0:
-            line = line.replace("<th>", '<th data-sort-method="none">')
+        elif line.find("<th>Version") > 0:
+            line = line.replace("<th>Version", '<th data-sort-method="none">V.')
         elif line.find("<th>Author") > 0:
             line = line.replace("<th>", '<th data-sort-method="none">')
         elif line.find("<th>URL") > 0:
             line = line.replace("<th>", '<th data-sort-method="none">')
         elif line.find("<th>Description") > 0:
             line = line.replace("<th>", '<th data-sort-method="none">')
-        elif line.find("https://") > 0:
-            h_link = line.replace("<td>", "").replace("</td>", "").strip()
-            short_link = h_link.replace("https://", "")
-            if short_link[-1] == "/":
-                short_link = short_link[:-1]
-            line = line.replace(
-                f"<td>{h_link}", f'<td><a href="{h_link}">{short_link}</a>'
-            )
-        elif line.find("http://") > 0:
-            h_link = line.replace("<td>", "").replace("</td>", "").strip()
-            short_link = h_link.replace("http://", "")
-            if short_link[-1] == "/":
-                short_link = short_link[:-1]
-            line = line.replace(
-                f"<td>{h_link}", f'<td><a href="{h_link}">{short_link}</a>'
-            )
         line = set_license_link(line)
         table_str += line + "\n"
-    return table_str
+    return html_text_to_link(table_str, True)
 
 
 def set_license_link(line: str) -> str:
     """Check for know license and set html link to local text file."""
 
-    f_path = "/license_files/"
     known_licenses = {
         "Apache Software License": "Apache_2_0.txt",
         "MIT License": "MIT_license.txt",
@@ -508,8 +482,46 @@ def set_license_link(line: str) -> str:
 
     for l_key in known_licenses.keys():
         if line.find(l_key) > 0:
-            line = line.replace(
-                l_key, f'<a href="{f_path}{known_licenses[l_key]}">{l_key}</a>'
-            )
+            line = line.replace(l_key, f'<a href="{known_licenses[l_key]}">{l_key}</a>')
             break
     return line
+
+
+def show_license_text(request) -> str:
+    """Return web page with license text."""
+    lic_file = open(LICENSE_PATH + request.path)
+    lic_text = lic_file.read()
+    lic_text = html_text_to_link(lic_text, False)
+    header = lic_text.split("\n")[0].strip()
+    lic_text = lic_text.replace(f"{header}\n", "").replace("\n", "<br>").strip()
+    lic_file.close()
+    html_str = (
+        get_html(LICENSE_PAGE)
+        .replace("Smart Hub", header)
+        .replace("<table></table>", f"<p>{lic_text}</p>")
+    )
+    return web.Response(text=html_str, content_type="text/html", charset="utf-8")
+
+
+def html_text_to_link(txt_str: str, shorten: bool) -> str:
+    """Search for written html links and convert to html syntax links."""
+    txt_lines = txt_str.split("\n")
+    txt_str = ""
+    for line in txt_lines:
+        if (i_l := line.find("https://")) > 0:
+            http_str = "https"
+        elif (i_l := line.find("http://")) > 0:
+            http_str = "http"
+        if i_l > 0:
+            h_link = line[i_l:].split()[0].split("<")[0]
+            short_link = h_link
+            if shorten:
+                short_link = h_link.replace(f"{http_str}://", "")
+                if short_link[-1] == "/":
+                    short_link = short_link[:-1]
+            txt_str += (
+                line.replace(h_link, f'<a href="{h_link}">{short_link}</a>') + "\n"
+            )
+        else:
+            txt_str += line + "\n"
+    return txt_str

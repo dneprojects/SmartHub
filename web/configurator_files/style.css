@@ -92,6 +92,8 @@ td {
    text-align: left;
    font-weight: normal;
 }*/
+table { width: 100%}
+
 address,
 caption,
 cite,
