@@ -12,7 +12,7 @@
     display: none;
 }
 
-#file_popup .popup-content {
+#file_popup, #updates_popup .popup-content {
     background-color: white;
     margin: 10% auto;
     padding: 20px;
@@ -112,7 +112,8 @@
     line-height: 16px;
 }
 #file_button,
-#close_file_popup {
+#close_file_popup,
+#close_updates_popup {
     height: 22px;
     width: 100px;
     top: 0;

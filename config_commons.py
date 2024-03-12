@@ -63,6 +63,32 @@ def show_modules(app) -> web.Response:
     return web.Response(text=page, content_type="text/html", charset="utf-8")
 
 
+def show_update_modules(app, mod_list) -> web.Response:
+    """Prepare modules page with update candidates."""
+    page = get_html("modules.html")
+    images = '<form id="mod-update-grid" action="/update_modules" method="post">'
+    for module in mod_list:
+        pic_file, title = get_module_image(module.typ)
+        images += '<div class="figd_grid">\n'
+        images += f'<input type="checkbox" class="mod_chk" id="chk_{module.id}" name="chk_{module.id}" value="{module.id}" checked="true">\n'
+        images += f'<label for="chk_{module.id}">\n'
+        images += f'<img src="configurator_files/{pic_file}" alt="{module.name}">&nbsp;&nbsp;&nbsp;{module.name}&nbsp;&nbsp;&nbsp;\n'
+        images += f'<p class="fw_subtext">{module.fw}</p>\n'
+        images += "</label>\n"
+        images += "</div>\n"
+    images += "</div>\n"
+    images += "<br><br>"
+    images += '<button name="UpdButton" id="upd_button" type="submit" value="cancel">Abbruch</button>'
+    images += '<button name="UpdButton" id="upd_button" type="submit" value="flash">Flashen</button>'
+    images += "</form>"
+    page = page.replace("<!-- ImageGrid -->", images)
+    page = page.replace("Overview", "Firmware Update für Module vorhanden")
+    page = page.replace(
+        "Wählen Sie ein Modul aus", "Wählen Sie die Module für das Update aus"
+    )
+    return web.Response(text=page, content_type="text/html", charset="utf-8")
+
+
 def fill_page_template(
     title, subtitle, content, menu, image, download_file: str
 ) -> str:

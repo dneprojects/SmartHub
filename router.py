@@ -119,6 +119,23 @@ class HbtnRouter:
             mod_str += chr(len(mod._name)) + mod._name
         return mod_str
 
+    def get_module_list(self) -> str:
+        """Return id, type, and name of all modules in a list."""
+
+        class Mdle:
+            """Class for module defs."""
+
+            def __init__(self, id: int, typ: bytes, name: str, fw: str):
+                self.id: int = id
+                self.typ: bytes = typ
+                self.name: str = name
+                self.fw: str = fw
+
+        mod_list = []
+        for mod in self.modules:
+            mod_list.append(Mdle(mod._id, mod._typ, mod._name, mod.get_sw_version()))
+        return mod_list
+
     def build_smr(self):
         """Build SMR file content from status."""
         st_idx = self.status_idx

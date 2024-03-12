@@ -1,5 +1,6 @@
 from os import path
 from aiohttp import web
+from urllib.parse import parse_qs
 from multidict import MultiDict
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from config_settings import (
@@ -15,6 +16,7 @@ from config_commons import (
     get_module_image,
     init_side_menu,
     show_modules,
+    show_update_modules,
 )
 from module import HbtnModule
 from module_hdlr import ModHdlr
@@ -62,6 +64,7 @@ class ConfigServer:
         """Initialize config server."""
         self.app = web.Application()
         self.app.add_routes(routes)
+        self.app.logger = logging.getLogger(__name__)
         self.settings_srv = ConfigSettingsServer(self.app, self.api_srv)
         self.app.add_subapp("/settings", self.settings_srv.app)
         self.automations_srv = ConfigAutomationsServer(self.app, self.api_srv)
@@ -106,37 +109,7 @@ class ConfigServer:
 
     @routes.get("/hub")
     async def root(request: web.Request) -> web.Response:
-        api_srv = request.app["api_srv"]
-        smhub = api_srv.sm_hub
-        smhub_info = smhub.info
-        hub_name = smhub._host
-        if api_srv.is_offline:
-            pic_file, subtitle = get_module_image(b"\xc9\x00")
-            html_str = get_html(CONF_HOMEPAGE)
-        elif api_srv.is_addon:
-            pic_file, subtitle = get_module_image(b"\xca\x00")
-            html_str = get_html(HUB_HOMEPAGE).replace(
-                "HubTitle", f"Smart Center '{hub_name}'"
-            )
-            smhub_info = smhub_info.replace(
-                "type: Smart Hub", "type:  Smart Hub Add-on"
-            )
-        else:
-            pic_file, subtitle = get_module_image(b"\xc9\x00")
-            html_str = get_html(HUB_HOMEPAGE).replace(
-                "HubTitle", f"Smart Hub '{hub_name}'"
-            )
-        html_str = html_str.replace("Overview", subtitle)
-        html_str = html_str.replace("smart-Ip.jpg", pic_file)
-        html_str = html_str.replace(
-            "ContentText",
-            "<h3>Eigenschaften</h3>\n<p>"
-            + smhub_info.replace("  ", "&nbsp;&nbsp;&nbsp;&nbsp;")
-            .replace(": ", ":&nbsp;&nbsp;")
-            .replace("\n", "</p>\n<p>")
-            + "</p>",
-        )
-        return web.Response(text=html_str, content_type="text/html", charset="utf-8")
+        return show_hub_overview(request.app)
 
     @routes.get("/modules")
     async def root(request: web.Request) -> web.Response:
@@ -236,6 +209,56 @@ class ConfigServer:
                 )
             return show_module_overview(app, mod_addr)  # web.HTTPNoContent()
 
+    @routes.post("/upd_upload")
+    async def root(request: web.Request) -> web.Response:
+        app = request.app
+        api_srv = app["api_srv"]
+        data = await request.post()
+        fw_filename = data["file"].filename
+        fw_bytes = data["file"].file.read()
+        upd_type = data["SysUpload"]
+        if upd_type == "rtr":
+            router = api_srv.routers[0]
+            app.logger.info(f"Firmware file for router {router._name} uploaded")
+            return show_update_modules(app, [router])
+        elif upd_type == "mod":
+            mod_type = fw_bytes[:2]
+            app.logger.info(
+                f"Firmware file for '{MODULE_CODES[mod_type.decode()]}' modules uploaded"
+            )
+            mod_list = api_srv.routers[0].get_module_list()
+            upd_list = []
+            for mod in mod_list:
+                if mod.typ == mod_type:
+                    upd_list.append(mod)
+            return show_update_modules(app, upd_list)
+        else:
+            mod_type = fw_bytes[:2]
+            mod_addr = int(upd_type)
+            module = api_srv.routers[0].get_module(mod_addr)
+            if module._typ == mod_type:
+                app.logger.info(f"Firmware file for module {module._name} uploaded")
+                return show_update_modules(app, [module])
+            else:
+                app.logger.error(
+                    f"Firmware file for {MODULE_CODES[mod_type.encode()]} uploaded, not compatible with module {module._name}"
+                )
+                return show_hub_overview(app)
+
+    @routes.post("/update_modules")
+    async def root(request: web.Request) -> web.Response:
+        app = request.app
+        api_srv = app["api_srv"]
+        resp = await request.text()
+        form_data = parse_qs(resp)
+        if form_data["UpdButton"][0] == "cancel":
+            return show_hub_overview(app)
+        for checked in list(form_data.keys())[:-1]:
+            app.logger.info(
+                f"Update von Modul {form_data[checked][0]} wird durchgeführt."
+            )
+        return show_hub_overview(app)
+
     @routes.get(path="/{key:.*}.txt")
     async def root(request: web.Request) -> web.Response:
         return show_license_text(request)
@@ -274,6 +297,37 @@ class ConfigServer:
 #     )
 #     page = adjust_settings_button(page, "", f"{0}")
 #     return web.Response(text=page, content_type="text/html", charset="utf-8")
+
+
+def show_hub_overview(app) -> web.Response:
+    """Show hub overview page."""
+    api_srv = app["api_srv"]
+    smhub = api_srv.sm_hub
+    smhub_info = smhub.info
+    hub_name = smhub._host
+    if api_srv.is_offline:
+        pic_file, subtitle = get_module_image(b"\xc9\x00")
+        html_str = get_html(CONF_HOMEPAGE)
+    elif api_srv.is_addon:
+        pic_file, subtitle = get_module_image(b"\xca\x00")
+        html_str = get_html(HUB_HOMEPAGE).replace(
+            "HubTitle", f"Smart Center '{hub_name}'"
+        )
+        smhub_info = smhub_info.replace("type: Smart Hub", "type:  Smart Hub Add-on")
+    else:
+        pic_file, subtitle = get_module_image(b"\xc9\x00")
+        html_str = get_html(HUB_HOMEPAGE).replace("HubTitle", f"Smart Hub '{hub_name}'")
+    html_str = html_str.replace("Overview", subtitle)
+    html_str = html_str.replace("smart-Ip.jpg", pic_file)
+    html_str = html_str.replace(
+        "ContentText",
+        "<h3>Eigenschaften</h3>\n<p>"
+        + smhub_info.replace("  ", "&nbsp;&nbsp;&nbsp;&nbsp;")
+        .replace(": ", ":&nbsp;&nbsp;")
+        .replace("\n", "</p>\n<p>")
+        + "</p>",
+    )
+    return web.Response(text=html_str, content_type="text/html", charset="utf-8")
 
 
 def format_smc(buf: bytes) -> str:

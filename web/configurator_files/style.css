@@ -731,6 +731,16 @@ body.produkte.sub #right h1 {
    font: 11px arial, helvetica, clean, sans-serif;
 
 }
+#upd_button {
+   height: 22px;
+   width: 140px;
+   margin-left: 0px;
+   margin-top: 20px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+
+}
 
 #config_button.config_button {
    height: 22px;
@@ -764,6 +774,15 @@ body.produkte.sub #right h1 {
 
 
 #automtns_button {
+   height: 22px;
+   width: 140px;
+   margin-left: 0px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
+
+#updates_button {
    height: 22px;
    width: 140px;
    margin-left: 0px;
@@ -1014,6 +1033,11 @@ select {
    accent-color: #C0372D;
 }
 
+input.mod_chk {
+   position:absolute;
+   margin:5px;
+}
+
 #rgb-colorpicker {
    width: 50px;
    height: 22px;
@@ -1262,20 +1286,25 @@ button.config_button {
    margin-top: auto;
 }
 
+form#mod-update-grid {
+   display:inherit;
+   flex-wrap: inherit;
+}
+
 .figd_grid {
-   margin: 20px;
-   width: 140px;
-   height: 140px;
+   margin: 15px;
+   width: 150px;
+   height: 150px;
    text-align: center;
    vertical-align: middle;
    box-shadow: 0px 0px 18px 2px grey;
 }
 
 .fig_grid {
-   width: 130px;
-   height: 130px;
+   width: 150px;
+   height: 150px;
    display: grid;
-   padding: 5px;
+   padding: 0px;
 }
 
 figcaption {
