@@ -465,6 +465,12 @@ def build_lic_table(table, spec) -> str:
             line = line.replace("<th>", '<th data-sort-method="none">')
         elif line.find("<th>Description") > 0:
             line = line.replace("<th>", '<th data-sort-method="none">')
+        elif line.find("Artistic License") > 0:
+            line = line[: line.find("<td>")] + "<td>Artistic License</td>"
+        line = line.replace(">Apache Software License<", ">Apache License 2.0<")
+        line = line.replace(">Apache-2.0<", ">Apache License 2.0<")
+        line = line.replace(">MIT<", ">MIT License<")
+        line = line.replace("Python Software Foundation License", "PSF License")
         line = set_license_link(line)
         table_str += line + "\n"
     return html_text_to_link(table_str, True)
@@ -474,9 +480,11 @@ def set_license_link(line: str) -> str:
     """Check for know license and set html link to local text file."""
 
     known_licenses = {
-        "Apache Software License": "Apache_2_0.txt",
-        "MIT License": "MIT_license.txt",
+        "Apache License 2.0": "Apache_2_0.txt",
+        "Artistic License": "Artistic.txt",
         "BSD License": "BSD_license.txt",
+        "MIT License": "MIT_license.txt",
+        "PSF License": "PSF_license.txt",
         "T Brown License": "Tristen_Brown.txt",
     }
 
