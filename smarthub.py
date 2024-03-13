@@ -14,10 +14,8 @@ import psutil
 import cpuinfo
 from const import (
     LOGGING_DEF_FILE,
-    OWN_IP,
+    SMHUB_INFO,
     SMHUB_PORT,
-    QUERY_PORT,
-    ANY_IP,
     RT_DEF_ADDR,
     RT_BAUDRATE,
     RT_TIMEOUT,
@@ -25,79 +23,7 @@ from const import (
 )
 from api_server import ApiServer
 from config_server import ConfigServer
-
-
-class SMHUB_INFO:
-    """Holds information."""
-
-    SW_VERSION = "1.1.2"
-    TYPE = "Smart Hub"
-    TYPE_CODE = "20"
-    SERIAL = "RBPI"
-
-
-class QueryServer:
-    """Server class for network queries seraching Smart Hubs"""
-
-    def __init__(self, lp, sm_hub):
-        self.loop = lp
-        self.lan_mac = sm_hub.lan_mac
-        self.logger = logging.getLogger(__name__)
-        self._q_running = False
-
-    async def initialize(self):
-        """Starting the server"""
-        resp_header = "\x00\x00\x00\xf7"
-        version_str = SMHUB_INFO.SW_VERSION.replace(".", "")[::-1]
-        type_str = SMHUB_INFO.TYPE_CODE
-        serial_str = SMHUB_INFO.SERIAL
-        empty_str_10 = "0000000000"
-        mac_str = ""
-        for nmbr in self.lan_mac.split(":"):
-            mac_str += chr(int(nmbr, 16))
-        self.resp_str = (
-            resp_header
-            + chr(0)
-            + version_str
-            + type_str
-            + empty_str_10
-            + serial_str
-            + mac_str
-        ).encode("iso8859-1")
-
-    async def handle_smhub_query(self, ip_reader, ip_writer):
-        """Network server handler to receive api commands."""
-
-        while True:
-            # Read api command from network
-            query = await ip_reader.read(1024)
-            ip_writer.write(self.resp_str)
-            await asyncio.sleep(0.04)
-
-    async def run_query_srv(self):
-        """Server for handling Smart Hub queries."""
-        try:
-            self.q_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.q_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, True)
-            self.q_sock.bind((ANY_IP, QUERY_PORT))
-            self.q_sock.settimeout(0.00002)
-            self.logger.info("Query server started")
-
-            self._q_running = True
-            while self._q_running:
-                try:
-                    data, addr = self.q_sock.recvfrom(10)
-                except Exception as error_msg:
-                    await asyncio.sleep(0.4)
-                else:
-                    self.q_sock.sendto(self.resp_str, addr)
-        except Exception as error_msg:
-            self.logger.error(f"Error in query server: {error_msg}")
-
-    def close_query_srv(self):
-        """Closing connection"""
-        self._q_running = False
-        self.q_sock.close()
+from query_server import QueryServer
 
 
 class SmartHub:
@@ -304,7 +230,7 @@ class SmartHub:
         info_str = info_str + f"    file: {log_level_file}\n"
         return info_str
 
-    async def run_api_server(self, loop, api_srv):
+    async def run_api_server(self, api_srv):
         """Main server for serving Smart Hub calls."""
         self.server = await asyncio.start_server(
             api_srv.handle_api_command, self._host_ip, SMHUB_PORT
@@ -446,15 +372,15 @@ async def main(init_flag, ev_loop):
         sm_hub.q_srv = QueryServer(ev_loop, sm_hub)
         await sm_hub.q_srv.initialize()
         # Instantiate api_server object
-        api_srv = ApiServer(ev_loop, sm_hub, rt_serial)
+        sm_hub.api_srv = ApiServer(ev_loop, sm_hub, rt_serial)
         # Instantiate config server object
         logger.debug("Initializing config server")
-        sm_hub.conf_srv = ConfigServer(api_srv)
+        sm_hub.conf_srv = ConfigServer(sm_hub.api_srv)
         logger.debug("Initializing API server")
         await sm_hub.conf_srv.initialize()
         if init_flag:
-            await api_srv.get_initial_status()
-            api_srv.is_offline = False
+            await sm_hub.api_srv.get_initial_status()
+            sm_hub.api_srv.is_offline = False
         else:
             logger.warning("Initialization of router and modules skipped")
         startup_ok = True
@@ -471,7 +397,7 @@ async def main(init_flag, ev_loop):
         async with sm_hub.tg:
             logger.debug("Starting API server")
             skip_init = sm_hub.tg.create_task(
-                sm_hub.run_api_server(ev_loop, api_srv), name="api_srv"
+                sm_hub.run_api_server(sm_hub.api_srv), name="api_srv"
             )
             logger.debug("Starting query server")
             sm_hub.tg.create_task(sm_hub.q_srv.run_query_srv(), name="q_srv")

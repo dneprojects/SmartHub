@@ -3,6 +3,7 @@ import struct
 from const import API_ACTIONS as spec
 from const import RT_CMDS
 from hdlr_class import HdlrBase
+import time
 
 
 class ActionsHdlr(HdlrBase):
@@ -334,9 +335,9 @@ class ActionsHdlr(HdlrBase):
                     .replace("<outm>", chr((out_msk >> 8) & 0xFF))
                     .replace("<outh>", chr((out_msk >> 16) & 0xFF))
                 )
-                self.logger.debug(
-                    f"Router {rt}, module {mod}, led {inp_code}: turn LED to R:{self._args[1]} G:{self._args[2]} B:{self._args[3]}"
-                )
+                # self.logger.debug(
+                #     f"Router {rt}, module {mod}, led {inp_code}: turn LED to R:{self._args[1]} G:{self._args[2]} B:{self._args[3]}"
+                # )
 
             case _:
                 self.response = f"Unknown API data command: {self.msg._cmd_grp} {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"
@@ -345,4 +346,8 @@ class ActionsHdlr(HdlrBase):
 
         # Send command to router
         await self.handle_router_cmd(rt, self._rt_command)
+        await asyncio.sleep(0.12)
+        self.logger.debug(
+            f"Action finished: {self.msg._cmd_grp} {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]} : Module {self._p5};  Arguments: {self._args}"
+        )
         self.response = "OK"

@@ -95,6 +95,7 @@ class ApiServer:
             self.api_msg = ApiMessage(self, pre + request, c_len)
             success = True
             if self.api_msg._crc_ok:
+                # self._netw_blocked = True
                 rt = self.api_msg.get_router_id()
                 self.logger.debug(
                     f"Processing network API command: {self.api_msg._cmd_grp} {struct.pack('<h', self.api_msg._cmd_spec)[1]} {struct.pack('<h', self.api_msg._cmd_spec)[0]}  Module: {self.api_msg._cmd_p5}  Args: {self.api_msg._cmd_data}"
@@ -130,16 +131,16 @@ class ApiServer:
 
             if success:
                 response = self.hdlr.response
-                self.logger.debug(f"API call returned: {response}")
+                self.logger.info(f"API call returned: {response}")
             else:
                 self.logger.warning(f"API call failed: {response}")
             self.respond_client(response)  # Aknowledge the api command at last
             if self._auto_restart_opr & (not self._opr_mode) & (not self._init_mode):
                 await self.set_operate_mode(rt)
-            await asyncio.sleep(0.1)  # pause for other processes to be scheduled
             if self._netw_blocked:
                 self._netw_blocked = False
                 self.logger.debug("Network block released")
+            await asyncio.sleep(0)  # pause for other processes to be scheduled
 
         self.sm_hub.restart_hub(False)
 

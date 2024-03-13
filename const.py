@@ -2,6 +2,7 @@
 
 from typing import Final
 
+
 OWN_IP = "192.168.178.110"
 ANY_IP = "0.0.0.0"
 SMHUB_PORT = 7777
@@ -29,6 +30,15 @@ CONFIG_TEMPLATE_FILE = "config_template.html"
 SETTINGS_TEMPLATE_FILE = "settings_template.html"
 AUTOMATIONS_TEMPLATE_FILE = "automations_template.html"
 AUTOMATIONEDIT_TEMPLATE_FILE = "automation_edit_template.html"
+
+
+class SMHUB_INFO:
+    """Holds information."""
+
+    SW_VERSION = "1.1.2"
+    TYPE = "Smart Hub"
+    TYPE_CODE = "20"
+    SERIAL = "RBPI"
 
 
 class API_CATEGS:
