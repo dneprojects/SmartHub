@@ -1,14 +1,15 @@
 import logging
 import asyncio
-from math import ceil
 from const import (
     RT_CMDS,
     API_RESPONSE,
     RT_RESP,
     RT_STAT_CODES,
+    SYS_MODES,
 )
 from hdlr_class import HdlrBase
 from messages import RtMessage, RtResponse
+from collections.abc import Callable
 
 
 class RtHdlr(HdlrBase):
@@ -22,12 +23,13 @@ class RtHdlr(HdlrBase):
         self.rt_id = rtr._id
         self.logger = logging.getLogger(__name__)
         self.rt_msg = RtMessage(self, 0, "   ")  # initialize empty object
+        self.protocol = ""
 
     async def rt_reboot(self):
         """Initiates a router reboot"""
         self.logger.info(f"Router {self.rt_id} will be rebooted, please wait...")
         await self.handle_router_cmd(self.rt_id, RT_CMDS.RT_REBOOT)
-        router_running = False
+        # router_running = False
         await asyncio.sleep(2)
         # while not (router_running):
         #     # Ask for mode 0, if returned, router is up
@@ -76,7 +78,7 @@ class RtHdlr(HdlrBase):
                 f"Response to get mode {group} command too long: {self.rt_msg._resp_buffer}"
             )
             if (b_len := len(self.ser_if[0]._buffer)) > 0:
-                chunk = await self.ser_if[0].read(b_len)  # empty buffer
+                await self.ser_if[0].read(b_len)  # empty buffer
             other_responses = True
             while other_responses:
                 await self.handle_router_cmd_resp(self.rt_id, rt_cmd)
@@ -302,7 +304,7 @@ class RtHdlr(HdlrBase):
 
     async def send_rt_name(self, rt_name):
         """Send router name."""
-        if type(rt_name) == bytes:
+        if isinstance(rt_name, bytes):
             rt_name = rt_name.decode("iso8859-1")
         rt_name = rt_name + (" " * (32 - len(rt_name)))
         await self.rtr.set_config_mode(True)
@@ -321,9 +323,9 @@ class RtHdlr(HdlrBase):
 
     async def send_mode_names(self, umd_name1, umd_name2):
         """Send user mode names."""
-        if type(umd_name1) == bytes:
+        if isinstance(umd_name1, bytes):
             umd_name1 = umd_name1.decode("iso8859-1")
-        if type(umd_name2) == bytes:
+        if isinstance(umd_name2, bytes):
             umd_name2 = umd_name2.decode("iso8859-1")
         umd_name1 = umd_name1 + (" " * (10 - len(umd_name1)))
         umd_name2 = umd_name2 + (" " * (10 - len(umd_name2)))
@@ -416,7 +418,7 @@ class RtHdlr(HdlrBase):
         self.rtr.daynight, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
         self.rtr.version, smr_ptr = self.get_smr_item(self.rtr.smr_upload, smr_ptr)
 
-    def get_smr_item(self, smr_bytes: bytes, smr_ptr: int) -> (bytes, int):
+    def get_smr_item(self, smr_bytes: bytes, smr_ptr: int) -> tuple[bytes, int]:
         """Get one item from smr bytes."""
         item_len = smr_bytes[smr_ptr]
         item = smr_bytes[smr_ptr + 1 : smr_ptr + item_len + 1]
@@ -428,12 +430,14 @@ class RtHdlr(HdlrBase):
         await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
         self.logger.info(f"Router {self.rt_id} system restarted")
 
-    async def upload_router_firmware(self, rt_type) -> bool:
+    async def upload_router_firmware(
+        self, rt_type, progress_fun: Callable[[], None]
+    ) -> bool:
         """Upload router firmware to router, returns True for success."""
         fw_buf = self.rtr.fw_upload
         fw_len = len(fw_buf)
         if fw_len == 0:
-            self.logger.error(f"Failed to upload / flash router")
+            self.logger.error("Failed to upload / flash router")
             return "ERROR"
 
         pkg_len = 13
@@ -444,7 +448,6 @@ class RtHdlr(HdlrBase):
         self.logger.info(
             f"Updating router {self.rt_id}: length {fw_len} bytes, {no_pkgs} packages"
         )
-        stat_msg = API_RESPONSE.rtfw_flash_stat.replace("<rtr>", chr(self.rt_id))
         cmd_str = RT_CMDS.SET_ISP_MODE.replace("<lenl>", chr(fw_len & 0xFF)).replace(
             "<lenh>", chr(fw_len >> 8)
         )
@@ -454,9 +457,9 @@ class RtHdlr(HdlrBase):
         if (resp[0] == 0x42) & (resp[1] == 0x4C) & (resp[2] == 0) & (resp[3] == 0):
             self.logger.warning("Router set into update mode")
         else:
-            self.logger.error(f"Failed to enter router ISP mode")
+            self.logger.error("Failed to enter router ISP mode")
             await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
-            self.logger.info(f"Router restarted")
+            self.logger.info("Router restarted")
             return "ERROR"
 
         await asyncio.sleep(1)
@@ -465,15 +468,14 @@ class RtHdlr(HdlrBase):
         if (resp[0] == 0x42) & (resp[1] == 0x4C) & (resp[2] == 0) & (resp[3] == 0):
             self.logger.warning("Router starting to update")
         else:
-            self.logger.error(f"Failed to enter router ISP mode")
+            self.logger.error("Failed to enter router ISP mode")
             await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
-            self.logger.info(f"Router restarted")
+            self.logger.info("Router restarted")
             return "ERROR"
         cmd_org = RT_CMDS.UPDATE_RT_PKG
-        stat_msg = stat_msg.replace("<pkgs>", chr(no_pkgs + 1))
         for pi in range(no_pkgs):
             pkg_low_target = (pi + 1) & 0xFF
-            pkg_high_target = (pi + 1) >> 8
+            # pkg_high_target = (pi + 1) >> 8
             if pi < (no_pkgs - 1):
                 cmd_str = (
                     cmd_org.replace("<len>", chr(pkg_len + 8))
@@ -495,14 +497,7 @@ class RtHdlr(HdlrBase):
             resp_msg = self.rt_msg._resp_buffer[-self.rt_msg._resp_buffer[2] + 4 : -1]
             if (resp_code == 201) & (len(resp_msg) > 3):
                 if (resp_msg[0] == 0x42) & (resp_msg[1] == 0x4C):
-                    pkg_low = resp_msg[2]
-                    pkg_high = resp_msg[3]
-                    await self.api_srv.hdlr.send_api_response(
-                        stat_msg.replace("<pkgl>", chr(pkg_low)).replace(
-                            "<pkgh>", chr(pkg_high)
-                        ),
-                        RT_STAT_CODES.PKG_OK,
-                    )
+                    await progress_fun(resp_msg[2], resp[resp_msg[3]], no_pkgs)
                 else:
                     self.logger.error(
                         f"Failed to flash router, returned message 201: {resp_msg}"
@@ -510,29 +505,55 @@ class RtHdlr(HdlrBase):
                     await self.handle_router_cmd_resp(
                         self.rt_id, RT_CMDS.SYSTEM_RESTART
                     )
-                    self.logger.info(f"Router restarted")
+                    self.logger.info("Router restarted")
                     return "ERROR"
             else:
-                self.logger.error(f"Failed to flash router, returned empty message 201")
+                self.logger.error("Failed to flash router, returned empty message 201")
                 await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
-                self.logger.info(f"Router restarted")
+                self.logger.info("Router restarted")
                 return "ERROR"
-        self.logger.info(f"Successfully uploaded and flashed router firmware")
+            await asyncio.sleep(0.002)
+        self.logger.info("Successfully uploaded and flashed router firmware")
         await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
-        self.logger.info(f"Router restarted")
+        self.logger.info("Router restarted")
         return "OK"
 
-    async def upload_module_firmware(self, mod_type: bytes) -> bool:
+    async def send_rtr_fw_update_protocol(
+        self, pkg_high: int, pkg_low: int, max_count: int
+    ):
+        """Send counter back to api."""
+        stat_msg = (
+            API_RESPONSE.rtfw_flash_stat.replace("<rtr>", chr(self.rt_id))
+            .replace("<pkgs>", chr(max_count + 1))
+            .replace("<pkgl>", chr(pkg_low))
+            .replace("<pkgh>", chr(pkg_high))
+        )
+        await self.api_srv.hdlr.send_api_response(
+            stat_msg,
+            RT_STAT_CODES.PKG_OK,
+        )
+
+    async def log_rtr_fw_update_protocol(
+        self, pkg_high: int, pkg_low: int, max_count: int
+    ):
+        """Send counter back to api."""
+        cur_pkg = pkg_high * 256 + pkg_low
+        self.upd_stat_dict["mod_0"]["progress"] = round(100 * cur_pkg / max_count)
+        self.logger.info(
+            f"Router update progress: {cur_pkg} of {max_count +1} : {100 * cur_pkg / max_count} %"
+        )
+
+    async def upload_module_firmware(
+        self, mod_type: bytes, progress_fun: Callable[[], None]
+    ) -> bool:
         """Upload firmware to router, returns True for success."""
         fw_buf = self.rtr.fw_upload
         fw_len = len(fw_buf)
         cmd_org = RT_CMDS.UPDATE_MOD_PKG
-        stat_msg = API_RESPONSE.bin_upload_stat.replace("<rtr>", chr(self.rt_id))
         pkg_len = 246
         if fw_len > 0:
             no_pkgs = int(fw_len / pkg_len)
             rest_len = fw_len - no_pkgs * pkg_len
-            stat_msg = stat_msg.replace("<pkgs>", chr(no_pkgs + 1))
             if rest_len > 0:
                 no_pkgs += 1
             for pi in range(no_pkgs):
@@ -559,13 +580,9 @@ class RtHdlr(HdlrBase):
                     )
                 await self.handle_router_cmd_resp(self.rt_id, cmd_str)
                 if self.rt_msg._resp_buffer[5] == RT_STAT_CODES.PKG_OK:
-                    await self.api_srv.hdlr.send_api_response(
-                        stat_msg.replace("<pkg>", chr(pi + 1)), RT_STAT_CODES.PKG_OK
-                    )
+                    await progress_fun(pi + 1, no_pkgs, RT_STAT_CODES.PKG_OK)
                 else:
-                    await self.api_srv.hdlr.send_api_response(
-                        stat_msg.replace("<pkg>", chr(pi + 1)), RT_STAT_CODES.PKG_ERR
-                    )
+                    await progress_fun(pi + 1, no_pkgs, RT_STAT_CODES.PKG_ERR)
                     break  # abort upload
             if (self.rt_msg._resp_buffer[4] == pi + 1) & (
                 self.rt_msg._resp_buffer[5] == RT_STAT_CODES.PKG_OK
@@ -579,27 +596,44 @@ class RtHdlr(HdlrBase):
         )
         return False
 
-    async def flash_module_firmware(self, mod_list) -> bool:
+    async def send_mod_fw_upload_protocol(self, pckg: int, no_pkgs: int, code: int):
+        """Send firmware upload status protocol to ip client."""
+        stat_msg = (
+            API_RESPONSE.bin_upload_stat.replace("<rtr>", chr(self.rt_id))
+            .replace("<pkg>", chr(pckg))
+            .replace("<pkgs>", chr(no_pkgs + 1))
+        )
+        await self.api_srv.hdlr.send_api_response(stat_msg, code)
+
+    async def log_mod_fw_upload_protocol(self, pckg: int, no_pkgs: int, code: int):
+        """Send firmware upload status protocol to ip client."""
+        if code == RT_STAT_CODES.PKG_OK:
+            self.upd_stat_dict["upload"] = round(pckg * 100 / no_pkgs)
+            self.logger.info(
+                f"Firmware upload package {pckg} of {no_pkgs} : {round(pckg * 100 / no_pkgs)}%"
+            )
+        else:
+            self.logger.error(f"Firmware upload package {pckg} of {no_pkgs} : failed")
+
+    async def flash_module_firmware(
+        self, mod_list, progress_fun: Callable[[], None]
+    ) -> bool:
         """Update module with uploaded firmware."""
 
         for mod in mod_list:
             cmd_str = RT_CMDS.FLASH_MOD_FW.replace("<mod>", chr(mod))
             await self.handle_router_cmd_resp(self.rt_id, cmd_str)
             while await self.in_program_mode():
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(1)
                 await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.MOD_FLASH_STAT)
-                await self.send_fw_update_protocol(
-                    mod, self.rt_msg._resp_msg.decode("iso8859-1")
-                )
+                await progress_fun(mod, self.rt_msg._resp_msg.decode("iso8859-1"))
 
             await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.MOD_FLASH_STAT)
-            await self.send_fw_update_protocol(
-                mod, self.rt_msg._resp_msg.decode("iso8859-1")
-            )
+            await progress_fun(mod, self.rt_msg._resp_msg.decode("iso8859-1"))
             self.logger.info(f"Update of module {mod} finished")
         return "OK"
 
-    async def send_fw_update_protocol(self, mod, protocol):
+    async def send_mod_fw_update_protocol(self, mod, protocol):
         """Send update status protocol to ip client."""
         plen_l = len(protocol) & 0xFF
         plen_h = len(protocol) >> 8
@@ -612,12 +646,40 @@ class RtHdlr(HdlrBase):
         )
         await self.api_srv.hdlr.send_api_response(stat_msg, 1)
 
+    async def log_mod_fw_update_protocol(self, mod, protocol):
+        """Log update status protocol."""
+        cmod = ord(protocol[0])
+        if not cmod:
+            # Ignore first responses, update not started
+            self.protocol = protocol
+            return
+        if protocol == self.protocol:
+            # Ignore unchanged status responses
+            return
+        self.protocol = protocol
+        perc = ord(protocol[1])
+        self.upd_stat_dict["mod_" + str(mod)]["progress"] = perc
+        log_info = f"Update status for modules: Cur. mod: {cmod}: {perc}%"
+        for mod_rdy_i in range(ord(protocol[2])):
+            md = ord(protocol[3 + 3 * mod_rdy_i])
+            if ord(protocol[5 + 3 * mod_rdy_i]) == 85:
+                md_stat = "OK"
+            elif ord(protocol[5 + 3 * mod_rdy_i]) == 70:
+                md_stat = "failed"
+            else:
+                md_stat = "skipped"
+            no_errs = ord(protocol[4 + 3 * mod_rdy_i])
+            self.upd_stat_dict["mod_" + str(md)]["errors"] = no_errs
+            self.upd_stat_dict["mod_" + str(md)]["success"] = md_stat
+            log_info += f"  Mod {ord(protocol[3 + 3 * mod_rdy_i])}: {md_stat}"
+        self.logger.info(log_info)
+
     async def forward_message(self, src_rt: int, fwd_cmd: bytes) -> bytes:
         """Forward message from other router."""
         # insert src_rt into command
         fwd_cmd = fwd_cmd.decode("iso8859-1")
         fwd_cmd = (
-            f"\x2a<rtr>\xff"
+            "\x2a<rtr>\xff"
             + fwd_cmd[:4]
             + chr(self.rt_id)
             + fwd_cmd[5:7]
@@ -640,3 +702,8 @@ class RtHdlr(HdlrBase):
             if mod_id in self.rtr.mod_addrs:
                 return self.rtr.get_module(mod_id).update_status(resp_msg.resp_data)
             return
+
+    async def in_program_mode(self) -> bool:
+        """Return True while in program mode."""
+        await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.GET_GLOB_MODE)
+        return self.rt_msg._resp_msg[0] == SYS_MODES.Update

@@ -729,7 +729,6 @@ body.produkte.sub #right h1 {
    margin-right: 40px;
    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
    font: 11px arial, helvetica, clean, sans-serif;
-
 }
 #upd_button {
    height: 22px;
@@ -739,7 +738,30 @@ body.produkte.sub #right h1 {
    margin-right: 40px;
    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
    font: 11px arial, helvetica, clean, sans-serif;
+}
+#flash_button {
+   height: 22px;
+   width: 140px;
+   margin-left: 0px;
+   margin-top: 20px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
 
+.mod_subtext {
+   margin-top: -2px;
+   color:#667
+}
+.fw_subtext {
+   margin-top: -2px;
+   color:#667
+}
+
+.fw_subtext_bold {
+   margin-top: -2px;
+   font-weight: bold;
+   color:#000
 }
 
 #config_button.config_button {
@@ -1279,11 +1301,6 @@ button.config_button {
    width: 80%;
    margin-left: auto;
    margin-right: auto;
-}
-
-.grid_row p {
-   color: #667;
-   margin-top: auto;
 }
 
 form#mod-update-grid {

@@ -8,6 +8,7 @@ from config_settings import (
     show_router_overview,
     show_module_overview,
 )
+import json
 from config_automations import ConfigAutomationsServer
 from config_commons import (
     adjust_settings_button,
@@ -16,6 +17,7 @@ from config_commons import (
     get_module_image,
     init_side_menu,
     show_modules,
+    show_update_router,
     show_update_modules,
 )
 from module import HbtnModule
@@ -80,18 +82,18 @@ class ConfigServer:
         init_side_menu(self.app)
 
     @routes.get("/")
-    async def root(request: web.Request) -> web.Response:
+    async def lnk_root(request: web.Request) -> web.Response:
         page = get_html(HOMEPAGE)
         if request.app["is_offline"]:
             page = page.replace(">Hub<", ">Home<")
         return web.Response(text=page, content_type="text/html", charset="utf-8")
 
     @routes.get("/licenses")
-    async def root(request: web.Request) -> web.Response:
+    async def lnk_licenses(request: web.Request) -> web.Response:
         return show_license_table(request.app)
 
     @routes.get("/exit")
-    async def root(request: web.Request) -> web.Response:
+    async def lnk_exit(request: web.Request) -> web.Response:
         page = get_html(HOMEPAGE)
         if request.app["is_offline"]:
             page = page.replace(">Hub<", ">Home<")
@@ -104,24 +106,24 @@ class ConfigServer:
         return web.Response(text=page, content_type="text/html", charset="utf-8")
 
     @routes.get("/router")
-    async def root(request: web.Request) -> web.Response:
+    async def lnk_router(request: web.Request) -> web.Response:
         return show_router_overview(request.app)
 
     @routes.get("/hub")
-    async def root(request: web.Request) -> web.Response:
+    async def lnk_hub(request: web.Request) -> web.Response:
         return show_hub_overview(request.app)
 
     @routes.get("/modules")
-    async def root(request: web.Request) -> web.Response:
+    async def lnk_modules(request: web.Request) -> web.Response:
         return show_modules(request.app)
 
     @routes.get("/module-{mod_addr}")
-    async def root(request: web.Request) -> web.Response:
+    async def lnk_module_addr(request: web.Request) -> web.Response:
         mod_addr = int(request.match_info["mod_addr"])
         return show_module_overview(request.app, mod_addr)
 
     @routes.get("/download")
-    async def root(request: web.Request) -> web.Response:
+    async def lnk_download(request: web.Request) -> web.Response:
         file_name = request.query["file"]
         file_name = file_name.split(".")[0]
         rtr = request.app["api_srv"].routers[0]
@@ -171,7 +173,7 @@ class ConfigServer:
         )
 
     @routes.post("/upload")
-    async def root(request: web.Request) -> web.Response:
+    async def lnk_upload(request: web.Request) -> web.Response:
         app = request.app
         data = await request.post()
         config_file = data["file"].file
@@ -179,7 +181,7 @@ class ConfigServer:
         content_str = content.decode()
         if "SysUpload" in data.keys():
             content_parts = content_str.split("---\n")
-            app.logger.info(f"Router configuration file uploaded")
+            app.logger.info("Router configuration file uploaded")
             await send_to_router(app, content_parts[0])
             for mod_addr in app["api_srv"].routers[0].mod_addrs:
                 for cont_part in content_parts[1:]:
@@ -193,7 +195,7 @@ class ConfigServer:
             return show_modules(app)
         elif data["ModUpload"] == "ModAddress":
             # router upload
-            app.logger.info(f"Router configuration file uploaded")
+            app.logger.info("Router configuration file uploaded")  # noqa: F541
             await send_to_router(app, content_str)
             return show_router_overview(app)
         else:
@@ -210,93 +212,149 @@ class ConfigServer:
             return show_module_overview(app, mod_addr)  # web.HTTPNoContent()
 
     @routes.post("/upd_upload")
-    async def root(request: web.Request) -> web.Response:
+    async def lnk_upd_upload(request: web.Request) -> web.Response:
         app = request.app
         api_srv = app["api_srv"]
+        rtr = api_srv.routers[0]
         data = await request.post()
-        fw_filename = data["file"].filename
-        fw_bytes = data["file"].file.read()
+        # fw_filename = data["file"].filename
+        rtr.fw_upload = data["file"].file.read()
         upd_type = data["SysUpload"]
         if upd_type == "rtr":
-            router = api_srv.routers[0]
-            app.logger.info(f"Firmware file for router {router._name} uploaded")
-            return show_update_modules(app, [router])
+            fw_vers = rtr.fw_upload[-27:-5].decode()
+            app.logger.info(f"Firmware file for router {rtr._name} uploaded")
+            return show_update_router(rtr, fw_vers)
         elif upd_type == "mod":
-            mod_type = fw_bytes[:2]
+            mod_type = rtr.fw_upload[:2]
+            mod_type_str = MODULE_CODES[mod_type.decode()]
+            fw_vers = rtr.fw_upload[-27:-5].decode().strip()
             app.logger.info(
-                f"Firmware file for '{MODULE_CODES[mod_type.decode()]}' modules uploaded"
+                f"Firmware file v. {fw_vers} for '{MODULE_CODES[mod_type.decode()]}' modules uploaded"
             )
-            mod_list = api_srv.routers[0].get_module_list()
+            mod_list = rtr.get_module_list()
             upd_list = []
             for mod in mod_list:
                 if mod.typ == mod_type:
                     upd_list.append(mod)
-            return show_update_modules(app, upd_list)
+            return show_update_modules(upd_list, fw_vers, mod_type_str)
         else:
-            mod_type = fw_bytes[:2]
+            mod_type = rtr.fw_upload[:2]
             mod_addr = int(upd_type)
-            module = api_srv.routers[0].get_module(mod_addr)
+            module = rtr.get_module(mod_addr)
             if module._typ == mod_type:
                 app.logger.info(f"Firmware file for module {module._name} uploaded")
-                return show_update_modules(app, [module])
+                return show_update_modules([module], fw_vers, mod_type_str)
             else:
                 app.logger.error(
                     f"Firmware file for {MODULE_CODES[mod_type.encode()]} uploaded, not compatible with module {module._name}"
                 )
                 return show_hub_overview(app)
 
-    @routes.post("/update_modules")
-    async def root(request: web.Request) -> web.Response:
+    @routes.post("/update_router")
+    async def lnk_update_router(request: web.Request) -> web.Response:
         app = request.app
         api_srv = app["api_srv"]
+        rtr = api_srv.routers[0]
         resp = await request.text()
         form_data = parse_qs(resp)
         if form_data["UpdButton"][0] == "cancel":
             return show_hub_overview(app)
-        for checked in list(form_data.keys())[:-1]:
-            app.logger.info(
-                f"Update von Modul {form_data[checked][0]} wird durchgeführt."
-            )
+        rtr.hdlr.upd_stat_dict = {"modules": [0], "upload": 100}
+        rtr.hdlr.upd_stat_dict["mod_0"] = {
+            "progress": 0,
+            "errors": 0,
+            "success": "OK",
+        }
+        await rtr.hdlr.upload_router_firmware(None, rtr.hdlr.log_rtr_fw_update_protocol)
         return show_hub_overview(app)
 
+    @routes.post("/update_modules")
+    async def lnk_update_modules(request: web.Request) -> web.Response:
+        app = request.app
+        api_srv = app["api_srv"]
+        rtr = api_srv.routers[0]
+        resp = await request.text()
+        form_data = parse_qs(resp)
+        if form_data["UpdButton"][0] == "cancel":
+            return show_hub_overview(app)
+        if len(form_data.keys()) == 1:
+            # nothing selected
+            return show_hub_overview(app)
+
+        mod_type = rtr.fw_upload[:2]
+        mod_list = []
+        for checked in list(form_data.keys())[:-1]:
+            mod_list.append(int(form_data[checked][0]))
+        rtr.hdlr.upd_stat_dict = {"modules": mod_list, "upload": 0}
+        for md in mod_list:
+            rtr.hdlr.upd_stat_dict[f"mod_{md}"] = {
+                "progress": 0,
+                "errors": 0,
+                "success": "OK",
+            }
+        app.logger.info(f"Update of Modules {mod_list}")
+        await api_srv.block_network_if(rtr._id, True)
+        if await rtr.hdlr.upload_module_firmware(
+            mod_type, rtr.hdlr.log_mod_fw_upload_protocol
+        ):
+            app.logger.info("Firmware uploaded to router successfully")
+            await rtr.hdlr.flash_module_firmware(
+                mod_list, rtr.hdlr.log_mod_fw_update_protocol
+            )
+            for mod in mod_list:
+                await rtr.get_module(mod).initialize()
+        else:
+            app.logger.info("Firmware upload to router failed, update terminated")
+        await api_srv.block_network_if(rtr._id, False)
+        return show_hub_overview(app)
+
+    @routes.get("/update_status")
+    async def lnk_update_status(request: web.Request) -> web.Response:
+        app = request.app
+        stat = app["api_srv"].routers[0].hdlr.upd_stat_dict
+        return web.Response(
+            text=json.dumps(stat), content_type="text/plain", charset="utf-8"
+        )
+
     @routes.get(path="/{key:.*}.txt")
-    async def root(request: web.Request) -> web.Response:
+    async def lnk_license_text(request: web.Request) -> web.Response:
         return show_license_text(request)
 
 
-# @routes.get(path="/{key:.*}")
-# async def _(request):
-#     app = request.app
-#     warning_txt = f"Route '{request.path}' not yet implemented"
-#     app.logger.warning(warning_txt)
-#     mod_image, type_desc = get_module_image(app["module"]._typ)
-#     page = fill_page_template(
-#         f"Modul '{app['module']._name}'",
-#         type_desc,
-#         warning_txt,
-#         app["side_menu"],
-#         mod_image,
-#         "",
-#     )
-#     page = adjust_settings_button(page, "", f"{0}")
-#     return web.Response(text=page, content_type="text/html", charset="utf-8")
+@routes.get(path="/{key:.*}")
+async def _(request):
+    app = request.app
+    warning_txt = f"Route '{request.path}' not yet implemented"
+    app.logger.warning(warning_txt)
+    mod_image, type_desc = get_module_image(app["module"]._typ)
+    page = fill_page_template(
+        f"Modul '{app['module']._name}'",
+        type_desc,
+        warning_txt,
+        app["side_menu"],
+        mod_image,
+        "",
+    )
+    page = adjust_settings_button(page, "", f"{0}")
+    return web.Response(text=page, content_type="text/html", charset="utf-8")
 
-# @routes.post(path="/{key:.*}")
-# async def _(request):
-#     app = request.app
-#     warning_txt = f"Route '{request.path}' not yet implemented"
-#     app.logger.warning(warning_txt)
-#     mod_image, type_desc = get_module_image(app["settings"]._typ)
-#     page = fill_page_template(
-#         f"Modul '{app['settings'].name}'",
-#         type_desc,
-#         warning_txt,
-#         app["side_menu"],
-#         mod_image,
-#         "",
-#     )
-#     page = adjust_settings_button(page, "", f"{0}")
-#     return web.Response(text=page, content_type="text/html", charset="utf-8")
+
+@routes.post(path="/{key:.*}")
+async def _(request):
+    app = request.app
+    warning_txt = f"Route '{request.path}' not yet implemented"
+    app.logger.warning(warning_txt)
+    mod_image, type_desc = get_module_image(app["settings"]._typ)
+    page = fill_page_template(
+        f"Modul '{app['settings'].name}'",
+        type_desc,
+        warning_txt,
+        app["side_menu"],
+        mod_image,
+        "",
+    )
+    page = adjust_settings_button(page, "", f"{0}")
+    return web.Response(text=page, content_type="text/html", charset="utf-8")
 
 
 def show_hub_overview(app) -> web.Response:

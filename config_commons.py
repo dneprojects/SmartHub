@@ -58,34 +58,95 @@ def show_modules(app) -> web.Response:
     modules = app["api_srv"].routers[0].modules
     for module in modules:
         pic_file, title = get_module_image(module._typ)
-        images += f'<div class="figd_grid"><a href="module-{module._id}"><div class="fig_grid"><img src="configurator_files/{pic_file}" alt="{module._name}"><p>{module._name}</p></div></a></div>\n'
+        images += f'<div class="figd_grid"><a href="module-{module._id}"><div class="fig_grid"><img src="configurator_files/{pic_file}" alt="{module._name}"><p class="mod_subtext">{module._name}</p></div></a></div>\n'
     page = page.replace("<!-- ImageGrid -->", images)
     return web.Response(text=page, content_type="text/html", charset="utf-8")
 
 
-def show_update_modules(app, mod_list) -> web.Response:
+def show_update_router(rtr, new_fw: str) -> web.Response:
     """Prepare modules page with update candidates."""
     page = get_html("modules.html")
+    page = page.replace(
+        "</html>",
+        '</html>\n<script type="text/javascript" src="/configurator_files/update_status.js"></script>',
+    )
+    images = '<form id="mod-update-grid" action="/update_modules" method="post">'
+    pic_file, title = get_module_image(b"\x00\x00")
+    images += '<div class="figd_grid">\n'
+    images += f'<img src="configurator_files/{pic_file}" alt="{rtr.name}">&nbsp;&nbsp;&nbsp;{rtr._name}&nbsp;&nbsp;&nbsp;\n'
+    images += (
+        f'<p class="fw_subtext" id="stat_0">{rtr.version[1:].decode("iso8859-1")}</p>\n'
+    )
+    images += "</div>\n"
+    images += "</div>\n"
+    images += "<br><br>"
+    images += '<button name="UpdButton" id="upd_button" type="submit" value="cancel">Abbruch</button>'
+    images += '<button name="UpdButton" id="flash_button" type="submit" value="flash">Flashen</button>'
+    images += "</form>"
+    page = page.replace("<!-- ImageGrid -->", images)
+    page = page.replace("<h1>Module</h1>", "<h1>Firmware Update</h1>")
+    page = page.replace("Overview", f"Version {new_fw} für Smart Router")
+    page = page.replace("Wählen Sie ein Modul aus", "")
+    page = page.replace('action="/update_modules"', 'action="/update_router"')
+    return web.Response(text=page, content_type="text/html", charset="utf-8")
+
+
+def is_outdated(cur_fw: str, new_fw: str) -> bool:
+    """Compare two firmware strings and return update status."""
+    cur_fw_fields = cur_fw.strip().split()
+    new_fw_fields = new_fw.strip().split()
+    cur_date = cur_fw_fields[-1]
+    new_date = new_fw_fields[-1]
+    cur_year = cur_date.split("/")[1]
+    cur_month = cur_date.split("/")[0][-2:]
+    new_year = new_date.split("/")[1]
+    new_month = new_date.split("/")[0][-2:]
+    if int(new_year) > int(cur_year):
+        return True
+    if (int(new_year) == int(cur_year)) & (int(new_month) > int(cur_month)):
+        return True
+    # if (new_date == cur_date) & ():
+    #     return True
+    return False
+
+
+def show_update_modules(mod_list, new_fw: str, mod_type: str) -> web.Response:
+    """Prepare modules page with update candidates."""
+    page = get_html("modules.html")
+    page = page.replace(
+        "</html>",
+        '</html>\n<script type="text/javascript" src="/configurator_files/update_status.js"></script>',
+    )
+    page = page.replace("Overview", f"Version {new_fw} für {mod_type}")
     images = '<form id="mod-update-grid" action="/update_modules" method="post">'
     for module in mod_list:
         pic_file, title = get_module_image(module.typ)
         images += '<div class="figd_grid">\n'
-        images += f'<input type="checkbox" class="mod_chk" id="chk_{module.id}" name="chk_{module.id}" value="{module.id}" checked="true">\n'
+        if is_outdated(module.fw, new_fw):
+            images += f'<input type="checkbox" class="mod_chk" id="chk_{module.id}" name="chk_{module.id}" value="{module.id}" checked>\n'
+        else:
+            images += f'<input type="checkbox" class="mod_chk" id="chk_{module.id}" name="chk_{module.id}" value="{module.id}">\n'
         images += f'<label for="chk_{module.id}">\n'
         images += f'<img src="configurator_files/{pic_file}" alt="{module.name}">&nbsp;&nbsp;&nbsp;{module.name}&nbsp;&nbsp;&nbsp;\n'
-        images += f'<p class="fw_subtext">{module.fw}</p>\n'
+        images += f'<p class="fw_subtext" id="stat_{module.id}">{module.fw}</p>\n'
         images += "</label>\n"
         images += "</div>\n"
     images += "</div>\n"
-    images += "<br><br>"
-    images += '<button name="UpdButton" id="upd_button" type="submit" value="cancel">Abbruch</button>'
-    images += '<button name="UpdButton" id="upd_button" type="submit" value="flash">Flashen</button>'
-    images += "</form>"
+    images += "<br><br>\n"
+    images += '<button name="UpdButton" id="upd_button" type="submit" value="cancel">Abbruch</button>\n'
+    images += '<button name="UpdButton" id="flash_button" type="submit" value="flash">Flashen</button>\n'
+    images += "</form>\n"
     page = page.replace("<!-- ImageGrid -->", images)
-    page = page.replace("Overview", "Firmware Update für Module vorhanden")
-    page = page.replace(
-        "Wählen Sie ein Modul aus", "Wählen Sie die Module für das Update aus"
-    )
+    page = page.replace("<h1>Module</h1>", "<h1>Firmware Update</h1>")
+    if len(mod_list) == 0:
+        page = page.replace(
+            "Wählen Sie ein Modul aus", "Kein kompatibles Modul vorhanden"
+        )
+        page = page.replace(">Flashen</button>", " disabled>Flashen</button>")
+    else:
+        page = page.replace(
+            "Wählen Sie ein Modul aus", "Wählen Sie Module für das Update aus"
+        )
     return web.Response(text=page, content_type="text/html", charset="utf-8")
 
 

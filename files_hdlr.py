@@ -36,12 +36,12 @@ class FilesHdlr(HdlrBase):
                 self.check_router_module_no(rt, mod)
                 if self.args_err:
                     return
-                self.api_srv.routers[rt - 1].get_module(
-                    mod
-                ).smg_upload = self.msg._cmd_data[:156]
-                self.api_srv.routers[rt - 1].get_module(
-                    mod
-                ).smc_upload = self.msg._cmd_data[156:]
+                self.api_srv.routers[rt - 1].get_module(mod).smg_upload = (
+                    self.msg._cmd_data[:156]
+                )
+                self.api_srv.routers[rt - 1].get_module(mod).smc_upload = (
+                    self.msg._cmd_data[156:]
+                )
                 self.response = "OK"
                 return
             case spec.SMM_TO_MOD:
@@ -296,6 +296,10 @@ class FilesHdlr(HdlrBase):
     async def update_module_type(self, rtr, mod_type, mod_list) -> bool:
         """Upload and flash firmware for one module type"""
         if rtr.load_firmware(mod_type):
-            if await rtr.hdlr.upload_module_firmware(mod_type):
-                return await rtr.hdlr.flash_module_firmware(mod_list)
+            if await rtr.hdlr.upload_module_firmware(
+                mod_type, rtr.hdlr.send_mod_fw_upload_protocol
+            ):
+                return await rtr.hdlr.flash_module_firmware(
+                    mod_list, rtr.hdlr.send_mod_fw_update_protocol
+                )
         return False

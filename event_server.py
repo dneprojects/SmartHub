@@ -4,7 +4,6 @@ import json
 import os
 import websockets
 from websockets import ConnectionClosedOK
-from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from const import DATA_FILES_DIR, HA_EVENTS
 from forward_hdlr import ForwardHdlr
 
@@ -88,7 +87,7 @@ class EventServer:
             return tok_str
         except Exception as err_msg:
             self.logger.error(
-                f"Failed to open {DATA_FILES_DIR + 'settings.set'}, event server can't transmit events"
+                f"Failed to open {DATA_FILES_DIR + 'settings.set'}: {err_msg}; event server can't transmit events"
             )
             return None
 
@@ -108,7 +107,8 @@ class EventServer:
         self.busy_starting = True
         self.evnt_running = True
         rtr_id = 100  # inital value, will be taken from event messages
-        success = await self.open_websocket()
+        await self.open_websocket()
+        tail = b""
 
         recvd_byte = b"\00"  # Initialization for resync
         while self.evnt_running:
@@ -123,7 +123,7 @@ class EventServer:
                         prefix = ("\xff#" + chr(rtr_id) + chr(len(tail) + 4)).encode(
                             "iso8859-1"
                         )
-                    except:
+                    except:  # noqa: E722
                         # If something goes wrong, rtr_id and tail are without value
                         prefix = ("\xff#" + chr(1) + chr(4)).encode("iso8859-1")
                 elif recvd_byte == b"\xff":
@@ -164,6 +164,7 @@ class EventServer:
                         self.logger.info(
                             f"API mode router message too short, tail: {tail}"
                         )
+                        msg_len = 0
                     else:
                         msg_len = await self.parse_event_message(
                             rt_event, rt_rd, rtr_id
@@ -257,7 +258,7 @@ class EventServer:
             mirr_events = self.api_srv.routers[rtr_id - 1].hdlr.parse_event(
                 rt_event[1:]
             )
-            if (mirr_events != None) & (mirr_events != []):
+            if (mirr_events is not None) & (mirr_events != []):
                 # send event to IP client
                 await self.notify_mirror_events(mirr_events, rtr_id)
             m_len = 232
@@ -273,7 +274,7 @@ class EventServer:
                     f"API mode router message, invalid system mode length: {rt_event}"
                 )
             else:
-                self.logger.debug(f"API mode router message, system mode: 'Config'")
+                self.logger.debug("API mode router message, system mode: 'Config'")
 
         else:
             # Discard resonse of API command
@@ -377,7 +378,7 @@ class EventServer:
                 case 68:
                     m_len = rt_event[8] + 7
                     self.logger.warning(f"Event 68: {rt_event}")
-                case other:
+                case _:
                     self.logger.warning(f"Unknown event id: {event_id}")
                     return m_len
             await self.notify_event(rtr_id, ev_list)
@@ -386,14 +387,14 @@ class EventServer:
     async def notify_event(self, rtr: int, event: list[int]):
         """Trigger event on remote host (e.g. home assistant)"""
 
-        if (self.websck == []) | (self.websck == None):
+        if (self.websck == []) | (self.websck is None):
             success = await self.open_websocket()
         else:
             success = True
         if not success:
             self.logger.warning("Failed to send event via websocket, open failed")
             return
-        if event == None:
+        if event is None:
             return
         try:
             evnt_data = {
@@ -405,7 +406,7 @@ class EventServer:
                 "evnt_arg2": event[3],
             }
             self.logger.debug(f"Event alerted: {evnt_data}")
-            if self.websck == None:
+            if self.websck is None:
                 return
             event_cmd = WEBSOCK_MSG.call_service_msg
             self.notify_id += 1
@@ -416,9 +417,9 @@ class EventServer:
             resp = await self.websck.recv()
             self.logger.debug(f"Notify returned {resp}")
 
-        except ConnectionClosedOK as err_msg:
+        except ConnectionClosedOK:
             self.logger.warning(
-                f"Connection closed by HA server, terminating event server task"
+                "Connection closed by HA server, terminating event server task"
             )
             self.evnt_running = False
             await self.stop()
@@ -444,7 +445,7 @@ class EventServer:
                 await self.websck.send(json.dumps(event_cmd))  # Send command
                 resp = await self.websck.recv()
                 if json.loads(resp)["type"] == "pong":
-                    self.logger.debug(f"Received pong from event server")
+                    self.logger.debug("Received pong from event server")
                     return True
                 else:
                     self.logger.error(
@@ -455,13 +456,13 @@ class EventServer:
                 self.logger.error(f"Could not send ping to event server: {error_msg}")
                 await self.close_websocket()
                 return False
-        self.logger.error(f"Could not reconnect to event server")
+        self.logger.error("Could not reconnect to event server")
         return False
 
     async def open_websocket(self, retry=False) -> bool:
         """Opens web socket connection to home assistant."""
 
-        if (not (self.websck == None)) & (not (self.websck == [])):
+        if (self.websck is not None) & (not (self.websck == [])):
             # websocket object registered if neither None nor []
             return True
         if self.api_srv._netw_blocked:
@@ -485,7 +486,7 @@ class EventServer:
             # token for 192.168.178.133: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlYjQ2MTA4ZjUxOTU0NTY3Yjg4ZjUxM2Q5ZjBkZWRlYSIsImlhdCI6MTY5NDYxMDEyMywiZXhwIjoyMDA5OTcwMTIzfQ.3LtGwhonmV2rAbRnKqEy3WYRyqiS8DTh3ogx06pNz1g"
             # token for 192.168.178.160: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI4OTNlZDJhODU2ZmY0ZDQ3YmVlZDE2MzIyMmU1ODViZCIsImlhdCI6MTcwMjgyMTYxNiwiZXhwIjoyMDE4MTgxNjE2fQ.NT-WSwkG9JN8f2cCt5fXlP4A8FEOAgDTrS1sdhB0ioo"
 
-        if self.token == None:
+        if self.token is None:
             if self.api_srv.is_addon:
                 self.logger.error(
                     "Websocket supervisor token is none, open_websocket failed."

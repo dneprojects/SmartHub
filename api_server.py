@@ -131,7 +131,7 @@ class ApiServer:
 
             if success:
                 response = self.hdlr.response
-                self.logger.info(f"API call returned: {response}")
+                self.logger.debug(f"API call returned: {response}")
             else:
                 self.logger.warning(f"API call failed: {response}")
             self.respond_client(response)  # Aknowledge the api command at last
