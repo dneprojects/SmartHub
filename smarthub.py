@@ -278,8 +278,9 @@ async def open_serial_interface(device, logger) -> tuple[StreamReader, StreamWri
         xonxoff=False,
     )
 
-    if len(ser_rd._buffer) > 0:
-        await ser_rd.readexactly(len(ser_rd._buffer))
+    buf_content = len(ser_rd.__getattribute__("_buffer"))
+    if buf_content:
+        await ser_rd.readexactly(buf_content)
         logger.info(f"Emptied serial read buffer of {device}")
     return (ser_rd, ser_wr)
 
@@ -422,7 +423,7 @@ async def main(init_flag, ev_loop):
 
     # Waiting until finished
     try:
-        await asyncio.wait(sm_hub.tg) # type: ignore
+        await asyncio.wait(sm_hub.tg)  # type: ignore
     except Exception:
         pass
     if rt_serial is not None:
