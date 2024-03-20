@@ -106,10 +106,8 @@ class SmartHub:
                 with open("/sys/firmware/devicetree/base/serial-number") as f:
                     self._serial = f.read()[:-1]
                     f.close()
-            except Exception as err_msg:
-                self.logger.warning(
-                    f"Could not access devicetree, using default information: {err_msg}"
-                )
+            except Exception:
+                self.logger.info("Using default devicetree")
                 self._pi_model = "Raspberry Pi"
                 self._serial = "10000000e3d90xxx"
             self._cpu_info = cpuinfo.get_cpu_info()

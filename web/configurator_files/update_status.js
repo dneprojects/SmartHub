@@ -26,7 +26,7 @@ function setStatus(jsonString) {
     var updateStat = JSON.parse(jsonString);
     upldStat = updateStat.upload;
     modsList = updateStat.modules
-    cur_mod = modStat.cur_mod;
+    cur_mod = updateStat.cur_mod;
 
     if (cur_mod < 0) {
         // upload
