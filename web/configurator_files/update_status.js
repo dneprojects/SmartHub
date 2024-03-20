@@ -39,7 +39,7 @@ function setStatus(jsonString) {
             lbl.className = 'fw_subtext_bold';
             lbl.innerText = "Upload: " + upldStat + "%";
         }
-        else if (prog < 100) {
+        else if ((upldStat == 100) & (prog > 0) & (prog < 100)) {
             if (i > 0) {
                 last_lbl = document.getElementById("stat_" + modsList[i - 1])
                 last_lbl.className = 'fw_subtext';
@@ -47,7 +47,7 @@ function setStatus(jsonString) {
             lbl.className = 'fw_subtext_bold';
             lbl.innerText = "Flashen: " + prog + "%";
         }
-        else if (prog == 100) {
+        else if ((upldStat == 100) & (prog == 100)) {
             lbl.className = 'fw_subtext_bold';
             lbl.innerText = "Flashen: " + success;
         }
