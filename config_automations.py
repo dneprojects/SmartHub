@@ -5,7 +5,6 @@ from automtn_trigger import AutomationTrigger
 from configuration import ModuleSettings
 from config_commons import get_module_image, disable_button, indent
 from config_settings import show_module_overview
-import logging
 from const import (
     WEB_FILES_DIR,
     AUTOMATIONS_TEMPLATE_FILE,
@@ -29,7 +28,7 @@ class ConfigAutomationsServer:
         self.app["parent"] = self.parent
 
     @routes.get("/list")
-    async def root(request: web.Request) -> web.Response:
+    async def get_list(request: web.Request) -> web.Response:  # type: ignore
         args = request.query_string.split("=")
         mod_addr = int(args[1])
         main_app = request.app["parent"]
@@ -37,7 +36,7 @@ class ConfigAutomationsServer:
         return build_show_automations(main_app, mod_addr, 0)
 
     @routes.post("/automtns")
-    async def root(request: web.Request) -> web.Response:
+    async def post_automtns(request: web.Request) -> web.Response:  # type: ignore
         resp = await request.text()
         form_data = parse_qs(resp)
         main_app = request.app["parent"]
@@ -87,7 +86,7 @@ class ConfigAutomationsServer:
             main_app["atm_mode"] = atm_mode
 
             if atm_mode == "delete":
-                if automtn_selctn != None:
+                if automtn_selctn is not None:
                     if main_app["step"] == 0:
                         del main_app["automations_def"].local[automtn_selctn]
                     else:
@@ -100,7 +99,7 @@ class ConfigAutomationsServer:
                             ]
                 return show_automations(main_app, main_app["step"])
 
-            if automtn_selctn == None:
+            if automtn_selctn is None:
                 if atm_mode == "change":
                     return show_automations(main_app, main_app["step"])
                 else:
@@ -154,7 +153,7 @@ class ConfigAutomationsServer:
             )
 
     @routes.post("/automtn_def")
-    async def root(request: web.Request) -> web.Response:
+    async def post_automtn_def(request: web.Request) -> web.Response:  # type: ignore
         resp = await request.text()
         form_data = parse_qs(resp)
         main_app = request.app["parent"]
@@ -172,6 +171,8 @@ class ConfigAutomationsServer:
         elif "trigger_sel" in form_data.keys():
             return web.HTTPNoContent()
         elif "action_sel" in form_data.keys():
+            return web.HTTPNoContent()
+        else:
             return web.HTTPNoContent()
 
 
@@ -312,7 +313,7 @@ def prepare_automations_list(main_app, step):
         last_source_header = ""
     tbl = (
         indent(4)
-        + f'<form id="automations_table" action="/automations/automtns" method="post">\n'
+        + '<form id="automations_table" action="/automations/automtns" method="post">\n'
     )
     for at_i in range(len(automations)):
         if step > 0:
@@ -344,7 +345,7 @@ def prepare_automations_list(main_app, step):
                 tbl += indent(6) + "<thead>\n"
                 tbl += (
                     indent(6)
-                    + f'<tr id="atm-th" data-sort-method="none"><th><b>Auslöser</b></th><th><b>Bedingung</b></th><th data-sort-method="none"></th><th><b>Aktion</b></th><th data-sort-method="none"></th></tr>\n'
+                    + '<tr id="atm-th" data-sort-method="none"><th><b>Auslöser</b></th><th><b>Bedingung</b></th><th data-sort-method="none"></th><th><b>Aktion</b></th><th data-sort-method="none"></th></tr>\n'
                 )
                 tbl += indent(6) + "</thead>\n"
                 tbl += indent(6) + "<tbody>\n"
@@ -352,7 +353,7 @@ def prepare_automations_list(main_app, step):
         evnt_desc = automations[at_i].trigger.description
         cond_desc = automations[at_i].condition.name
         actn_desc = automations[at_i].action.description
-        id_name = f"atmn_tbl"
+        id_name = "atmn_tbl"
         sel_chkd = ""
         if at_i == main_app["automations_def"].selected:
             sel_chkd = "checked"

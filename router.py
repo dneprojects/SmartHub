@@ -98,13 +98,13 @@ class HbtnRouter:
             self.mod_addrs.remove(mod_addr)
         self.load_descriptions()
 
-    async def get_status(self) -> str:
+    async def get_status(self) -> bytes:
         """Returns router channel status"""
-        opr_off = await self.api_srv.set_server_mode(self._id)
+        await self.api_srv.set_server_mode(self._id)
         self.chan_status = await self.hdlr.get_rt_status()
         return self.chan_status
 
-    def get_module(self, mod_id):
+    def get_module(self, mod_id: int) -> HbtnModule | None:
         """Return module object."""
         md_idx = self.mod_addrs.index(mod_id)
         if md_idx >= len(self.modules):
@@ -119,7 +119,7 @@ class HbtnRouter:
             mod_str += chr(len(mod._name)) + mod._name
         return mod_str
 
-    def get_module_list(self) -> str:
+    def get_module_list(self) -> list:
         """Return id, type, and name of all modules in a list."""
 
         class Mdle:
@@ -136,9 +136,9 @@ class HbtnRouter:
             mod_list.append(Mdle(mod._id, mod._typ, mod._name, mod.get_sw_version()))
         return mod_list
 
-    def build_smr(self):
+    def build_smr(self) -> None:
         """Build SMR file content from status."""
-        st_idx = self.status_idx
+        st_idx = self.status_idx  # noqa: F841
         chan_buf = self.channels
         self.logger.debug(f"self.channels: {chan_buf}")
         chan_list = b""
@@ -166,7 +166,7 @@ class HbtnRouter:
         """Calculate and store crc of SMR data."""
         self.smr_crc = ModbusComputeCRC(smr_buf)
 
-    async def set_config_mode(self, set_not_reset: bool):
+    async def set_config_mode(self, set_not_reset: bool) -> None:
         """Switches to config mode and back."""
         if self.api_srv._init_mode:
             return
@@ -179,11 +179,11 @@ class HbtnRouter:
                 await self.api_srv.set_server_mode(self._id)
         return
 
-    async def flush_buffer(self):
+    async def flush_buffer(self) -> None:
         """Empty router buffer."""
         await self.hdlr.handle_router_cmd(self._id, RT_CMDS.CLEAR_RT_SENDBUF)
 
-    async def set_module_group(self, mod: int, grp: int):
+    async def set_module_group(self, mod: int, grp: int) -> None:
         """Store new module group setting into router."""
         self.groups = self.groups[:mod] + int.to_bytes(grp) + self.groups[mod + 1 :]
         await self.set_config_mode(True)
@@ -208,7 +208,7 @@ class HbtnRouter:
             ptr += l_len
         return out_buf
 
-    def save_descriptions(self):
+    def save_descriptions(self) -> None:
         """Save descriptions to file."""
         file_name = f"Rtr_{self._id}_descriptions.smb"
         if self.api_srv.is_addon:
@@ -226,7 +226,7 @@ class HbtnRouter:
                 f"Error saving description to file {file_path + file_name}: {err_msg}"
             )
 
-    def load_descriptions(self):
+    def load_descriptions(self) -> None:
         """Load descriptions from file."""
         self.descriptions = ""
         file_name = f"Rtr_{self._id}_descriptions.smb"
@@ -249,7 +249,7 @@ class HbtnRouter:
         else:
             self.logger.warning(f"Descriptions file {file_path + file_name} not found")
 
-    def unpack_descriptions(self, lines: str):
+    def unpack_descriptions(self, lines: str) -> None:
         """Load descriptions from string."""
         line = lines[0].split(";")
         for ci in range(len(line) - 1):
@@ -259,9 +259,9 @@ class HbtnRouter:
             line = lines[li + 1].split(";")
             for ci in range(len(line) - 1):
                 self.descriptions += chr(int(line[ci]))
-        self.logger.info(f"Descriptions restored")
+        self.logger.info("Descriptions restored")
 
-    def save_firmware(self, bin_data):
+    def save_firmware(self, bin_data) -> None:
         "Save firmware binary to file and fw_data buffer."
         file_path = DATA_FILES_DIR
         file_name = f"Firmware_{bin_data[0]:02d}_{bin_data[1]:02d}.bin"
@@ -271,7 +271,7 @@ class HbtnRouter:
         self.fw_upload = bin_data
         self.logger.debug(f"Firmware file {file_path + file_name} saved")
 
-    def load_firmware(self, mod_type) -> bytes:
+    def load_firmware(self, mod_type) -> bool:
         "Load firmware binary from file to fw_data buffer."
         if isinstance(mod_type, str):
             mod_type = mod_type.encode("iso8859-1")
@@ -289,14 +289,12 @@ class HbtnRouter:
         )
         return False
 
-    def get_router_settings(self):
+    def get_router_settings(self) -> RouterSettings:
         """Collect all settings and prepare for config server."""
         self.settings = RouterSettings(self)
-        self.settings.id = 0  # to distinguish from modules
-        self.settings.typ = b"\0\0"  # to distinguish from modules
         return self.settings
 
-    async def set_settings(self, settings: RouterSettings):
+    async def set_settings(self, settings: RouterSettings) -> None:
         """Store settings into router."""
         self.settings = settings
         if self.api_srv.is_offline:
@@ -318,13 +316,13 @@ class HbtnRouter:
             await self.get_full_status()
             await self.api_srv.block_network_if(self._id, False)
 
-    def set_descriptions(self, settings: RouterSettings):
+    def set_descriptions(self, settings: RouterSettings) -> None:
         """Store names into router descriptions."""
         # groups, group names, mode dependencies
         self.descriptions = settings.set_glob_descriptions()
         self.save_descriptions()
 
-    def get_properties(self):
+    def get_properties(self) -> tuple[dict[str, int], list[str]]:
         """Return number of flags, commands, etc."""
 
         props: dict = {}

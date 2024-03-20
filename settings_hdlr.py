@@ -11,7 +11,7 @@ class SettingsHdlr(HdlrBase):
     async def process_message(self):
         """Parse message, prepare and send router command"""
 
-        rt = self._p4
+        rt: int = self._p4
         match self._spec:
             case spec.CONN_TST:
                 self.logger.debug("Connection test")

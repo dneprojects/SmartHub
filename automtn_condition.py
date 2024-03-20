@@ -28,7 +28,7 @@ class AutomationCondition:
         self.autmn_dict = autmn.autmn_dict
         self.name, self.cond_arg = self.parse()
 
-    def parse(self) -> (str, int):
+    def parse(self) -> tuple[str, int]:
         """Return condition name and argument."""
         if self.cond_code in range(160, 184):  # time 0 .. 24
             cond_name = f"Uhrzeit: {self.cond_code - 160}h"

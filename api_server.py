@@ -5,6 +5,7 @@ from asyncio.streams import StreamReader, StreamWriter
 
 from const import RT_CMDS, API_CATEGS
 import logging
+from logging.handlers import RotatingFileHandler
 from messages import ApiMessage
 from data_hdlr import DataHdlr
 from settings_hdlr import SettingsHdlr
@@ -31,22 +32,21 @@ class ApiServer:
         self.logger = logging.getLogger(__name__)
         self._rt_serial: tuple[StreamReader, StreamWriter] = rt_serial
         self._opr_mode: bool = True  # Allows explicitly setting operate mode off
-        self.hdlr = []
         self.routers = []
         self.routers.append(HbtnRouter(self, 1))
-        self.evnt_srv = []
         self.api_msg = ApiMessage(self, const.def_cmd, const.def_len)
         self._running = True
-        self._client_ip = ""
-        self._hass_ip = ""
-        self.is_addon = False
-        self.mirror_mode_enabled = True
-        self.event_mode_enabled = True
-        self._api_cmd_processing = False  # For blocking of config server io requests
-        self._netw_blocked = False  # For blocking of network api server request
-        self._auto_restart_opr = False  # For automatic restart of Opr after api call
-        self._init_mode = True
-        self._first_api_cmd = True
+        self._client_ip: str = ""
+        self._hass_ip: str = ""
+        self.is_addon: bool = False
+        self.mirror_mode_enabled: bool = True
+        self.event_mode_enabled: bool = True
+        self._api_cmd_processing: bool = False  # Blocking of config server io requests
+        self._netw_blocked: bool = False  # Blocking of network api server request
+        self._auto_restart_opr: bool = False  # Automatic restart of Opr after api call
+        self._init_mode: bool = True
+        self._first_api_cmd: bool = True
+        self.is_offline = False
 
     async def get_initial_status(self):
         """Starts router object and reads complete system status"""
@@ -188,14 +188,14 @@ class ApiServer:
             await self.set_operate_mode(rt_no)
             self.logger.debug("Release API mode block")
 
-    async def set_operate_mode(self, rt_no=1):
+    async def set_operate_mode(self, rt_no=1) -> bool:
         """Turn on operate mode: enable router events."""
         # Client ip needed for event handling;
         # method "get_extra_info" is only implemented for writer object
         if self._init_mode:
             self.logger.debug("Skipping set Operate mode due to init_mode")
-            return
-        if not "ip_writer" in self.__dir__():
+            return True
+        if "ip_writer" not in self.__dir__():
             # no command received yet
             self._opr_mode = False
             return False
@@ -222,7 +222,7 @@ class ApiServer:
         await asyncio.sleep(0.1)
         return self._opr_mode
 
-    async def reinit_opr_mode(self, rt_no, mode):
+    async def reinit_opr_mode(self, rt_no, mode) -> str:
         """Force stop operate mode and restart."""
         if not mode:
             # Start of re-init with mode == 0
@@ -232,7 +232,8 @@ class ApiServer:
                 "Stopping EventSrv task, setting Srv mode for initialization, doing rollover"
             )
             await asyncio.sleep(0.1)
-            logging.root.handlers[1].doRollover()  # Open new log file
+            root_file_hdlr: RotatingFileHandler = logging.root.handlers[1]  # type: ignore
+            root_file_hdlr.doRollover()  # Open new log file
             self.logger.debug(
                 "Stopping EventSrv task, setting Srv mode for initialization, rollover done"
             )
@@ -252,7 +253,7 @@ class ApiServer:
             self.logger.info("--- Initialization finished")
             return "Init mode reset"
 
-    async def set_server_mode(self, rt_no=1):
+    async def set_server_mode(self, rt_no=1) -> bool:
         """Turn on client/server mode: disable router events"""
         if not (self._opr_mode):
             return True
@@ -268,7 +269,7 @@ class ApiServer:
         self.logger.info("--- Switched to Client/Server mode")
         return not self._opr_mode
 
-    async def set_initial_server_mode(self, rt_no=1):
+    async def set_initial_server_mode(self, rt_no=1) -> None:
         """Turn on server mode: disable router events"""
         self._init_mode = True
         self._opr_mode = False

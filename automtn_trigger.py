@@ -1,4 +1,3 @@
-from automtn_condition import CondCodes
 from const import MirrIdx
 from const import FingerNames
 
@@ -179,7 +178,7 @@ Months = {
 class AutomationTrigger:
     """Object for trigger part of habitron automations."""
 
-    def __init__(self, autmn, settings, atm_def: bytes):
+    def __init__(self, autmn, settings, atm_def: bytes | None):
         self.automation = autmn
         self.settings = settings
         if atm_def is None:
@@ -374,7 +373,7 @@ class AutomationTrigger:
 
         return self.triggers_dict, self.sensors_dict
 
-    def parse(self) -> str:
+    def parse(self) -> None:
         """Parse event arguments and return readable string."""
         try:
             self.unit = None
@@ -400,6 +399,7 @@ class AutomationTrigger:
                     trig_command += f" {self.get_dict_entry('inputs',event_arg - 8)}"
                     self.unit = event_arg - 8
             elif self.event_code in EventsSets[SelTrgCodes["logic"]]:
+                trig_command = "Logik Eingang"
                 if event_arg == 0:
                     set_str = "rückgesetzt"
                     self.value = 0
@@ -407,7 +407,6 @@ class AutomationTrigger:
                     set_str = "gesetzt"
                     self.value = 1
                 event_arg += self.event_arg2  # one is always zero
-                event_arg2 = ""
                 if event_arg in range(1, 17):
                     self.unit = event_arg
                     self.event_arg_name = self.get_dict_entry("flags", self.unit)
@@ -565,7 +564,7 @@ class AutomationTrigger:
                 self.description = f"Unknown event: {self.event_code} / {self.event_arg1} / {self.event_arg2}"
                 return
             self.description = trig_command + chr(32) + event_desc
-            if self.event_id == None:
+            if self.event_id is None:
                 self.event_id = self.event_code
             return
         except Exception as err_msg:
@@ -708,7 +707,7 @@ class AutomationTrigger:
                     opt_str += (
                         f'<option value="{usr.nmbr}-{usr.type}">{usr.name}</option>\n'
                     )
-            opt_str += f'<option value="255">Benutzer unbekannt / Fehler</option>\n'
+            opt_str += '<option value="255">Benutzer unbekannt / Fehler</option>\n'
             page = page.replace(
                 '<option value="">-- Benutzer wählen --</option>', opt_str
             )
@@ -746,7 +745,7 @@ class AutomationTrigger:
 
     def activate_ui_elements(self, page: str, step: int) -> str:
         """Set javascript values according to sel automation."""
-        if self.event_id == None:
+        if self.event_id is None:
             self.event_id = self.event_code
         page = page.replace("const trg_code = 0;", f"const trg_code = {self.event_id};")
         page = page.replace(
@@ -921,7 +920,7 @@ class AutomationTrigger:
                 err_no = self.automation.get_sel(form_data, "syserr_no")
                 self.event_arg1 = err_no >> 8
                 self.event_arg2 = err_no & 0xFF
-        if self.event_id == None:
+        if self.event_id is None:
             self.event_id = self.event_code
         self.automation.src_rt = self.src_rt
         self.automation.src_mod = self.src_mod
@@ -951,7 +950,7 @@ class AutomationTrigger:
                 l_inp = arg - 41
                 unit_no = int(l_inp / 2) + 1
                 inp_no = l_inp - (unit_no - 1) * 2 + 1
-                unit_no, inp_no, l_name = self.get_counter_inputs(l_inp)
+                unit_no, inp_no, l_name = self.automation.get_counter_inputs(l_inp)
                 out_desc = f"Logikeingang {inp_no} von Unit {unit_no}"
             return out_desc
         else:
@@ -963,7 +962,7 @@ class AutomationTrigger:
                 out_desc = f"Glob. Merker {self.get_dict_entry('glob_flags', unit_no)}"
             else:
                 l_inp = arg - 164
-                unit_no, inp_no, l_name = self.get_counter_inputs(l_inp)
+                unit_no, inp_no, l_name = self.automation.get_counter_inputs(l_inp)
                 if l_name == "":
                     out_desc = f"Logikeingang {inp_no} von Unit {unit_no}"
                 else:

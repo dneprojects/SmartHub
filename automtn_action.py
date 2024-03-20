@@ -219,11 +219,12 @@ class AutomationAction:
 
     def parse(self):
         """Parse action arguments and return description."""
+
+        self.unit = None
+        self.value = None
+        actn_target = self.action_name()
+        actn_desc = ""
         try:
-            self.unit = None
-            self.value = None
-            actn_target = self.action_name()
-            actn_desc = ""
             for actn_arg in self.action_args:
                 actn_desc += chr(actn_arg)
             if self.action_code in [1, 2, 3]:  # set/reset/toggle of outputs/leds/flags
@@ -357,16 +358,15 @@ class AutomationAction:
                 actn_desc = f"Höhe {self.action_args[0]}, Dauer {self.action_args[1]}"
             elif self.action_code == 35:  # RGB-LED
                 task = self.action_args[0]
-                task2 = self.action_args[1]
                 led_id = self.action_args[2]
                 if led_id in range(1, 9):
                     actn_desc = f"#{led_id} "
                 elif led_id in range(41, 45):
                     actn_desc = self.get_dict_entry("leds", led_id - 40) + " "
                 elif led_id == 100:
-                    actn_desc = f"ambient "
+                    actn_desc = "ambient "
                 else:
-                    actn_desc = f"Farbe unverändert "
+                    actn_desc = "Farbe unverändert "
                 if task == 1:
                     actn_desc += "setzen: "
                 elif task == 2:
@@ -422,7 +422,7 @@ class AutomationAction:
         for act_key in sel_actions:
             if self.action_id in ActionsSets[act_key]:
                 if act_key in [1, 2]:
-                    if ((act_key == 1) & (self.unit < 16)) | (
+                    if ((act_key == 1) & (self.unit in range(16))) | (
                         (act_key == 2) & (self.unit in range(17, 25))
                     ):
                         opt_str += f'<option value="{act_key}" selected>{sel_actions[act_key]}</option>\n'

@@ -1,8 +1,8 @@
 import logging
 import asyncio
-from const import API_DATA as spec
-from const import RT_CMDS, API_ACTIONS
+from const import API_ACTIONS
 from messages import RtMessage
+from typing import Iterable
 
 
 class HdlrBase:
@@ -12,18 +12,18 @@ class HdlrBase:
         """Creates handler object with msg infos and serial interface"""
         self.api_srv = api_srv
         self.msg = api_srv.api_msg
-        self._cmd_grp = self.msg._cmd_grp
+        self._cmd_grp: int = self.msg._cmd_grp
         self._spec: int = self.msg._cmd_spec
         self._p4: int = self.msg._cmd_p4
         self._p5: int = self.msg._cmd_p5
-        self._args = self.msg._cmd_data
+        self._args: bytes = self.msg._cmd_data
         self.logger = logging.getLogger(__name__)
-        self.response: str = "OK"
+        self.response: str | bytes = "OK"
         self.ser_if = api_srv._rt_serial
         self.args_err: bool = False
         self.rt_msg = RtMessage(self, 0, "   ")  # initialize empty object
 
-    def get_router_module(self) -> int:
+    def get_router_module(self) -> tuple[int, int]:
         if (self._p4 == 0) & (len(self._args) > 0):
             return self._args[0], self._args[1]
         elif (self._cmd_grp == 30) & (self._spec >= API_ACTIONS.OUTP_OFF):
@@ -37,11 +37,11 @@ class HdlrBase:
         else:
             return self._p4, self._p5
 
-    def check_arg(self, arg: int, rng: range, err_msg: str):
+    def check_arg(self, arg: int, rng: Iterable[int], err_msg: str):
         """General function for argument checks, return False if no error found"""
         if self.args_err:
             return  # Previous check already failed
-        if not (arg in rng):
+        if arg not in rng:
             self.args_err = True
             self.response = err_msg
             self.logger.error(err_msg)
@@ -69,7 +69,7 @@ class HdlrBase:
         self.check_router_no(rt_no)
         self.check_arg(mod_no, range(1, 251), "Error: module no out of range 1..250")
 
-    async def handle_router_cmd_resp(self, rt_no: int, cmd: RT_CMDS) -> None:
+    async def handle_router_cmd_resp(self, rt_no: int, cmd: str) -> None:
         """Sends router command via serial interface and get response"""
         self.rt_msg = RtMessage(self, rt_no, cmd)
         await self.rt_msg.rt_send()
@@ -92,7 +92,7 @@ class HdlrBase:
         )
         return
 
-    async def handle_router_cmd(self, rt_no: int, cmd: RT_CMDS) -> None:
+    async def handle_router_cmd(self, rt_no: int, cmd: str) -> None:
         """Sends router command via serial interface and get response."""
         self.rt_msg = RtMessage(self, rt_no, cmd)
         await self.rt_msg.rt_send()

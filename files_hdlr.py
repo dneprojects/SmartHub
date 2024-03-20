@@ -3,7 +3,7 @@ from pymodbus.utilities import computeCRC as ModbusComputeCRC
 import math
 import os
 from const import API_FILES as spec
-from const import API_RESPONSE, MODULE_CODES, DATA_FILES_DIR
+from const import API_RESPONSE, DATA_FILES_DIR
 from hdlr_class import HdlrBase
 
 
@@ -13,7 +13,7 @@ class FilesHdlr(HdlrBase):
     async def process_message(self):
         """Parse message, prepare and send router command"""
 
-        rt, mod = self.get_router_module()
+        (rt, mod) = self.get_router_module()
         match self._spec:
             case spec.SMB_SEND:
                 self.check_router_no(rt)
@@ -202,14 +202,14 @@ class FilesHdlr(HdlrBase):
                 for module in rtr.modules:
                     m_typ = module._typ
                     i_typ = int.from_bytes(m_typ, "little")
-                    if not (i_typ in type_list):
+                    if i_typ not in type_list:
                         mod_list = []
                         type_list.append(i_typ)
                         for mod in rtr.modules:
                             if mod._typ == m_typ:
                                 mod_list.append(mod.id)
                         await rtr.set_config_mode(True)
-                        self.update_module_type(rtr, m_typ, mod_list)
+                        await self.update_module_type(rtr, m_typ, mod_list)
                         await rtr.set_config_mode(False)
                 self.response = "OK"
                 return
@@ -265,9 +265,9 @@ class FilesHdlr(HdlrBase):
                     self._p5 != 0
                 ):
                     await rtr.set_config_mode(True)
-                    stat_msg = API_RESPONSE.smc_upload_stat.replace(
-                        "<rtr>", chr(rt)
-                    ).replace("<mod>", chr(module._id))
+                    # stat_msg = API_RESPONSE.smc_upload_stat.replace(
+                    #     "<rtr>", chr(rt)
+                    # ).replace("<mod>", chr(module._id))
 
                     await module.hdlr.send_module_list(module._id)
                     # = bytes, content changed

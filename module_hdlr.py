@@ -1,11 +1,8 @@
 import logging
 import asyncio
 from math import ceil
-from const import MirrIdx, SMGIdx, RT_CMDS, MODULE_CODES, API_RESPONSE
+from const import MirrIdx, SMGIdx, RT_CMDS
 from hdlr_class import HdlrBase
-from messages import RtResponse
-from module import HbtnModule
-from configuration import ModuleSettings
 
 
 class ModHdlr(HdlrBase):
@@ -21,7 +18,6 @@ class ModHdlr(HdlrBase):
             self.msg = api_srv.hdlr.msg
         self.ser_if = self.api_srv._rt_serial
         self.logger = logging.getLogger(__name__)
-        self.mod: HbtnModule = []
 
     def initialize(self, mod):
         """Set module properties."""
@@ -34,7 +30,7 @@ class ModHdlr(HdlrBase):
         await self.handle_router_cmd(self.rt_id, RT_CMDS.MD_REBOOT)
         return "OK"
 
-    async def get_module_status(self, mod_addr: int) -> bytes:
+    async def get_module_status(self, mod_addr: int) -> None:
         """Get all module settings."""
         await self.api_srv.set_server_mode(self.rt_id)
         await self.handle_router_cmd_resp(
@@ -88,71 +84,6 @@ class ModHdlr(HdlrBase):
             await self.set_logic_units()
         await self.api_srv.set_operate_mode()
 
-    def set_module_smg(self, mod_addr: int):
-        """Set SMG data to module properties."""
-        md_setting = ModuleSettings(self.mod, self.mod.rt)
-        status = b"\0" * MirrIdx.END
-        # set name
-        base_idx = SMGIdx.index(MirrIdx.MOD_NAME)
-        md_name = self.mod.smg_upload[base_idx : base_idx + 32]
-        self.mod._name = md_name.decode("iso8859-1").strip()
-        status = md_setting.replace_bytes(
-            status,
-            (self.mod._name + " " * (32 - len(self.mod._name))).encode("iso8859-1"),
-            MirrIdx.MOD_NAME,
-        )
-        # set buttons times
-        base_idx = SMGIdx.index(SMGIdx.T_SHORT)
-        md_setting.t_short = self.mod.smg_upload[base_idx]
-        base_idx = SMGIdx.index(MirrIdx.T_LONG)
-        md_setting.t_long = self.mod.smg_upload[base_idx]
-        if int(self.mod._typ[0]) in [1, 0x32, 0x0B]:
-            # input related settings
-            # set inputs mode
-            base_idx = SMGIdx.index(MirrIdx.SWMOD_1_8)
-            i1 = self.mod.smg_upload[base_idx]
-            i9 = self.mod.smg_upload[base_idx + 1]
-            i17 = self.mod.smg_upload[base_idx + 2]
-            # set analog inputs
-            base_idx = SMGIdx.index(MirrIdx.STAT_AD24_ACTIVE)
-            val = self.mod.smg_upload[base_idx]
-        if int(self.mod._typ[0]) in [1, 0x0A]:
-            # output related settings
-            self.set_logic_units()
-            if self.mod._typ == "\x0a\x16":
-                # dimm module specific settings
-                self.set_dimm_speed()
-                self.set_dimm_modes()
-            else:
-                self.set_covers_settings()
-                self.set_covers_times()
-                self.set_blinds_times()
-        if int(self.mod._typ[0]) in [1, 0x32, 0x50]:
-            # motion related settings
-            self.set_motion_detection()
-        if int(self.mod._typ[0]) in [1, 0x32]:
-            # Smart Controller specific settings
-            self.set_module_language()
-            self.set_target_values()
-            self.set_climate_settings()
-            self.set_display_constrast()
-            self.set_temp_control()
-        if int(self.mod._typ[0]) in [1]:
-            # Smart Controller XL specific settings
-            self.set_dimm_speed()
-            self.set_dimm_modes()
-            self.set_supply_prio()
-            self.set_module_light()
-            self.set_limit_temperature()
-        if self.mod._typ == b"\x1e\x01":
-            # Ekey specific settings
-            self.set_ekey_version()
-        if self.mod._typ == b"\x1e\x03":
-            # GSM specific settings
-            self.set_pin()
-            self.set_logic_units()
-        self.mod.status = status
-
     async def get_module_list(self, mod_addr: int) -> bytes:
         """Get the module description and command list."""
 
@@ -160,7 +91,6 @@ class ModHdlr(HdlrBase):
         pckg = 1
         area = 50
         cnt = 1
-        mod_code = self.mod.get_module_code()
         smc_buffer = b""
         rt_command = (
             RT_CMDS.GET_MOD_SMC.replace("<rtr>", chr(self.rt_id))
@@ -544,11 +474,11 @@ class ModHdlr(HdlrBase):
         p3_idx = p1_idx + 3  # 2b
         p4_idx = p1_idx + 6  # 4a
         p2_idx = p3_idx + 3  # 5b
-        p1 = (self.mod.smg_upload[p1_idx] / 9) - 9
-        p2 = (((self.mod.smg_upload[p2_idx] / 2) + 88) / 10) - 10
-        p3 = (self.mod.smg_upload[p3_idx] / 7) - 4
-        p4 = self.mod.smg_upload[p4_idx]
-        if p1 >= 10 | p2 >= 10 | p3 >= 10 | p4 >= 10:
+        p1 = int((self.mod.smg_upload[p1_idx] / 9) - 9)
+        p2 = int((((self.mod.smg_upload[p2_idx] / 2) + 88) / 10) - 10)
+        p3 = int((self.mod.smg_upload[p3_idx] / 7) - 4)
+        p4 = int(self.mod.smg_upload[p4_idx])
+        if (p1 >= 10) | (p2 >= 10) | (p3 >= 10) | (p4 >= 10):
             self.logger.error(f"Error decoding pin for module {self.mod._id}.")
             return "ERROR"
         cmd = (
@@ -610,9 +540,9 @@ class ModHdlr(HdlrBase):
             await self.handle_router_cmd_resp(
                 self.rt_id, cmd.replace("<pkg>", chr(pkg_cnt))
             )
-            pkg_resp = self.rt_msg._resp_buffer[10]
+            # pkg_resp = self.rt_msg._resp_buffer[10]
             db_size = self.rt_msg._resp_buffer[12] * 256 + self.rt_msg._resp_buffer[11]
-            buf_len = self.rt_msg._resp_buffer[7] - 7
+            # buf_len = self.rt_msg._resp_buffer[7] - 7
             db_buffer += self.rt_msg._resp_buffer[13:-1]
             db_upload_ready = len(db_buffer) >= db_size - 24
             pkg_cnt += 1
@@ -639,7 +569,7 @@ class ModHdlr(HdlrBase):
         if no_users > 1:
             return "ERROR"
         user_id = list[1]
-        no_fingers = list[2]
+        # no_fingers = list[2]
         fingers = list[3:]
         for fngr in fingers:
             cmd = (

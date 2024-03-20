@@ -24,19 +24,20 @@ class ApiMessage(BaseMessage):
         self._prefix: str = "\xa8"
         self._postfix: str = "\x3f"
         self._crc = int.from_bytes(inbuf[-3:-1], "big")
-        self._crc_ok = self.check_CRC()
+        self._crc_ok: bool = self.check_CRC()
         ulen = int(inbuf[3])
         plen = int(inbuf[4 + ulen])
-        self._user = inbuf[4 : 4 + ulen].decode("iso8859-1")
-        self._passw = inbuf[5 + ulen : 5 + ulen + plen].decode("iso8859-1")
-        self._command = inbuf[7 + ulen + plen : -3]
-        self._cmd_grp = self._command[0]
-        self._cmd_spec = int.from_bytes(self._command[1:3], "big")
-        self._cmd_p4 = self._command[3]
-        self._cmd_p5 = self._command[4]
-        self._argi = 7 + ulen + plen + 5
-        self._dlen = int.from_bytes(self._command[5:7], "little")
-        self._cmd_data = self._command[7 : 7 + self._dlen]
+        self._user: str = inbuf[4 : 4 + ulen].decode("iso8859-1")
+        self._passw: str = inbuf[5 + ulen : 5 + ulen + plen].decode("iso8859-1")
+        self._command: bytes = inbuf[7 + ulen + plen : -3]
+        self._cmd_grp: int = self._command[0]
+        self._cmd_spec: int = int.from_bytes(self._command[1:3], "big")
+        self._cmd_p4: int = self._command[3]
+        self._cmd_p5: int = self._command[4]
+        self._argi: int = 7 + ulen + plen + 5
+        self._dlen: int = int.from_bytes(self._command[5:7], "little")
+        self._cmd_data: bytes = self._command[7 : 7 + self._dlen]
+        self.response: str = ""
         if not (self._crc_ok):
             self.response = "CRC error"
             self.resp_prepare_std(self.response)
@@ -45,7 +46,7 @@ class ApiMessage(BaseMessage):
         """Validates received api message."""
         return ModbusCheckCRC(self._buffer[:-3], self._crc)
 
-    def calc_CRC(self, buf) -> tuple[chr, chr]:
+    def calc_CRC(self, buf) -> tuple[str, str]:
         """Compute CRC for api message."""
         cmd_crc = ModbusComputeCRC(buf)
         crc_low = cmd_crc & 0xFF
@@ -100,7 +101,7 @@ class RtMessage(BaseMessage):
 
     def __init__(self, api_hdlr, rt_id: int, rt_command: str) -> None:
         self.api_hdlr = api_hdlr
-        if api_hdlr.ser_if != None:
+        if api_hdlr.ser_if is not None:
             self.rt_reader = api_hdlr.ser_if[0]
             self.ser_writer = api_hdlr.ser_if[1]
         else:
@@ -109,9 +110,9 @@ class RtMessage(BaseMessage):
         self.logger = logging.getLogger(__name__)
         self.rt = rt_id
         self.rt_command = rt_command
-        self._buffer: bytes = b""
+        self._buffer: str = ""
+        self._length: int = 0
         self.rt_prepare()
-        self._length = ord(self._buffer[2])
         self._resp_msg = b"\0"
         self._resp_buffer = b"\0\0"
         self._resp_code = 0
@@ -122,6 +123,7 @@ class RtMessage(BaseMessage):
         cmd_len = chr(len(self._buffer))
         self._buffer = self._buffer[:2] + cmd_len + self._buffer[3:]
         self.calc_CRC()
+        self._length = ord(self._buffer[2])
 
     def calc_CRC(self) -> None:
         """Caclulates simple xor checksum"""
@@ -137,15 +139,25 @@ class RtMessage(BaseMessage):
         for byt in self._resp_buffer[:-1]:
             chksum ^= byt
         self._crc_ok = self._resp_buffer[-1] == chksum
+        return self._crc_ok
 
     async def rt_send(self) -> None:
         """Sends router command via serial interface"""
-        len = self.ser_writer.write(self._buffer.encode("iso8859-1"))
+        if self.ser_writer is None:
+            self.logger.warning("Can't send to router, ser_writer is None")
+            return
+        self.ser_writer.write(self._buffer.encode("iso8859-1"))
         await self.ser_writer.drain()
         self.logger.debug(f"Sent to router: {self._buffer.encode('iso8859-1')}")
 
     async def rt_recv(self) -> None:
         """Reads router's response message via serial interface"""
+        if self.rt_reader is None:
+            self.logger.warning("Can't read from router, rt_reader is None")
+            self._resp_code = 0
+            self._resp_buffer = b"\0\0"
+            self._resp_msg = b"\0\0"
+            return
         prefix = await self.rt_reader.readexactly(4)
         if (prefix[3] - 3) < 1:
             self.logger.error("Invalid message length")
@@ -200,3 +212,4 @@ class RtResponse(BaseMessage):
         for byt in self._resp_buffer[:-1]:
             chksum ^= byt
         self._crc_ok = self._resp_buffer[-1] == chksum
+        return self._crc_ok

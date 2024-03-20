@@ -60,17 +60,16 @@ class ConfigServer:
         self._ip = api_srv.sm_hub._host_ip
         self._port = CONF_PORT
         self.conf_running = False
-        self.app: web.Application = []
 
     async def initialize(self):
         """Initialize config server."""
         self.app = web.Application()
-        self.app.add_routes(routes)
         self.app.logger = logging.getLogger(__name__)
         self.settings_srv = ConfigSettingsServer(self.app, self.api_srv)
         self.app.add_subapp("/settings", self.settings_srv.app)
         self.automations_srv = ConfigAutomationsServer(self.app, self.api_srv)
         self.app.add_subapp("/automations", self.automations_srv.app)
+        self.app.add_routes(routes)
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
         self.site = web.TCPSite(self.runner, self._ip, self._port)
@@ -82,18 +81,18 @@ class ConfigServer:
         init_side_menu(self.app)
 
     @routes.get("/")
-    async def lnk_root(request: web.Request) -> web.Response:
+    async def get_root(request: web.Request) -> web.Response:  # type: ignore
         page = get_html(HOMEPAGE)
         if request.app["is_offline"]:
             page = page.replace(">Hub<", ">Home<")
         return web.Response(text=page, content_type="text/html", charset="utf-8")
 
     @routes.get("/licenses")
-    async def lnk_licenses(request: web.Request) -> web.Response:
+    async def get_licenses(request: web.Request) -> web.Response:  # type: ignore
         return show_license_table(request.app)
 
     @routes.get("/exit")
-    async def lnk_exit(request: web.Request) -> web.Response:
+    async def get_exit(request: web.Request) -> web.Response:  # type: ignore
         page = get_html(HOMEPAGE)
         if request.app["is_offline"]:
             page = page.replace(">Hub<", ">Home<")
@@ -106,24 +105,24 @@ class ConfigServer:
         return web.Response(text=page, content_type="text/html", charset="utf-8")
 
     @routes.get("/router")
-    async def lnk_router(request: web.Request) -> web.Response:
+    async def get_router(request: web.Request) -> web.Response:  # type: ignore
         return show_router_overview(request.app)
 
     @routes.get("/hub")
-    async def lnk_hub(request: web.Request) -> web.Response:
+    async def get_hub(request: web.Request) -> web.Response:  # type: ignore
         return show_hub_overview(request.app)
 
     @routes.get("/modules")
-    async def lnk_modules(request: web.Request) -> web.Response:
+    async def get_modules(request: web.Request) -> web.Response:  # type: ignore
         return show_modules(request.app)
 
     @routes.get("/module-{mod_addr}")
-    async def lnk_module_addr(request: web.Request) -> web.Response:
+    async def get_module_addr(request: web.Request) -> web.Response:  # type: ignore
         mod_addr = int(request.match_info["mod_addr"])
         return show_module_overview(request.app, mod_addr)
 
     @routes.get("/download")
-    async def lnk_download(request: web.Request) -> web.Response:
+    async def get_download(request: web.Request) -> web.Response:  # type: ignore
         file_name = request.query["file"]
         file_name = file_name.split(".")[0]
         rtr = request.app["api_srv"].routers[0]
@@ -173,10 +172,10 @@ class ConfigServer:
         )
 
     @routes.post("/upload")
-    async def lnk_upload(request: web.Request) -> web.Response:
+    async def get_upload(request: web.Request) -> web.Response:  # type: ignore
         app = request.app
         data = await request.post()
-        config_file = data["file"].file
+        config_file = data["file"].file  # type: ignore
         content = config_file.read()
         content_str = content.decode()
         if "SysUpload" in data.keys():
@@ -199,7 +198,7 @@ class ConfigServer:
             await send_to_router(app, content_str)
             return show_router_overview(app)
         else:
-            mod_addr = int(data["ModUpload"])
+            mod_addr = int(str(data["ModUpload"]))
             if data["ModUpload"] == content_str.split(";")[0]:
                 await send_to_module(app, content_str, mod_addr)
                 app.logger.info(
@@ -212,14 +211,14 @@ class ConfigServer:
             return show_module_overview(app, mod_addr)  # web.HTTPNoContent()
 
     @routes.post("/upd_upload")
-    async def lnk_upd_upload(request: web.Request) -> web.Response:
+    async def get_upd_upload(request: web.Request) -> web.Response:  # type: ignore
         app = request.app
         api_srv = app["api_srv"]
         rtr = api_srv.routers[0]
         data = await request.post()
         # fw_filename = data["file"].filename
-        rtr.fw_upload = data["file"].file.read()
-        upd_type = data["SysUpload"]
+        rtr.fw_upload = data["file"].file.read()  # type: ignore
+        upd_type = str(data["SysUpload"])
         if upd_type == "rtr":
             fw_vers = rtr.fw_upload[-27:-5].decode()
             app.logger.info(f"Firmware file for router {rtr._name} uploaded")
@@ -239,19 +238,24 @@ class ConfigServer:
             return show_update_modules(upd_list, fw_vers, mod_type_str)
         else:
             mod_type = rtr.fw_upload[:2]
+            mod_type_str = MODULE_CODES[mod_type.decode()]
+            fw_vers = rtr.fw_upload[-27:-5].decode().strip()
             mod_addr = int(upd_type)
             module = rtr.get_module(mod_addr)
-            if module._typ == mod_type:
+            if module is None:
+                app.logger.error(f"Could not find module {mod_addr}")
+                return show_hub_overview(app)
+            elif module._typ == mod_type:
                 app.logger.info(f"Firmware file for module {module._name} uploaded")
                 return show_update_modules([module], fw_vers, mod_type_str)
             else:
                 app.logger.error(
-                    f"Firmware file for {MODULE_CODES[mod_type.encode()]} uploaded, not compatible with module {module._name}"
+                    f"Firmware file for {MODULE_CODES[mod_type.decode()]} uploaded, not compatible with module {module._name}"
                 )
                 return show_hub_overview(app)
 
     @routes.post("/update_router")
-    async def lnk_update_router(request: web.Request) -> web.Response:
+    async def get_update_router(request: web.Request) -> web.Response:  # type: ignore
         app = request.app
         api_srv = app["api_srv"]
         rtr = api_srv.routers[0]
@@ -269,7 +273,7 @@ class ConfigServer:
         return show_hub_overview(app)
 
     @routes.post("/update_modules")
-    async def lnk_update_modules(request: web.Request) -> web.Response:
+    async def get_update_modules(request: web.Request) -> web.Response:  # type: ignore
         app = request.app
         api_srv = app["api_srv"]
         rtr = api_srv.routers[0]
@@ -309,7 +313,7 @@ class ConfigServer:
         return show_hub_overview(app)
 
     @routes.get("/update_status")
-    async def lnk_update_status(request: web.Request) -> web.Response:
+    async def get_update_status(request: web.Request) -> web.Response:  # type: ignore
         app = request.app
         stat = app["api_srv"].routers[0].hdlr.upd_stat_dict
         return web.Response(
@@ -317,7 +321,7 @@ class ConfigServer:
         )
 
     @routes.get(path="/{key:.*}.txt")
-    async def lnk_license_text(request: web.Request) -> web.Response:
+    async def get_license_text(request: web.Request) -> web.Response:  # type: ignore
         return show_license_text(request)
 
 
@@ -607,7 +611,7 @@ def set_license_link(line: str) -> str:
     return line
 
 
-def show_license_text(request) -> str:
+def show_license_text(request) -> web.Response:
     """Return web page with license text."""
     lic_file = open(LICENSE_PATH + request.path)
     lic_text = lic_file.read()

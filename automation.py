@@ -165,7 +165,7 @@ class AutomationDefinition:
         self.autmn_dict = autmn_dict
         self.settings = settings
         self.logger = logging.getLogger(__name__)
-        if atm_def == None:
+        if atm_def is None:
             self.src_rt = 0
             self.src_mod = 0
             self.event_code = 0
@@ -180,7 +180,7 @@ class AutomationDefinition:
         self.condition = AutomationCondition(self, atm_def)
         self.logger.debug(f"Initializing action for automation {atm_def}")
         self.action = AutomationAction(self, atm_def)
-        self.logger.debug(f"Initializing of automation done")
+        self.logger.debug("Initializing of automation done")
 
     def event_name(self) -> str:
         """Return event name."""
@@ -256,7 +256,7 @@ class AutomationDefinition:
                         out_desc = f"Zähler '{l_name}' ???"
             return out_desc
 
-    def get_counter_inputs(self, log_inp: int):
+    def get_counter_inputs(self, log_inp: int) -> tuple[int, int, str]:
         """Return counter information, if counter input found."""
         unit_no = int(log_inp / 8)
         inp_no = log_inp - unit_no * 8
@@ -294,8 +294,8 @@ class AutomationDefinition:
             return md_desc[2:]
         return md_desc
 
-    def make_definition(self) -> bytes:
-        """Return definition line as bytes."""
+    def make_definition(self) -> str:
+        """Return definition line as string."""
 
         actn_arg_len = len(self.action.action_args)
         def_line = (
@@ -318,12 +318,12 @@ class AutomationDefinition:
 
     def set_option(self, page, select_val, select_str: str) -> str:
         """Search line by value and/or string (use None to choose) and add 'selected'."""
-        if select_val == None:
+        if select_val is None:
             search_str = ""
         else:
             search_str = f'<option value="{select_val}"'
         repl_str = search_str + " selected"
-        if select_str != None:
+        if select_str is not None:
             search_str += f">{select_str}<"
             repl_str += f">{select_str}<"
         return page.replace(search_str, repl_str)

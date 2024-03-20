@@ -10,7 +10,7 @@ class SetupHdlr(HdlrBase):
     async def process_message(self):
         """Parse message, prepare and send router command"""
 
-        rt, mod = self.get_router_module()
+        (rt, mod) = self.get_router_module()
 
         match self._spec:
             case spec.KEY_TEACH:

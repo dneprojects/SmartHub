@@ -1,9 +1,10 @@
 import asyncio
+from asyncio.tasks import Task
 import logging
 import json
 import os
 import websockets
-from websockets import ConnectionClosedOK
+from websockets import ConnectionClosedOK, WebSocketClientProtocol
 from const import DATA_FILES_DIR, HA_EVENTS
 from forward_hdlr import ForwardHdlr
 
@@ -58,15 +59,17 @@ class EventServer:
         self._client_ip = api_srv._client_ip
         self._uri = ""
         self.logger = logging.getLogger(__name__)
-        self.ev_srv_task = []
-        self.websck = []
+        self.ev_srv_task: Task
+        self.ev_srv_task_running = False
+        self.websck: WebSocketClientProtocol
         self.token = None
         self.notify_id = 1
         self.evnt_running = False
         self.msg_appended = False
         self.busy_starting = False
+        self.websck_is_closed = True
 
-    def get_ident(self) -> str:
+    def get_ident(self) -> str | None:
         """Return token"""
         try:
             with open(DATA_FILES_DIR + "settings.set", mode="rb") as fid:
@@ -91,7 +94,7 @@ class EventServer:
             )
             return None
 
-    def extract_rest_msg(self, rt_event, msg_len):
+    def extract_rest_msg(self, rt_event: bytes, msg_len: int) -> bytes:
         """Check for more appended messages."""
         if len(rt_event) > msg_len:
             tail = rt_event[msg_len - 1 :]
@@ -99,6 +102,7 @@ class EventServer:
             self.logger.info(f"     Complete message: {rt_event}")
             self.msg_appended = True
             return tail
+        return b""
 
     async def watch_rt_events(self, rt_rd):
         """Task for handling router responses and events in api mode"""
@@ -108,7 +112,7 @@ class EventServer:
         self.evnt_running = True
         rtr_id = 100  # inital value, will be taken from event messages
         await self.open_websocket()
-        tail = b""
+        tail: bytes = b""
 
         recvd_byte = b"\00"  # Initialization for resync
         while self.evnt_running:
@@ -366,7 +370,7 @@ class EventServer:
                     m_len += 1
                     ev_list = [
                         mod_id,
-                        HA_EVENTS.COUNTER,
+                        HA_EVENTS.CNT_VAL,
                         args[0],
                         args[1],
                     ]
@@ -378,16 +382,17 @@ class EventServer:
                 case 68:
                     m_len = rt_event[8] + 7
                     self.logger.warning(f"Event 68: {rt_event}")
+                    return m_len
                 case _:
                     self.logger.warning(f"Unknown event id: {event_id}")
                     return m_len
             await self.notify_event(rtr_id, ev_list)
-            return m_len
+        return m_len
 
     async def notify_event(self, rtr: int, event: list[int]):
         """Trigger event on remote host (e.g. home assistant)"""
 
-        if (self.websck == []) | (self.websck is None):
+        if self.websck_is_closed:
             success = await self.open_websocket()
         else:
             success = True
@@ -406,8 +411,6 @@ class EventServer:
                 "evnt_arg2": event[3],
             }
             self.logger.debug(f"Event alerted: {evnt_data}")
-            if self.websck is None:
-                return
             event_cmd = WEBSOCK_MSG.call_service_msg
             self.notify_id += 1
             event_cmd["id"] = self.notify_id
@@ -421,13 +424,14 @@ class EventServer:
             self.logger.warning(
                 "Connection closed by HA server, terminating event server task"
             )
+            self.websck_is_closed = True
             self.evnt_running = False
             await self.stop()
             await self.api_srv.set_server_mode(100)
         except Exception as error_msg:
             # Use to get cancel event in api_server
             self.logger.error(f"Could not connect to event server: {error_msg}")
-            self.websck = []
+            self.websck_is_closed = True
             if await self.ping_pong_reconnect():
                 # Retry
                 await self.websck.send(json.dumps(event_cmd))  # Send command
@@ -462,8 +466,7 @@ class EventServer:
     async def open_websocket(self, retry=False) -> bool:
         """Opens web socket connection to home assistant."""
 
-        if (self.websck is not None) & (not (self.websck == [])):
-            # websocket object registered if neither None nor []
+        if not self.websck_is_closed:
             return True
         if self.api_srv._netw_blocked:
             # First run, don't start websocket, HA is not ready
@@ -495,7 +498,7 @@ class EventServer:
                 self.logger.error(
                     "Websocket stored token is none, open_websocket failed."
                 )
-            self.websck = None
+            self.websck_is_closed = True
             return False
 
         try:
@@ -511,6 +514,7 @@ class EventServer:
         except Exception as err_msg:
             await self.close_websocket()
             self.logger.error(f"Websocket connect failed: {err_msg}")
+            self.websck_is_closed = True
             return False
         if json.loads(resp)["type"] == "auth_required":
             try:
@@ -527,18 +531,19 @@ class EventServer:
                 return False
         else:
             self.logger.info(f"Websocket connected to {self._uri}, response: {resp}")
+        self.websck_is_closed = False
         return True
 
     async def close_websocket(self):
         """Close websocket, if object still available."""
-        if self.websck != []:
+        if not self.websck_is_closed:
             try:
                 await asyncio.wait_for(asyncio.shield(self.websck.close()), timeout=1)
-                self.websck = []
+                self.websck_is_closed = True
                 self.logger.debug("Websocket closed")
             except TimeoutError:
                 self.logger.warning("Timeout closing websocket, removing entry anyway")
-                self.websck = []
+                self.websck_is_closed = True
                 self.logger.debug("Websocket still closing")
             except Exception as err_msg:
                 self.logger.warning(f"Websocket close failed: {err_msg}")
@@ -557,18 +562,19 @@ class EventServer:
         self.ev_srv_task = self.api_srv.loop.create_task(
             self.watch_rt_events(self.api_srv._rt_serial[0])
         )
+        self.ev_srv_task_running = True
 
     async def stop(self):
         """Stop running event server task."""
         self.evnt_running = False
-        if not self.running():
+        if not self.ev_srv_task_running:
             return
         self.logger.debug("Stopping EventSrv task")
         self.evnt_running = False
         # waiting for event server to receive response and shut down
         t_wait = 0.0
         t_max = 2.0
-        if self.ev_srv_task == []:
+        if not self.running():
             self.logger.debug("No EventSrv running, already stopped")
         else:
             while (self.ev_srv_task._state != "FINISHED") & (t_wait < t_max):
@@ -581,20 +587,20 @@ class EventServer:
             else:
                 self.ev_srv_task.cancel()
                 self.logger.debug(f"EventSrv stoppped after {t_max} sec")
-            self.ev_srv_task = []
+            self.ev_srv_task_running = False
             # await self.close_websocket()
 
     def running(self) -> bool:
-        """Return status of event server task."""
-        if self.ev_srv_task == []:
+        """Check status of event server task, set and retrun status flag."""
+        if not self.ev_srv_task_running:
             self.logger.debug(
                 "Event server not running, no EventSrv object instantiated"
             )
-            return False
+            return self.ev_srv_task_running
         if self.ev_srv_task.done():
             self.logger.debug("Event server not running, EventSrv 'done'")
-            return False
+            self.ev_srv_task_running = False
         if self.ev_srv_task.cancelled():
             self.logger.debug("Event server not running, EventSrv 'cancelled'")
-            return False
-        return True
+            self.ev_srv_task_running = False
+        return self.ev_srv_task_running

@@ -1,7 +1,6 @@
 import logging
-from pymodbus.utilities import checkCRC as ModbusCheckCRC
 from pymodbus.utilities import computeCRC as ModbusComputeCRC
-from const import MirrIdx, SMGIdx, MStatIdx, MODULE_CODES, CStatBlkIdx, HA_EVENTS
+from const import MirrIdx, SMGIdx, MODULE_CODES, CStatBlkIdx, HA_EVENTS
 from configuration import ModuleSettings, ModuleSettingsLight
 
 
@@ -114,7 +113,7 @@ class HbtnModule:
             cvr_idx -= 5
         return cvr_idx
 
-    def compare_status(self, stat1: str, stat2: str, diff_idx, idx) -> list:
+    def compare_status(self, stat1: bytes, stat2: bytes, diff_idx, idx) -> list:
         """Find updates fields."""
         for x, y in zip(stat1, stat2):
             if x != y:
@@ -175,37 +174,36 @@ class HbtnModule:
                 i2 = MirrIdx.LOGIC
                 i3 = MirrIdx.FLAG_LOC + 2
                 i_diff = self.compare_status(
-                    self.status[i2:i3], new_status[i2:i3], i_diff, i2 - i0
+                    self.status[i2:i3], new_status[i2:i3], i_diff, i2
                 )
             i_diff = self.compare_status(
-                self.status[i0:i1], new_status[i0:i1], i_diff, 0
+                self.status[i0:i1], new_status[i0:i1], i_diff, i0
             )
             for i_d in i_diff:
-                idx = i_d + i0
-                if not (idx in block_list):
+                if i_d not in block_list:
                     ev_type = 0
                     ev_str = "-"
-                    val = new_status[idx]
-                    if idx in range(MirrIdx.MOV, MirrIdx.MOV + 1):
+                    val = new_status[i_d]
+                    if i_d in range(MirrIdx.MOV, MirrIdx.MOV + 1):
                         ev_type = HA_EVENTS.MOVE
                         ev_str = "Movement"
                         idv = 0
-                    elif idx in range(MirrIdx.COVER_POS, MirrIdx.COVER_POS + 8):
+                    elif i_d in range(MirrIdx.COVER_POS, MirrIdx.COVER_POS + 8):
                         ev_type = HA_EVENTS.COV_VAL
-                        idv = self.swap_mirr_cover_idx(idx - MirrIdx.COVER_POS)
+                        idv = self.swap_mirr_cover_idx(i_d - MirrIdx.COVER_POS)
                         ev_str = f"Cover {idv + 1} pos"
-                    elif idx in range(MirrIdx.BLAD_POS, MirrIdx.BLAD_POS + 8):
+                    elif i_d in range(MirrIdx.BLAD_POS, MirrIdx.BLAD_POS + 8):
                         ev_type = HA_EVENTS.BLD_VAL
-                        idv = self.swap_mirr_cover_idx(idx - MirrIdx.BLAD_POS)
+                        idv = self.swap_mirr_cover_idx(i_d - MirrIdx.BLAD_POS)
                         ev_str = f"Blade {idv + 1} pos"
-                    elif idx in range(MirrIdx.DIM_1, MirrIdx.DIM_4 + 1):
+                    elif i_d in range(MirrIdx.DIM_1, MirrIdx.DIM_4 + 1):
                         ev_type = HA_EVENTS.DIM_VAL
-                        idv = idx - MirrIdx.DIM_1
+                        idv = i_d - MirrIdx.DIM_1
                         ev_str = f"Dimmmer {idv + 1}"
-                    elif idx in range(MirrIdx.FLAG_LOC, MirrIdx.FLAG_LOC + 2):
+                    elif i_d in range(MirrIdx.FLAG_LOC, MirrIdx.FLAG_LOC + 2):
                         ev_type = HA_EVENTS.FLAG
-                        old_val = self.status[idx]
-                        new_val = new_status[idx]
+                        old_val = self.status[i_d]
+                        new_val = new_status[i_d]
                         chg_msk = old_val ^ new_val
                         val = new_val & chg_msk
                         for i in range(8):
@@ -215,18 +213,18 @@ class HbtnModule:
                         if idv != chg_msk:
                             # more than one flag changed, return mask and byte
                             idv = chg_msk + 1000
-                            if idx > MirrIdx.FLAG_LOC:  # upper byte
+                            if i_d > MirrIdx.FLAG_LOC:  # upper byte
                                 idv = idv + 1000
                         else:
                             # single change, return flag no and value 0/1
                             idv = i
-                            if idx > MirrIdx.FLAG_LOC:  # upper byte
+                            if i_d > MirrIdx.FLAG_LOC:  # upper byte
                                 idv = idv + 8
                             val = int(val > 0)
                         ev_str = f"Flag {idv + 1}"
-                    elif idx in range(MirrIdx.COUNTER_VAL, MirrIdx.COUNTER_VAL + 28):
+                    elif i_d in range(MirrIdx.COUNTER_VAL, MirrIdx.COUNTER_VAL + 28):
                         ev_type = HA_EVENTS.CNT_VAL
-                        idv = int((idx - MirrIdx.COUNTER_VAL) / 3)
+                        idv = int((i_d - MirrIdx.COUNTER_VAL) / 3)
                         ev_str = f"Counter {idv + 1}"
                     if ev_type > 0:
                         update_info.append(
@@ -238,7 +236,7 @@ class HbtnModule:
                             ]
                         )
                         self.logger.debug(
-                            f"Update in module status {self._id}: {self._name}: Event {ev_str}, Byte {idx} - new: {val}"
+                            f"Update in module status {self._id}: {self._name}: Event {ev_str}, Byte {i_d} - new: {val}"
                         )
         if len(new_status) > 100:
             self.status = new_status
@@ -316,7 +314,7 @@ class HbtnModule:
         bl_times = ""
         try:
             prop_range = self.io_properties["covers"]
-        except:
+        except Exception:
             prop_range = 8
         for ci in range(8):
             try:
@@ -379,7 +377,7 @@ class HbtnModule:
         """Calculate and store crc of SMC data."""
         self.set_smc_crc(ModbusComputeCRC(smc_buf))
 
-    def calc_SMG_crc(self, smg_buf: bytes) -> None:
+    def calc_SMG_crc(self, smg_buf: bytes) -> int:
         """Calculate and store crc of SMG data."""
         self.smg_crc = ModbusComputeCRC(smg_buf)
         return self.smg_crc
@@ -425,7 +423,7 @@ class HbtnModule:
         # self.list = await self.hdlr.get_module_list(self._id)
         self.calc_SMC_crc(self.list)
 
-    def get_io_properties(self) -> dict:
+    def get_io_properties(self) -> tuple[dict[str, int], list[str]]:
         """Return number of inputs, outputs, etc."""
         type_code = self._typ
         props: dict = {}

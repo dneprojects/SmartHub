@@ -1,7 +1,9 @@
 import asyncio
 from asyncio.streams import StreamReader, StreamWriter
 import logging
-from logging import config
+from logging import config as log_conf
+from logging import RootLogger
+from logging.handlers import RotatingFileHandler
 import yaml
 import serial
 import serial.tools.list_ports
@@ -33,18 +35,22 @@ class SmartHub:
         self.loop = loop
         self.tg = asyncio.TaskGroup()
         self.logger = logger
-        self.q_srv: QueryServer = []
-        self.conf_srv: ConfigServer = []
-        self.get_mac()
-        self._serial = ""
-        self._pi_model = ""
-        self._cpu_info = ""
-        self._host = ""
-        self._host_ip = ""
+        self.q_srv: QueryServer
+        self.conf_srv: ConfigServer
+        self.api_srv: ApiServer
+        self._serial: str = ""
+        self._pi_model: str = ""
+        self._cpu_info: dict
+        self._host: str = ""
+        self._host_ip: str = ""
+        self.lan_mac: str = ""
+        self.wlan_mac: str = ""
+        self.curr_mac: str = ""
         self.info = self.get_info()
+        self.get_macs()
         self.logger.info("Smart Hub starting...")
-        self.skip_init = False
-        self.restart = False
+        self.skip_init: bool = False
+        self.restart: bool = False
 
     def reboot_hub(self):
         """Reboot hardware."""
@@ -62,7 +68,7 @@ class SmartHub:
             self.logger.info(f"Terminating task {tsk.get_name()}")
             tsk.cancel()
 
-    def get_mac(self):
+    def get_macs(self):
         """Ask for own mac address."""
         if "eth0" in psutil.net_if_addrs():
             self.lan_mac = psutil.net_if_addrs()["eth0"][-1].address
@@ -102,7 +108,7 @@ class SmartHub:
                     f.close()
             except Exception as err_msg:
                 self.logger.warning(
-                    "Could not access devicetree, using default information"
+                    f"Could not access devicetree, using default information: {err_msg}"
                 )
                 self._pi_model = "Raspberry Pi"
                 self._serial = "10000000e3d90xxx"
@@ -239,7 +245,7 @@ class SmartHub:
         async with self.server:
             try:
                 await self.server.serve_forever()
-            except:
+            except Exception:
                 self.logger.warning("Server stopped, restarting Smart Hub ...")
                 return self.skip_init
 
@@ -250,9 +256,11 @@ def setup_logging():
     with open(f"./{LOGGING_DEF_FILE}", "r") as stream:
         config = yaml.load(stream, Loader=yaml.FullLoader)
     if logging.root.handlers == []:
-        logging.config.dictConfig(config)
-    logging.root.handlers[1].doRollover()
-    logging.root.propogate = True
+        log_conf.dictConfig(config)
+    root_logger: RootLogger = logging.root
+    root_file_hdlr: RotatingFileHandler = root_logger.handlers[1]  # type: ignore
+    root_file_hdlr.doRollover()
+    root_logger.propagate = True
     return logging.getLogger(__name__)
 
 
@@ -279,7 +287,7 @@ async def open_serial_interface(device, logger) -> tuple[StreamReader, StreamWri
 async def init_serial(logger):
     """Open and initialize serial interface to router."""
 
-    def calc_CRC(buf) -> bytes:
+    def prepare_buf_crc(buf: str) -> str:
         """Caclulates simple xor checksum"""
         chksum = 0
         buf = buf[:-1]
@@ -301,7 +309,7 @@ async def init_serial(logger):
         new_query = True
         while router_booting:
             if new_query:
-                rt_cmd = calc_CRC(
+                rt_cmd = prepare_buf_crc(
                     RT_CMDS.STOP_MIRROR.replace("<rtr>", chr(RT_DEF_ADDR))
                 )
                 rt_serial[1].write(rt_cmd.encode("iso8859-1"))
@@ -314,17 +322,17 @@ async def init_serial(logger):
                     logger.debug(f"Unexpected short test response: {resp_buf}")
                     new_query = False
                 elif new_query & (resp_buf[4] == 0x87):
-                    logger.info(f"Router available")
+                    logger.info("Router available")
                     router_booting = False
                 elif (not new_query) & (resp_buf[3] == 0x87):
-                    logger.info(f"Router available")
+                    logger.info("Router available")
                     router_booting = False
                 elif new_query & (resp_buf[4] == 0xFD):  # 253
-                    logger.info(f"Waiting for router booting...")
+                    logger.info("Waiting for router booting...")
                     await asyncio.sleep(5)
                     new_query = True
                 elif (not new_query) & (resp_buf[3] == 0xFD):  # 253
-                    logger.info(f"Waiting for router booting...")
+                    logger.info("Waiting for router booting...")
                     await asyncio.sleep(5)
                     new_query = True
                 else:
@@ -332,7 +340,7 @@ async def init_serial(logger):
                     logger.debug(f"Unexpected test response: {resp_buf}")
                     new_query = True
             else:
-                raise Exception(f"No test response received")
+                raise Exception("No test response received")
                 new_query = True
     except Exception as err_msg:
         logger.error(f"Error during test stop mirror command: {err_msg}")
@@ -357,19 +365,19 @@ async def main(init_flag, ev_loop):
         # Instantiate SmartHub object
         sm_hub = SmartHub(ev_loop, logger)
         rt_serial = None
-        while (rt_serial == None) & (retry_serial >= 0):
+        while (rt_serial is None) & (retry_serial >= 0):
             if retry_serial < retry_max:
                 logger.warning(
                     f"Initialization of serial connection failed, retry {retry_max-retry_serial}"
                 )
             rt_serial = await init_serial(logger)
             retry_serial -= 1
-        if rt_serial == None:
+        if rt_serial is None:
             init_flag = False
-            logger.error(f"Initialization of serial connection failed")
+            logger.error("Initialization of serial connection failed")
         # Instantiate query object
         logger.debug("Initializing query server")
-        sm_hub.q_srv = QueryServer(ev_loop, sm_hub)
+        sm_hub.q_srv = QueryServer(ev_loop, sm_hub.lan_mac)
         await sm_hub.q_srv.initialize()
         # Instantiate api_server object
         sm_hub.api_srv = ApiServer(ev_loop, sm_hub, rt_serial)
@@ -380,7 +388,6 @@ async def main(init_flag, ev_loop):
         await sm_hub.conf_srv.initialize()
         if init_flag:
             await sm_hub.api_srv.get_initial_status()
-            sm_hub.api_srv.is_offline = False
         else:
             logger.warning("Initialization of router and modules skipped")
         startup_ok = True
@@ -415,10 +422,11 @@ async def main(init_flag, ev_loop):
 
     # Waiting until finished
     try:
-        await asyncio.wait(sm_hub.tg)
-    except Exception as err_msg:
+        await asyncio.wait(sm_hub.tg) # type: ignore
+    except Exception:
         pass
-    rt_serial[1].close()
+    if rt_serial is not None:
+        rt_serial[1].close()
     if sm_hub.restart:
         return 1
     elif skip_init:

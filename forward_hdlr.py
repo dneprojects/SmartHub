@@ -46,21 +46,21 @@ class ForwardHdlr(HdlrBase):
                 if self.args_err:
                     return
 
-                self.fwd_mapping[
-                    f"{self._p4}"
-                ] = f"{self._args[0]}.{self._args[1]}.{self._args[2]}.{self._args[3]}"
+                self.fwd_mapping[f"{self._p4}"] = (
+                    f"{self._args[0]}.{self._args[1]}.{self._args[2]}.{self._args[3]}"
+                )
                 self.save_mapping()
                 self.response = f"{self.fwd_mapping}"
                 return
             case spec.FWD_TABLE_SET:
-                self.fwd_mapping = dict
-                for map_idx in range[self._p5]:
+                self.fwd_mapping = dict()
+                for map_idx in range(self._p5):
                     mi = 5 * map_idx
                     if mi in range(1, 65):
                         key = f"{self._args[mi]}"
-                        self.fwd_mapping[
-                            key
-                        ] = f"{self._args[mi + 1]}.{self._args[mi + 2]}.{self._args[mi + 3]}.{self._args[mi + 4]}"
+                        self.fwd_mapping[key] = (
+                            f"{self._args[mi + 1]}.{self._args[mi + 2]}.{self._args[mi + 3]}.{self._args[mi + 4]}"
+                        )
                     else:
                         self.logger.warning(f"Invalid router id in mapping table: {mi}")
                 self.save_mapping()
@@ -68,7 +68,7 @@ class ForwardHdlr(HdlrBase):
                 return
             case spec.FWD_TO_SMHUB:
                 forw_ip = self.api_srv._client_ip
-                if forw_ip == 0:
+                if forw_ip == "":
                     self.response = f"Could not lookup router ID for IP {forw_ip} with forward message {self._args}"
                     self.args_err = True
                 self.check_router_no(self._p4)
@@ -130,7 +130,7 @@ class ForwardHdlr(HdlrBase):
                 buffer = sck.recv(resp_len + 3)
                 resp_bytes = resp_bytes + buffer
             resp_bytes = resp_bytes[0:resp_len]
-        except TimeoutError as exc:
+        except TimeoutError:
             resp_bytes = b"Timeout error"
             self.logger.info(
                 f"Timeout error after sending forward response to router {t_rt} at {t_ip}"

@@ -12,7 +12,6 @@ from config_commons import (
     get_module_image,
     disable_button,
 )
-import logging
 from const import (
     WEB_FILES_DIR,
     SETTINGS_TEMPLATE_FILE,
@@ -40,12 +39,12 @@ class ConfigSettingsServer:
         self.app["parent"] = self.parent
 
     @routes.get("/module-{mod_addr}")
-    async def root(request: web.Request) -> web.Response:
+    async def get_module(request: web.Request) -> web.Response:  # type: ignore
         mod_addr = int(request.match_info["mod_addr"])
         return show_module_overview(request.app["parent"], mod_addr)
 
     @routes.get("/settings")
-    async def root(request: web.Request) -> web.Response:
+    async def get_settings(request: web.Request) -> web.Response:  # type: ignore
         args = request.query_string.split("=")
         if args[0] == "ModSettings":
             mod_addr = int(args[1])
@@ -54,12 +53,12 @@ class ConfigSettingsServer:
             return show_settings(request.app["parent"], 0)
 
     @routes.get("/step")
-    async def root(request: web.Request) -> web.Response:
+    async def get_step(request: web.Request) -> web.Response:  # type: ignore
         args = request.query_string.split("=")
         return await show_next_prev(request.app["parent"], args[1])
 
     @routes.post("/settings")
-    async def root(request: web.Request) -> web.Response:
+    async def post_settings(request: web.Request) -> web.Response:  # type: ignore
         resp = await request.text()
         form_data = parse_qs(resp)
         settings = request.app["parent"]["settings"]
@@ -69,14 +68,14 @@ class ConfigSettingsServer:
         return await show_next_prev(request.app["parent"], args)
 
     @routes.post("/step")
-    async def root(request: web.Request) -> web.Response:
+    async def post_step(request: web.Request) -> web.Response:  # type: ignore
         resp = await request.text()
         form_data = parse_qs(resp)
         args = parse_response_form(request.app["parent"], form_data)
         return await show_next_prev(request.app["parent"], args)
 
     @routes.get("/teach")
-    async def root(request: web.Request) -> web.Response:
+    async def get_teach(request: web.Request) -> web.Response:  # type: ignore
         args = request.query_string.split("=")
         return await show_next_prev(request.app["parent"], args[1])
 
@@ -89,7 +88,7 @@ def show_router_overview(main_app) -> web.Response:
     type_desc = "Smart Router - Kommunikationsschnittstelle zwischen den Modulen"
     if rtr.channels == b"":
         page = fill_page_template(
-            f"Router", type_desc, "--", side_menu, "router.jpg", ""
+            "Router", type_desc, "--", side_menu, "router.jpg", ""
         )
         page = adjust_settings_button(page, "", f"{0}")
         return web.Response(text=page, content_type="text/html")
@@ -131,26 +130,26 @@ def show_router_overview(main_app) -> web.Response:
     if mode_str[0] == ",":
         mode_str = mode_str[2:]
     props += (
-        f"Mode:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+        "Mode:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
         + mode_str
         + "<br>"
     )
     if api_srv._opr_mode:
-        props += f"Betriebsart:&nbsp;&nbsp;Operate<br>"
+        props += "Betriebsart:&nbsp;&nbsp;Operate<br>"
     else:
-        props += f"Betriebsart:&nbsp;&nbsp;Client/Server<br>"
+        props += "Betriebsart:&nbsp;&nbsp;Client/Server<br>"
     if api_srv.mirror_mode_enabled & api_srv._opr_mode:
-        props += f"Spiegel:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aktiv<br>"
+        props += "Spiegel:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aktiv<br>"
     else:
-        props += f"Spiegel:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inaktiv<br>"
+        props += "Spiegel:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inaktiv<br>"
     if api_srv.event_mode_enabled & api_srv._opr_mode:
         props += (
-            f"Events:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aktiv<br>"
+            "Events:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aktiv<br>"
         )
     else:
-        props += f"Events:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inaktiv<br>"
+        props += "Events:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inaktiv<br>"
 
-    def_filename = f"my_router.hrt"
+    def_filename = "my_router.hrt"
     page = fill_page_template(
         f"Router '{rtr._name}'", type_desc, props, side_menu, "router.jpg", def_filename
     )
@@ -343,7 +342,7 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
     settings = main_app["settings"]
     tbl = (
         indent(4)
-        + f'<form id="settings_table" action="/settings/settings" method="post">\n'
+        + '<form id="settings_table" action="/settings/settings" method="post">\n'
     )
     tbl += "\n" + indent(5) + "<table>\n"
     id_name = "mname"
@@ -364,7 +363,7 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
             + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><select name="{id_name}" id="{id_name}">\n'
         )
         rtr = main_app["api_srv"].routers[0]
-        groups = rtr.groups
+        # groups = rtr.groups
         rt_settings = RouterSettings(rtr)
         grps = rt_settings.groups
         for grp in grps:
@@ -503,8 +502,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
         covers = getattr(main_app["settings"], "covers")
     tbl_data = getattr(main_app["settings"], key)
     tbl = (
-        indent(4)
-        + f'<form id="settings_table" action="/settings/step" method="post">\n'
+        indent(4) + '<form id="settings_table" action="/settings/step" method="post">\n'
     )
     tbl += "\n" + indent(5) + "<table>\n"
 
@@ -709,7 +707,7 @@ def parse_response_form(main_app, form_data):
                 else:
                     if key == "users":
                         settings.all_fingers[int(form_data[form_key][0])] = []
-                        if not ("users_sel" in dir(settings)):
+                        if "users_sel" not in dir(settings):
                             settings.users_sel = 0
                     settings.__getattribute__(key).append(
                         IfDescriptor(
@@ -865,10 +863,10 @@ def parse_response_form(main_app, form_data):
     return form_data["ModSettings"][0]
 
 
-def get_property_kind(main_app, step):
+def get_property_kind(main_app, step) -> tuple[str, str, str]:
     """Return header of property kind."""
     if step == 0:
-        return "", "Grundeinstellungen"
+        return "", "Grundeinstellungen", ""
     cnt = 0
     props = main_app["props"]
     io_keys = main_app["io_keys"]

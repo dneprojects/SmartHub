@@ -3,7 +3,6 @@ import struct
 from const import API_ACTIONS as spec
 from const import RT_CMDS
 from hdlr_class import HdlrBase
-import time
 
 
 class ActionsHdlr(HdlrBase):
@@ -107,14 +106,14 @@ class ActionsHdlr(HdlrBase):
                 self.check_router_module_no(rt, mod)
                 self.check_arg(
                     self._args[2],
-                    (1, 2, 100),
+                    [1, 2, 100],
                     "Error: control selector out of range 1,2,100",
                 )
                 if self.args_err:
                     return
                 if self._args[2] == 1:  # temperature 1
                     sel = 83
-                elif self._args[2] == 2:  # temperature 1
+                elif self._args[2] == 2:  # temperature 2
                     sel = 87
                 else:
                     sel = 100

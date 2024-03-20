@@ -31,14 +31,14 @@ class AdminHdlr(HdlrBase):
                 await self.api_srv.set_server_mode(rt)
                 ip_len = self._args[0]
                 self.api_srv._hass_ip = self._args[1 : ip_len + 1].decode("iso8859-1")
-                tok_len = self._args[ip_len + 1]
+                # tok_len = self._args[ip_len + 1]
                 ip_len = len(self.api_srv._client_ip)
                 cl_ip_str = (chr(ip_len) + self.api_srv._client_ip).encode("iso8859-1")
                 self.save_id(cl_ip_str + self._args)
                 self.response = "OK"
             case spec.SMHUB_LOG_LEVEL:
                 self.check_arg(
-                    self._p4, range(2), "Parameter 4 ust be 0 (console) or 1 (file)."
+                    self._p4, range(2), "Parameter 4 must be 0 (console) or 1 (file)."
                 )
                 self.check_arg(
                     self._p5,
@@ -70,7 +70,7 @@ class AdminHdlr(HdlrBase):
                 await self.handle_router_cmd_resp(rt, RT_CMDS.SYSTEM_RESTART)
                 self.response = self.rt_msg._resp_buffer
             case spec.RT_START_FWD:
-                self.check_router_no(rt, mod)
+                self.check_router_module_no(rt, mod)
                 if self.args_err:
                     return
                 mod_list = self.api_srv.routers[rt - 1].mod_addrs
@@ -80,10 +80,10 @@ class AdminHdlr(HdlrBase):
                 self.response = self.rt_msg._resp_buffer
                 return
             case spec.RT_FWD_SET:
-                mod = self.args[1]
-                cmd = self.args[2]
-                t_rt = self.args[3]
-                t_mod = self.args[4]
+                mod = self._args[1]
+                cmd = self._args[2]
+                t_rt = self._args[3]
+                t_mod = self._args[4]
                 self.check_router_module_no(rt, mod)
                 self.check_arg(
                     t_rt, range(1, 65), "Error: target router no out of range 1..64"
@@ -94,16 +94,16 @@ class AdminHdlr(HdlrBase):
                 if self.args_err:
                     return
                 rt_command = (
-                    RT_CMDS.RT_FORW_SET.replace("<mod_src>", mod)
-                    .replace("<cmd_src>", cmd)
-                    .replace("<rt_trg>", t_rt)
-                    .replace("<mod_trg>", t_mod)
+                    RT_CMDS.RT_FORW_SET.replace("<mod_src>", chr(mod))
+                    .replace("<cmd_src>", chr(cmd))
+                    .replace("<rt_trg>", chr(t_rt))
+                    .replace("<mod_trg>", chr(t_mod))
                 )
                 await self.handle_router_cmd_resp(rt, rt_command)
                 self.response = self.rt_msg._resp_buffer
                 return
             case spec.RT_FWD_DEL:
-                if self.args[1] == 255:
+                if self._args[1] == 255:
                     self.check_router_no(rt)
                     if self.args_err:
                         return
@@ -112,10 +112,10 @@ class AdminHdlr(HdlrBase):
                     self.response = self.rt_msg._resp_buffer
                     return
                 else:
-                    mod = self.args[1]
-                    cmd = self.args[2]
-                    t_rt = self.args[3]
-                    t_mod = self.args[4]
+                    mod = self._args[1]
+                    cmd = self._args[2]
+                    t_rt = self._args[3]
+                    t_mod = self._args[4]
                     self.check_router_module_no(rt, mod)
                     self.check_arg(
                         t_rt, range(1, 65), "Error: target router no out of range 1..64"
@@ -128,10 +128,10 @@ class AdminHdlr(HdlrBase):
                     if self.args_err:
                         return
                     rt_command = (
-                        RT_CMDS.RT_FORW_DEL_1.replace("<mod_src>", mod)
-                        .replace("<cmd_src>", cmd)
-                        .replace("<rt_trg>", t_rt)
-                        .replace("<mod_trg>", t_mod)
+                        RT_CMDS.RT_FORW_DEL_1.replace("<mod_src>", chr(mod))
+                        .replace("<cmd_src>", chr(cmd))
+                        .replace("<rt_trg>", chr(t_rt))
+                        .replace("<mod_trg>", chr(t_mod))
                     )
                     await self.handle_router_cmd_resp(rt, rt_command)
                     self.response = self.rt_msg._resp_buffer

@@ -11,9 +11,9 @@ from const import (
 class QueryServer:
     """Server class for network queries seraching Smart Hubs"""
 
-    def __init__(self, lp, sm_hub):
+    def __init__(self, lp, lan_mac: str):
         self.loop = lp
-        self.lan_mac = sm_hub.lan_mac
+        self.lan_mac = lan_mac
         self.logger = logging.getLogger(__name__)
         self._q_running = False
 
@@ -37,15 +37,6 @@ class QueryServer:
             + mac_str
         ).encode("iso8859-1")
 
-    async def handle_smhub_query(self, ip_reader, ip_writer):
-        """Network server handler to receive api commands."""
-
-        while True:
-            # Read api command from network
-            query = await ip_reader.read(1024)
-            ip_writer.write(self.resp_str)
-            await asyncio.sleep(0.04)
-
     async def run_query_srv(self):
         """Server for handling Smart Hub queries."""
         self._q_running = True
@@ -61,7 +52,7 @@ class QueryServer:
                 while self._q_running:
                     try:
                         data, addr = self.q_sock.recvfrom(10)
-                    except Exception as error_msg:
+                    except Exception:
                         await asyncio.sleep(0.4)
                     else:
                         self.q_sock.sendto(self.resp_str, addr)
