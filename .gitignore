@@ -1,4 +1,4 @@
-requirements.txt
+ings.setrequirements.txt
 *.code-workspace
 *.bin
 *.pem
@@ -16,3 +16,4 @@ __pycache__/
 nul
 launch.json
 .vscode/settings.json
+settings.set
