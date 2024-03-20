@@ -26,29 +26,25 @@ function setStatus(jsonString) {
     var updateStat = JSON.parse(jsonString);
     upldStat = updateStat.upload;
     modsList = updateStat.modules
+    cur_mod = modStat.cur_mod;
 
-    for (let i = 0; i < modsList.length; i++) {
-        modAddr = modsList[i];
-        modKey = "mod_" + modAddr;
+    if (cur_mod < 0) {
+        // upload
+        lbl = document.getElementById("stat_" + modsList[0]);
+        lbl.className = 'fw_subtext_bold';
+        lbl.innerText = "Upload: " + upldStat + "%";
+    }
+    else {
+        modKey = "mod_" + cur_mod;
         modStat = updateStat[modKey];
         prog = modStat.progress;
-        console.log("Progress: " + prog);
         success = modStat.success;
-        lbl = document.getElementById("stat_" + modAddr);
-        if ((upldStat < 100) & (i == 0)) {
-            lbl.className = 'fw_subtext_bold';
-            lbl.innerText = "Upload: " + upldStat + "%";
-        }
-        else if (prog < 100) {
-            if (i > 0) {
-                last_lbl = document.getElementById("stat_" + modsList[i - 1])
-                last_lbl.className = 'fw_subtext';
-            }
+        lbl = document.getElementById("stat_" + cur_mod);
+        if (prog < 100) {
             lbl.className = 'fw_subtext_bold';
             lbl.innerText = "Flashen: " + prog + "%";
         }
-        else if (prog == 100) {
-            lbl.className = 'fw_subtext_bold';
+        else if ((upldStat == 100) & (prog == 100)) {
             lbl.innerText = "Flashen: " + success;
         }
     }

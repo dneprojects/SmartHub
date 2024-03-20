@@ -539,6 +539,7 @@ class RtHdlr(HdlrBase):
     ) -> None:
         """Send counter back to api."""
         cur_pkg = pkg_high * 256 + pkg_low
+        self.upd_stat_dict["cur_mod"] = 0
         self.upd_stat_dict["mod_0"]["progress"] = round(100 * cur_pkg / max_count)
         self.logger.info(
             f"Router update progress: {cur_pkg} of {max_count +1} : {100 * cur_pkg / max_count} %"
@@ -613,6 +614,7 @@ class RtHdlr(HdlrBase):
     ) -> None:
         """Send firmware upload status protocol to ip client."""
         if code == RT_STAT_CODES.PKG_OK:
+            self.upd_stat_dict["cur_mod"] = -1
             self.upd_stat_dict["upload"] = round(pckg * 100 / no_pkgs)
             self.logger.info(
                 f"Firmware upload package {pckg} of {no_pkgs} : {round(pckg * 100 / no_pkgs)}%"
@@ -665,6 +667,7 @@ class RtHdlr(HdlrBase):
             return
         self.protocol = protocol
         perc = ord(protocol[1])
+        self.upd_stat_dict["cur_mod"] = mod
         self.upd_stat_dict["mod_" + str(mod)]["progress"] = perc
         log_info = f"Update status for modules: Cur. mod: {cmod}: {perc}%"
         for mod_rdy_i in range(ord(protocol[2])):
