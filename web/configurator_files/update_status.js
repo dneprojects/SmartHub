@@ -10,8 +10,9 @@ for (let i = 0; i < check_boxes.length; i++) {
 }
 control_flashbutton();
 
-function control_flashbutton()  {
-    flash_btn.disabled = true;
+function control_flashbutton() {
+    if (document.getElementById("stat_0") == null)
+        flash_btn.disabled = true;  // for modules only
     for (let i = 0; i < check_boxes.length; i++) {
         if (check_boxes[i].checked) {
             flash_btn.disabled = false;
