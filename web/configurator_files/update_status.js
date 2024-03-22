@@ -1,7 +1,25 @@
 const flash_btn = document.getElementById("flash_button");
+const check_boxes = document.getElementsByClassName("mod_chk");
 flash_btn.addEventListener("click", function () {
     watchUpdateStatus();
 });
+for (let i = 0; i < check_boxes.length; i++) {
+    check_boxes[i].addEventListener("change", function () {
+        control_flashbutton();
+    })
+}
+control_flashbutton();
+
+function control_flashbutton()  {
+    flash_btn.disabled = true;
+    for (let i = 0; i < check_boxes.length; i++) {
+        if (check_boxes[i].checked) {
+            flash_btn.disabled = false;
+            break;
+        }
+    }
+}
+
 async function watchUpdateStatus() {
     
     await setInterval(function() { 
