@@ -233,6 +233,7 @@ function setTriggerSels() {
     if (selectn == "9") {
         setElementVisibility("counter-select", "visible");
         setElementVisibility("count-vals", "visible");
+        setMaxCount()
     }
     if (selectn == "40") {
         setElementVisibility("mov-select", "visible");

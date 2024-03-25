@@ -300,6 +300,7 @@ function setActCntval() {
     setElementVisibility("cnt-val", "hidden");
     if (idx == 3){
         setElementVisibility("cnt-val", "visible");
+        setMaxCountAct()
     }
 }
 function setActDPercval() {
