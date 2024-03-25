@@ -134,7 +134,7 @@ class ApiServer:
                 self.logger.debug(f"API call returned: {response}")
             else:
                 self.logger.warning(f"API call failed: {response}")
-            self.respond_client(response)  # Aknowledge the api command at last
+            await self.respond_client(response)  # Aknowledge the api command at last
             if self._auto_restart_opr & (not self._opr_mode) & (not self._init_mode):
                 await self.set_operate_mode(rt)
             if self._netw_blocked:
@@ -153,12 +153,13 @@ class ApiServer:
         self._running = False
         self._auto_restart_opr = False
 
-    def respond_client(self, response):
+    async def respond_client(self, response):
         """Send api command response"""
 
         self.api_msg.resp_prepare_std(response)
         self.logger.debug(f"API network response: {self.api_msg._rbuffer}")
         self.ip_writer.write(self.api_msg._rbuffer)
+        await self.ip_writer.drain()
 
     async def send_status_to_client(self):
         """Send api status response"""
