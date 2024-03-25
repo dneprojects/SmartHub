@@ -8,7 +8,7 @@ from hdlr_class import HdlrBase
 class SettingsHdlr(HdlrBase):
     """Handling of all settings messages."""
 
-    async def process_message(self):
+    async def process_message(self) -> None:
         """Parse message, prepare and send router command"""
 
         rt: int = self._p4

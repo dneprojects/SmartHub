@@ -15,7 +15,7 @@ class ForwardHdlr(HdlrBase):
         super().__init__(api_srv)
         self.read_mapping()
 
-    async def process_message(self):
+    async def process_message(self) -> None:
         """Parse message, prepare and send router command"""
 
         match self._spec:

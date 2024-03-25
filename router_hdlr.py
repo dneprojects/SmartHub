@@ -30,14 +30,25 @@ class RtHdlr(HdlrBase):
         """Initiates a router reboot"""
         self.logger.info(f"Router {self.rt_id} will be rebooted, please wait...")
         await self.handle_router_cmd(self.rt_id, RT_CMDS.RT_REBOOT)
-        # router_running = False
-        await asyncio.sleep(2)
-        # while not (router_running):
-        #     # Ask for mode 0, if returned, router is up
-        #     # await self.rt_msg.get_router_response()
-        #     ret_msg = await self.get_mode(0)
-        #     router_running = len(ret_msg) > 0
-        self.logger.info(f"Router {self.rt_id} rebooted")
+        await self.waitfor_rt_booted()
+
+    async def waitfor_rt_booted(self):
+        """Wait until router finished booting."""
+        router_running = False
+        while not (router_running):
+            ret_msg = await self.get_rt_status()
+            router_running = (len(ret_msg) > 40) & (
+                ret_msg[-3] == RT_STAT_CODES.SYS_RUNNING
+            )
+            if not router_running:
+                self.logger.info("Waiting for router booting...")
+                await asyncio.sleep(2)
+        if ret_msg[-2] == RT_STAT_CODES.SYS_PROBLEMS:
+            self.logger.warning(
+                f"Router {self.rt_id} running, boot finished with module problems"
+            )
+        else:
+            self.logger.info(f"Router {self.rt_id} running")
 
     async def set_mode(self, group: int, new_mode):
         """Changes system or group mode to new_mode"""

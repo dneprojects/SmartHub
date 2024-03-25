@@ -10,7 +10,7 @@ from hdlr_class import HdlrBase
 class FilesHdlr(HdlrBase):
     """Handling of all files messages."""
 
-    async def process_message(self):
+    async def process_message(self) -> None:
         """Parse message, prepare and send router command"""
 
         (rt, mod) = self.get_router_module()

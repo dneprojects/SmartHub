@@ -8,7 +8,7 @@ from hdlr_class import HdlrBase
 class AdminHdlr(HdlrBase):
     """Handling of all admin messages."""
 
-    async def process_message(self):
+    async def process_message(self) -> None:
         """Parse message, prepare and send router command"""
 
         rt = self._p4

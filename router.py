@@ -68,8 +68,7 @@ class HbtnRouter:
         """Startup procedure: wait for router #1, get router info, start modules."""
         from module_hdlr import ModHdlr
 
-        # await self.hdlr.rt_reboot()
-        # self.logger.info("Router reboot finished")
+        await self.hdlr.waitfor_rt_booted()
         modules = await self.get_full_status()
 
         for m_idx in range(modules[0]):
