@@ -1,7 +1,7 @@
 import asyncio
 from asyncio.streams import StreamReader, StreamWriter
 import logging
-from logging import config as log_conf
+from logging import Logger, config as log_conf
 from logging import RootLogger
 from logging.handlers import RotatingFileHandler
 import yaml
@@ -78,23 +78,23 @@ class SmartHub:
         self.curr_mac = ":".join(re.findall("..", "%012x" % uuid.getnode()))
         return
 
-    def get_host_ip(self):
+    def get_host_ip(self) -> str:
         """Return own ip."""
         return self._host_ip
 
-    def get_version(self):
+    def get_version(self) -> str:
         """Return version string"""
         return SMHUB_INFO.SW_VERSION
 
-    def get_serial(self):
+    def get_serial(self) -> str:
         """Return version string"""
         return SMHUB_INFO.SERIAL
 
-    def get_type(self):
+    def get_type(self) -> str:
         """Return version string"""
         return SMHUB_INFO.TYPE
 
-    def get_info(self):
+    def get_info(self) -> str:
         """Return information on Smart Hub hardware and software"""  # Get cpu statistics
 
         if self._serial == "":
@@ -201,7 +201,7 @@ class SmartHub:
         info_str = info_str + f"    file: {log_level_file}\n"
         return info_str
 
-    def get_update(self):
+    def get_update(self) -> str:
         """Return updated information on Smart Hub sensors and status."""  # Get cpu statistics
 
         info_str = "hardware:\n"
@@ -248,7 +248,7 @@ class SmartHub:
                 return self.skip_init
 
 
-def setup_logging():
+def setup_logging() -> Logger:
     """Initialze logging settings."""
 
     with open(f"./{LOGGING_DEF_FILE}", "r") as stream:

@@ -46,7 +46,7 @@ class ApiServer:
         self._auto_restart_opr: bool = False  # Automatic restart of Opr after api call
         self._init_mode: bool = True
         self._first_api_cmd: bool = True
-        self.is_offline = False
+        self.is_offline: bool = False
 
     async def get_initial_status(self):
         """Starts router object and reads complete system status"""
