@@ -84,7 +84,9 @@ def show_router_overview(main_app) -> web.Response:
     """Prepare overview page of module."""
     api_srv = main_app["api_srv"]
     rtr = api_srv.routers[0]
-    side_menu = activate_side_menu(main_app["side_menu"], ">Router<")
+    side_menu = activate_side_menu(
+        main_app["side_menu"], ">Router<", api_srv.is_offline
+    )
     type_desc = "Smart Router - Kommunikationsschnittstelle zwischen den Modulen"
     if rtr.channels == b"":
         page = fill_page_template(
@@ -161,8 +163,12 @@ def show_module_overview(main_app, mod_addr) -> web.Response:
     """Prepare overview page of module."""
     api_srv = main_app["api_srv"]
     module = api_srv.routers[0].get_module(mod_addr)
-    side_menu = activate_side_menu(main_app["side_menu"], ">Module<")
-    side_menu = activate_side_menu(side_menu, f"module-{module._id}")
+    side_menu = activate_side_menu(
+        main_app["side_menu"], ">Module<", api_srv.is_offline
+    )
+    side_menu = activate_side_menu(
+        side_menu, f"module-{module._id}", api_srv.is_offline
+    )
     mod_image, type_desc = get_module_image(module._typ)
     main_app["module"] = module
     mod_description = get_module_properties(module)
@@ -504,7 +510,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
     tbl = (
         indent(4) + '<form id="settings_table" action="/settings/step" method="post">\n'
     )
-    tbl += "\n" + indent(5) + "<table>\n"
+    tbl += "\n" + indent(5) + '<table id="set_tbl">\n'
 
     tbl_entries = dict()
     for ci in range(len(tbl_data)):
@@ -605,6 +611,19 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             else:
                 sel_chkd = ""
             tbl += f'<td><label for="{id_name}">Auswahl</label><input type="radio" name="{id_name}" id="{id_name}" value="{ci}" {sel_chkd}></td>'
+        if key in [
+            "glob_flags",
+            "flags",
+            "groups",
+            "vis_cmds",
+            "coll_cmds",
+            "dir_cmds",
+            "logic",
+            "users",
+            "fingers",
+        ]:
+            # Add additional checkbox element
+            tbl += f'<td><input type="checkbox" class="sel_element" name="sel_{ci}" value="{ci}"></td>'
         tbl += "</tr>\n"
     if key in [
         "glob_flags",
@@ -659,9 +678,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
         )
         tbl += (
             indent(7)
-            + f'<td><button name="ModSettings" class="new_button" id="config_button" type="submit" form="settings_table" value="new-{mod_addr}-{step}">anlegen</button></td>\n'
-            + indent(7)
-            + "</tr>\n"
+            + f'<td><button name="ModSettings" class="new_button" id="config_button" type="submit" form="settings_table" value="new-{mod_addr}-{step}">anlegen</button>\n'
         )
         if key in ["fingers"]:
             tbl = tbl.replace(
@@ -670,11 +687,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             )
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="del_entry" type="number" min="{min_del}" max="{max_del}" placeholder="Existierende Nummer eintragen" id="{id_name}"/></td>\n'
-        )
-        tbl += (
-            indent(7)
-            + f'<td><button name="ModSettings" class="new_button" id="config_button" type="submit" form="settings_table" value="del-{mod_addr}-{step}">entfernen</button></td>\n'
+            + f'<button name="ModSettings" class="new_button" id="config_button" type="submit" form="settings_table" value="del-{mod_addr}-{step}">entfernen</button></td>\n'
             + indent(7)
             + "</tr>\n"
         )
@@ -687,8 +700,20 @@ def parse_response_form(main_app, form_data):
     """Parse configuration input form and store results in settings."""
     key = main_app["key"]
     settings = main_app["settings"]
+    if form_data["ModSettings"][0][:4] == "del-":  # remove element
+        idxs = [int(form_data[ky][0]) for ky in form_data.keys() if ky[:4] == "sel_"]
+        idxs.sort(reverse=True)
+        for idx in idxs:
+            del settings.__getattribute__(key)[idx]
+            if key == "users":
+                del settings.all_fingers[idx]
+        main_app["settings"] = settings
+        return form_data["ModSettings"][0]
+
     for form_key in list(form_data.keys())[:-1]:
-        if form_key == "new_entry":
+        if form_key[:4] == "sel_":
+            pass  # checked, but no delete command
+        elif form_key == "new_entry":
             # add element
             entry_found = False
             for elem in settings.__getattribute__(key):
@@ -716,16 +741,6 @@ def parse_response_form(main_app, form_data):
                             0,
                         )
                     )
-        elif form_key == "del_entry":
-            # remove element
-            idx = 0
-            for elem in settings.__getattribute__(key):
-                if elem.nmbr == int(form_data[form_key][0]):
-                    del settings.__getattribute__(key)[idx]
-                    if key == "users":
-                        del settings.all_fingers[int(form_data[form_key][0])]
-                    break
-                idx += 1
         elif form_key == "users_sel":
             settings.users_sel = int(form_data[form_key][0])
         else:
@@ -893,8 +908,8 @@ def get_property_kind(main_app, step) -> tuple[str, str, str]:
             header = "Rollladen"
             prompt = "Rollladen"
         case "logic":
-            header = "Logik-Bausteine"
-            prompt = "Logik-Baustein"
+            header = "Zähler"
+            prompt = "Zähler"
         case "users":
             header = "Benutzerverwaltung"
             prompt = "Benutzer"

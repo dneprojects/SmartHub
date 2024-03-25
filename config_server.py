@@ -445,12 +445,13 @@ def seperate_upload(upload_str: str) -> tuple[bytes, bytes]:
             if len(byt) > 0:
                 smc_bytes += int.to_bytes(int(byt))
                 no_list_chars += 1
-    smc_bytes = (
-        chr(no_list_lines & 0xFF)
-        + chr(no_list_lines >> 8)
-        + chr(no_list_chars & 0xFF)
-        + chr(no_list_chars >> 8)
-    ).encode("iso8859-1") + smc_bytes[4:]
+    if len(lines) > 1:
+        smc_bytes = (
+            chr(no_list_lines & 0xFF)
+            + chr(no_list_lines >> 8)
+            + chr(no_list_chars & 0xFF)
+            + chr(no_list_chars >> 8)
+        ).encode("iso8859-1") + smc_bytes[4:]
     return smg_bytes, smc_bytes
 
 

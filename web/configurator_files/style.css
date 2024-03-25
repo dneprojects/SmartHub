@@ -93,6 +93,7 @@ td {
    font-weight: normal;
 }*/
 table { width: 100%}
+table#set_tbl { width: auto}
 
 address,
 caption,
@@ -787,12 +788,13 @@ body.produkte.sub #right h1 {
 #config_button.new_button {
    height: 21.78px;
    width: 70px;
-   margin-left: 10px;
-   margin-right: 40px;
+   margin-left: 5px;
+   margin-right: 2px;
    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
    font: 11px arial, helvetica, clean, sans-serif;
    border: 1px solid #C0372D;
 }
+
 
 
 #automtns_button {
@@ -1053,6 +1055,10 @@ select {
    margin-left: 10px;
    margin-right: 10px;
    accent-color: #C0372D;
+}
+
+input[type="checkbox"].sel_element {
+   margin-left: 5px
 }
 
 input.mod_chk {

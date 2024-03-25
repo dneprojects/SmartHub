@@ -18,41 +18,9 @@ def html_response(html_file) -> web.Response:
     return web.Response(text=text, content_type="text/html", charset="utf-8")
 
 
-def adjust_side_menu(modules, is_offline) -> str:
-    """Load side_menu and adjust module entries."""
-    mod_lines = []
-    with open(WEB_FILES_DIR + SIDE_MENU_FILE, mode="r", encoding="utf-8") as smf_id:
-        side_menu = smf_id.read().splitlines(keepends=True)
-    for sub_line in side_menu:
-        if sub_line.find("modules sub") > 0:
-            sub_idx = side_menu.index(sub_line)
-            break
-    first_lines = side_menu[:sub_idx]
-    last_lines = side_menu[sub_idx + 1 :]
-    for module in modules:
-        mod_lines.append(
-            sub_line.replace("module-1", f"module-{module._id}").replace(
-                "ModuleName", module._name
-            )
-        )
-    page = "".join(first_lines) + "".join(mod_lines) + "".join(last_lines)
-    if is_offline:
-        page = page.replace(
-            '<a href="hub" title="Hub" class="submenu modules">Hub</a>',
-            '<a href="hub" title="Hub" class="submenu modules">Home</a>',
-        )
-    return page
-
-
-def init_side_menu(app):
-    """Setup side menu."""
-    side_menu = adjust_side_menu(app["api_srv"].routers[0].modules, app["is_offline"])
-    app["side_menu"] = side_menu
-
-
 def show_modules(app) -> web.Response:
     """Prepare modules page."""
-    side_menu = activate_side_menu(app["side_menu"], ">Module<")
+    side_menu = activate_side_menu(app["side_menu"], ">Module<", app["is_offline"])
     page = get_html("modules.html").replace("<!-- SideMenu -->", side_menu)
     images = ""
     modules = app["api_srv"].routers[0].modules
@@ -174,7 +142,39 @@ def fill_page_template(
     return page
 
 
-def activate_side_menu(menu: str, entry: str) -> str:
+def init_side_menu(app):
+    """Setup side menu."""
+    side_menu = adjust_side_menu(app["api_srv"].routers[0].modules, app["is_offline"])
+    app["side_menu"] = side_menu
+
+
+def adjust_side_menu(modules, is_offline: bool) -> str:
+    """Load side_menu and adjust module entries."""
+    mod_lines = []
+    with open(WEB_FILES_DIR + SIDE_MENU_FILE, mode="r", encoding="utf-8") as smf_id:
+        side_menu = smf_id.read().splitlines(keepends=True)
+    for sub_line in side_menu:
+        if sub_line.find("modules sub") > 0:
+            sub_idx = side_menu.index(sub_line)
+            break
+    first_lines = side_menu[:sub_idx]
+    last_lines = side_menu[sub_idx + 1 :]
+    for module in modules:
+        mod_lines.append(
+            sub_line.replace("module-1", f"module-{module._id}").replace(
+                "ModuleName", module._name
+            )
+        )
+    page = "".join(first_lines) + "".join(mod_lines) + "".join(last_lines)
+    if is_offline:
+        page = page.replace(
+            'class="submenu modules">Hub</a>',
+            'class="submenu modules">Home</a>',
+        )
+    return page
+
+
+def activate_side_menu(menu: str, entry: str, is_offline: bool) -> str:
     """Mark menu entry as active."""
     side_menu = menu.splitlines(keepends=True)
     for sub_line in side_menu:
@@ -185,7 +185,13 @@ def activate_side_menu(menu: str, entry: str) -> str:
         r"title=\"[a-z,A-z,0-9,\-,\"]+ ", "", side_menu[sub_idx]
     )
     side_menu[sub_idx] = side_menu[sub_idx].replace('class="', 'class="active ')
-    return "".join(side_menu)
+    side_menu_str = "".join(side_menu)
+    if is_offline:
+        side_menu_str = side_menu_str.replace(
+            'class="submenu modules">Hub</a>',
+            'class="submenu modules">Home</a>',
+        )
+    return side_menu_str
 
 
 def get_module_image(type_code: bytes) -> tuple[str, str]:

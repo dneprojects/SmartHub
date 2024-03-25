@@ -167,6 +167,25 @@
   <script type="text/javascript">
     const save_btn = document.getElementById("config_button_sv");
     const teach_btn = document.getElementsByName("TeachNewFinger")[0];
+    const check_boxes = document.getElementsByClassName("sel_element");
+    const del_btn = document.getElementsByName("ModSettings")[1]
+    for (let i = 0; i < check_boxes.length; i++) {
+        check_boxes[i].addEventListener("change", function () {
+            control_delbutton();
+        })
+    }
+    control_delbutton();
+
+    function control_delbutton()  {
+        del_btn.disabled = true;  // for modules only
+        for (let i = 0; i < check_boxes.length; i++) {
+            if (check_boxes[i].checked) {
+                del_btn.disabled = false;
+                break;
+            }
+        }
+    }
+
     var fngrNames = {}
     save_btn.addEventListener("click", function () {
       openMsgPopup();

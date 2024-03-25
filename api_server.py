@@ -276,3 +276,45 @@ class ApiServer:
         await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.SET_SRV_MODE)
         await self.evnt_srv.stop()
         self.logger.debug("API mode turned off initially")
+
+
+class ApiServerMin(ApiServer):
+    """Holds shared data, base router, event handler, and serial interface"""
+
+    def __init__(self, loop, sm_hub) -> None:
+        self.loop = loop
+        self.sm_hub = sm_hub
+        self.logger = logging.getLogger(__name__)
+        self._rt_serial: None = None
+        self._opr_mode: bool = False  # Always off
+        self.hdlr = []
+        self.routers = []
+        self.routers.append(HbtnRouter(self, 1))
+        self.is_addon: bool = False
+        self.mirror_mode_enabled: bool = True
+        self.event_mode_enabled: bool = True
+        self._api_cmd_processing: bool = False  # Blocking of config server io requests
+        self._netw_blocked: bool = True  # Blocking of network api server request
+        self._auto_restart_opr: bool = False  # Automatic restart of Opr after api call
+        self._init_mode: bool = True
+        self._first_api_cmd: bool = True
+        self.is_offline = True  # Always offline
+
+    async def shutdown(self, rt, restart_flg):
+        """Terminating all tasks and self."""
+        await self.sm_hub.conf_srv.runner.cleanup()
+        self._running = False
+        self._auto_restart_opr = False
+        self.sm_hub.tg._abort()
+
+    async def start_opr_mode(self, rt_no):
+        """Turn on operate mode: enable router events."""
+        return self._opr_mode
+
+    async def stop_opr_mode(self, rt_no):
+        """Turn on server mode: disable router events"""
+        return True
+
+    async def set_initial_srv_mode(self, rt_no):
+        """Turn on config mode: disable router events"""
+        return
