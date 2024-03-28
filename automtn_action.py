@@ -233,6 +233,13 @@ class AutomationAction:
                 actn_target = self.automation.get_output_desc(
                     self.action_args[0], False
                 )
+                if actn_target[:6] == "Zähler":
+                    if self.unit % 2 == 0:  # even input numbers
+                        actn_desc = "abwärts zählen"
+                    else:
+                        actn_desc = "hoch zählen"
+                    self.unit = int((self.unit - 165) / 8) + 1
+                    actn_target = f"Zähler {self.get_dict_entry('logic', self.unit)}"
             elif actn_target[:6] == "Zähler":
                 actn_desc = actn_target.replace("Zähler ", "")
                 self.unit = int((self.action_args[0] - 165) / 8) + 1
@@ -618,10 +625,10 @@ class AutomationAction:
             counter_opt = self.automation.get_sel(form_data, "act_countopt")
             counter_no = self.automation.get_sel(form_data, "act_counter")
             if counter_opt == 1:  # count up
-                self.action_code = 118
+                self.action_code = 1
                 self.action_args.append(165 + (counter_no - 1) * 8)
             elif counter_opt == 2:  # count down
-                self.action_code = 119
+                self.action_code = 1
                 self.action_args.append(166 + (counter_no - 1) * 8)
             else:  # set counter value
                 self.action_args.append(counter_no)

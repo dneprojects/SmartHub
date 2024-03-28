@@ -35,6 +35,15 @@ function initActElements(act_code, act_args) {
             setElement("action-select", 2)
             setElement("led-act", out_no);
         }
+        else if (out_no > 164) {
+            setElement("action-select", 6)
+            var cnt_no = Math.floor((out_no - 165) / 8) + 1;
+            setElement("counter-act", cnt_no)
+            if (cnt_no % 2  == 0)
+                setElement("countopt-act", 2);
+            else
+                setElement("countopt-act", 1);
+            }
         else {
             setElement("action-select", 111);
             if (out_no > 100)

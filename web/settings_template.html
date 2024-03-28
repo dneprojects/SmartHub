@@ -177,6 +177,7 @@
     control_delbutton();
 
     function control_delbutton()  {
+      if (del_btn.innerHTML == "entfernen") {
         del_btn.disabled = true;  // for modules only
         for (let i = 0; i < check_boxes.length; i++) {
             if (check_boxes[i].checked) {
@@ -184,6 +185,8 @@
                 break;
             }
         }
+      }
+        
     }
 
     var fngrNames = {}

@@ -196,6 +196,7 @@ class ConfigServer:
             # router upload
             app.logger.info("Router configuration file uploaded")  # noqa: F541
             await send_to_router(app, content_str)
+            init_side_menu(app)
             return show_router_overview(app)
         else:
             mod_addr = int(str(data["ModUpload"]))
@@ -208,6 +209,7 @@ class ConfigServer:
                 app.logger.warning(
                     f"Module configuration file does not fit to module number {mod_addr}, upload aborted"
                 )
+            init_side_menu(app)
             return show_module_overview(app, mod_addr)  # web.HTTPNoContent()
 
     @routes.post("/upd_upload")

@@ -123,7 +123,9 @@ class RtMessage(BaseMessage):
         cmd_len = chr(len(self._buffer))
         self._buffer = self._buffer[:2] + cmd_len + self._buffer[3:]
         self.calc_CRC()
-        self._length = ord(self._buffer[2])
+        self._length = 0
+        if len(self._buffer) > 3:
+            self._length = ord(self._buffer[2])
 
     def calc_CRC(self) -> None:
         """Caclulates simple xor checksum"""

@@ -196,13 +196,9 @@ class ApiServer:
         if self._init_mode:
             self.logger.debug("Skipping set Operate mode due to init_mode")
             return True
-        if "ip_writer" not in self.__dir__():
-            # no command received yet
+        if not self.get_client_ip():
             self._opr_mode = False
             return False
-        self._client_ip = self.ip_writer.get_extra_info("peername")[0]
-        self.is_addon = self._client_ip == self.sm_hub.get_host_ip()
-        # SmartHub running with Home Assistant, use internal websocket
         if self._opr_mode & self.evnt_srv.running():
             return True
         if self._opr_mode:
@@ -225,6 +221,7 @@ class ApiServer:
 
     async def reinit_opr_mode(self, rt_no, mode) -> str:
         """Force stop operate mode and restart."""
+        self.get_client_ip()
         if not mode:
             # Start of re-init with mode == 0
             self._init_mode = True
@@ -267,8 +264,24 @@ class ApiServer:
         await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.SET_SRV_MODE)
         await self.evnt_srv.stop()
         self._opr_mode = False
+        await self.ensure_empty_response()
         self.logger.info("--- Switched to Client/Server mode")
         return not self._opr_mode
+
+    async def ensure_empty_response(self, rt_no=1) -> None:
+        """Send test command and wait for correspondig response."""
+        await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.GET_GLOB_MODE)
+        if len(self.hdlr.rt_msg._resp_buffer) < 4:
+            await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.GET_GLOB_MODE)
+        recent_resp = self.hdlr.rt_msg._resp_buffer[3] != ord(RT_CMDS.GET_GLOB_MODE[7])
+        while recent_resp:
+            self.logger.warning(
+                f"Received unexpected test response: {self.hdlr.rt_msg._resp_msg}"
+            )
+            await self.hdlr.handle_router_resp(rt_no)
+            recent_resp = self.hdlr.rt_msg._resp_buffer[3] != ord(
+                RT_CMDS.GET_GLOB_MODE[7]
+            )
 
     async def set_initial_server_mode(self, rt_no=1) -> None:
         """Turn on server mode: disable router events"""
@@ -277,6 +290,17 @@ class ApiServer:
         await self.hdlr.handle_router_cmd_resp(rt_no, RT_CMDS.SET_SRV_MODE)
         await self.evnt_srv.stop()
         self.logger.debug("API mode turned off initially")
+
+    def get_client_ip(self) -> bool:
+        """Return host id from latest call."""
+
+        if "ip_writer" not in self.__dir__():
+            # no command received yet
+            return False
+        self._client_ip = self.ip_writer.get_extra_info("peername")[0]
+        self.is_addon = self._client_ip == self.sm_hub.get_host_ip()
+        return True
+        # SmartHub running with Home Assistant, use internal websocket
 
 
 class ApiServerMin(ApiServer):

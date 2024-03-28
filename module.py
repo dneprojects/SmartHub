@@ -113,7 +113,9 @@ class HbtnModule:
             cvr_idx -= 5
         return cvr_idx
 
-    def compare_status(self, stat1: bytes, stat2: bytes, diff_idx, idx) -> list:
+    def compare_status(
+        self, stat1: bytes, stat2: bytes, diff_idx: list[int], idx: int
+    ) -> list[int]:
         """Find updates fields."""
         for x, y in zip(stat1, stat2):
             if x != y:
@@ -123,6 +125,9 @@ class HbtnModule:
 
     def update_status(self, new_status: bytes):
         """Saves new mirror status and returns differences."""
+
+        if self.status == new_status:
+            return []
         block_list = []
         update_info = []
         i_diff = []
