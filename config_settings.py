@@ -650,12 +650,8 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                     min_new = elem_nmbrs[n_idx] + 1
                 else:
                     break
-            min_del = min(elem_nmbrs)
-            max_del = max(elem_nmbrs)
         else:
             min_new = 1
-            min_del = 1
-            max_del = 0
         if key in ["glob_flags", "flags"]:
             max_new = 16
         elif key in ["dir_cmds"]:
@@ -664,7 +660,6 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             max_new = 65280
         elif key in ["groups"]:
             max_new = 80
-            min_del = max(1, min_del)
         elif key in ["coll_cmds", "users"]:
             max_new = 255
         elif key in ["fingers"]:
