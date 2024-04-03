@@ -135,7 +135,11 @@ class ApiServer:
             else:
                 self.logger.warning(f"API call failed: {response}")
             await self.respond_client(response)  # Aknowledge the api command at last
-            if self._auto_restart_opr and (not self._opr_mode) and (not self._init_mode):
+            if (
+                self._auto_restart_opr
+                and (not self._opr_mode)
+                and (not self._init_mode)
+            ):
                 await self.set_operate_mode(rt)
             if self._netw_blocked:
                 self._netw_blocked = False
