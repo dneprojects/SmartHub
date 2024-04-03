@@ -27,6 +27,7 @@ import logging
 import pathlib
 from const import (
     MODULE_CODES,
+    SMHUB_INFO,
     WEB_FILES_DIR,
     HOMEPAGE,
     LICENSE_PAGE,
@@ -371,7 +372,9 @@ def show_hub_overview(app) -> web.Response:
     hub_name = smhub._host
     if api_srv.is_offline:
         pic_file, subtitle = get_module_image(b"\xc9\x00")
-        html_str = get_html(CONF_HOMEPAGE)
+        html_str = get_html(CONF_HOMEPAGE).replace(
+            "Version: x.y.z", f"Version: {SMHUB_INFO.SW_VERSION}"
+        )
     elif api_srv.is_addon:
         pic_file, subtitle = get_module_image(b"\xca\x00")
         html_str = get_html(HUB_HOMEPAGE).replace(

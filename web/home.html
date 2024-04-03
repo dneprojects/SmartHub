@@ -133,6 +133,8 @@
                   </div>
                 
                 </div>
+                <br>
+                <p>Version: x.y.z</p>
                 <!-- MainContentEnd -->
               </div>
 
@@ -220,11 +222,6 @@
     });
     form_upload.addEventListener("submit", function () {
       openMsgPopup();
-    });
-    window.addEventListener("click", function (event) {
-      if (event.target == myPopup) {
-        openMsgPopup();
-      };
     });
     function openMsgPopup() {
       file_popup.classList.remove("show");

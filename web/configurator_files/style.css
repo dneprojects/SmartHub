@@ -1098,7 +1098,7 @@ select:focus {
 #group_dep,
 select {
    background: url(design/input_shadow.gif) no-repeat left top;
-   width: 110px;
+   width: 150px;
 }
 
 form.select,

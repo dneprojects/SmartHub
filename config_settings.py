@@ -296,6 +296,10 @@ def show_setting_step(main_app, mod_addr, step) -> web.Response:
 
 def fill_settings_template(main_app, title, subtitle, step, settings, key: str) -> str:
     """Return settings page."""
+    if settings.typ == b"\x00\x00":
+        mod_addr = 0
+    else:
+        mod_addr = settings.id
     with open(
         WEB_FILES_DIR + SETTINGS_TEMPLATE_FILE, mode="r", encoding="utf-8"
     ) as tplf_id:
@@ -321,13 +325,13 @@ def fill_settings_template(main_app, title, subtitle, step, settings, key: str) 
     if step == 0:
         page = disable_button("zurück", page)
         # page = page.replace('form="settings_table"', "")
-        settings_form = prepare_basic_settings(main_app, settings.id, mod_type)
+        settings_form = prepare_basic_settings(main_app, mod_addr, mod_type)
         if settings.properties["no_keys"] == 0:
             page = disable_button("weiter", page)
     else:
         if step == main_app["props"]["no_keys"]:
             page = disable_button("weiter", page)
-        settings_form = prepare_table(main_app, settings.id, step, key)
+        settings_form = prepare_table(main_app, mod_addr, step, key)
     page = page.replace("<p>ContentText</p>", settings_form)
     return page
 
@@ -358,7 +362,8 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
         prompt = "Routername"
     tbl += (
         indent(7)
-        + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="name" type="text" maxlength="32" id="{id_name}" value="{settings.name}"/></td></tr>\n'
+        + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="name" '
+        + f'type="text" maxlength="32" id="{id_name}" value="{settings.name}"/></td></tr>\n'
     )
     if mod_addr > 0:
         # Module
@@ -366,7 +371,8 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
         prompt = "Gruppenzugehörigkeit"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><select name="{id_name}" id="{id_name}">\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td>'
+            + f'<td><select name="{id_name}" id="{id_name}">\n'
         )
         rtr = main_app["api_srv"].routers[0]
         # groups = rtr.groups
@@ -387,13 +393,15 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
         prompt = "Benutzer Modus 1"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="text" maxlength="10" id="{id_name}" value="{settings.user1_name}"/>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" '
+            + f'type="text" maxlength="10" id="{id_name}" value="{settings.user1_name}"/>\n'
         )
         id_name = "user2_name"
         prompt = "Benutzer Modus 2"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="text" maxlength="10" id="{id_name}" value="{settings.user2_name}"/>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" '
+            + f'type="text" maxlength="10" id="{id_name}" value="{settings.user2_name}"/>\n'
         )
     if settings.type in [
         "Smart Controller XL-1",
@@ -404,13 +412,15 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
         prompt = "Display-Kontrast"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="0" max="50" id="{id_name}" value="{settings.displ_contr}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" '
+            + f'type="number" min="0" max="50" id="{id_name}" value="{settings.displ_contr}"/></td></tr>\n'
         )
         id_name = "displ_time"
         prompt = "Display-Leuchtzeit"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="1" max="240" id="{id_name}" value="{settings.displ_time}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" '
+            + f'type="number" min="1" max="240" id="{id_name}" value="{settings.displ_time}"/></td></tr>\n'
         )
     if mod_addr > 0:
         if len(settings.inputs) > 0:
@@ -418,13 +428,15 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
             prompt = "Tastendruck kurz [ms]"
             tbl += (
                 indent(7)
-                + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="10" max="250" id="{id_name}" value="{settings.t_short}"/></td></tr>\n'
+                + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" '
+                + f'type="number" min="10" max="250" id="{id_name}" value="{settings.t_short}"/></td></tr>\n'
             )
             id_name = "t_long"
             prompt = "Tastendruck lang [ms]"
             tbl += (
                 indent(7)
-                + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="100" max="2500" id="{id_name}" value="{settings.t_long}"/></td></tr>\n'
+                + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" '
+                + f'type="number" min="100" max="2500" id="{id_name}" value="{settings.t_long}"/></td></tr>\n'
             )
     if settings.type in [
         "Smart Controller XL-1",
@@ -437,7 +449,8 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
         prompt = "Dimmgeschwindigkeit"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" type="number" min="1" max="10" id="{id_name}" value="{settings.t_dimm}"/></td></tr>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="{id_name}" '
+            + f'type="number" min="1" max="10" id="{id_name}" value="{settings.t_dimm}"/></td></tr>\n'
         )
     if settings.type in [
         "Smart Controller XL-1",
@@ -462,10 +475,14 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
         tbl += (
             indent(7)
             + f'<td style="vertical-align: top;">{prompt}</td>'
-            + f'<td><div><label for="{id_name}_cl1">Heizen</label><input type="radio" name="{id_name}" id="{id_name}_cl1" value = "1" {cl1_checked}></div>'
-            + f'<div><label for="{id_name}_cl2">Kühlen</label><input type="radio" name="{id_name}" id="{id_name}_cl2" value = "2" {cl2_checked}></div>'
-            + f'<div><label for="{id_name}_cl3">Heizen / Kühlen</label><input type="radio" name="{id_name}" id="{id_name}_cl3" value = "3" {cl3_checked}></div>'
-            + f'<div><label for="{id_name}_cl4">Aus</label><input type="radio" name="{id_name}" id="{id_name}_cl4" value = "4" {cl4_checked}></div></td></tr>\n'
+            + f'<td><div><label for="{id_name}_cl1">Heizen</label><input type="radio" '
+            + f'name="{id_name}" id="{id_name}_cl1" value = "1" {cl1_checked}></div>'
+            + f'<div><label for="{id_name}_cl2">Kühlen</label><input type="radio" '
+            + f'name="{id_name}" id="{id_name}_cl2" value = "2" {cl2_checked}></div>'
+            + f'<div><label for="{id_name}_cl3">Heizen / Kühlen</label><input type="radio" '
+            + f'name="{id_name}" id="{id_name}_cl3" value = "3" {cl3_checked}></div>'
+            + f'<div><label for="{id_name}_cl4">Aus</label><input type="radio" '
+            + f'name="{id_name}" id="{id_name}_cl4" value = "4" {cl4_checked}></div></td></tr>\n'
         )
         id_name = "temp_1_2"
         prompt = "Temperatursensor"
@@ -478,8 +495,10 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
         tbl += (
             indent(7)
             + f'<td style="vertical-align: top;">{prompt}</td>'
-            + f'<td><div><label for="{id_name}_s1">Sensor 1</label><input type="radio" name="{id_name}" id="{id_name}_s1" value = "1" {s1_checked}></div>'
-            + f'<div><label for="{id_name}_s2">Sensor 2</label><input type="radio" name="{id_name}" id="{id_name}_s2" value = "2" {s2_checked}></div></td></tr>\n'
+            + f'<td><div><label for="{id_name}_s1">Sensor 1</label><input type="radio" '
+            + f'name="{id_name}" id="{id_name}_s1" value = "1" {s1_checked}></div>'
+            + f'<div><label for="{id_name}_s2">Sensor 2</label><input type="radio" '
+            + f'name="{id_name}" id="{id_name}_s2" value = "2" {s2_checked}></div></td></tr>\n'
         )
     if settings.type in ["Smart Controller XL-1", "Smart Controller XL-2"]:
         id_name = "supply_prio"
@@ -493,8 +512,10 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
         tbl += (
             indent(7)
             + f'<td style="vertical-align: top;">{prompt}</td>'
-            + f'<td><div><label for="{id_name}_230">230V</label><input type="radio" name="{id_name}" id="{id_name}_230" value = "230" {v230_checked}></div>'
-            + f'<div><label for="{id_name}_24">24V</label><input type="radio" name="{id_name}" id="{id_name}_24" value = "24" {v24_checked}></div></td></tr>\n'
+            + f'<td><div><label for="{id_name}_230">230V</label><input type="radio" '
+            + f'name="{id_name}" id="{id_name}_230" value = "230" {v230_checked}></div>'
+            + f'<div><label for="{id_name}_24">24V</label><input type="radio" '
+            + f'name="{id_name}" id="{id_name}_24" value = "24" {v24_checked}></div></td></tr>\n'
         )
     tbl += indent(5) + "</table>\n"
     tbl += indent(4) + "</form>\n"
@@ -538,20 +559,26 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             if covers[ci].type == 0:
                 tbl += (
                     indent(7)
-                    + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" type="text" id="{id_name}" maxlength="{maxl}" value=" --" disabled></td>'
+                    + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" '
+                    + f'type="text" id="{id_name}" maxlength="{maxl}" value=" --" disabled></td>'
                 )
             else:
                 tbl += (
                     indent(7)
-                    + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" type="text" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci].name[:maxl].strip()}"></td>'
+                    + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" '
+                    + f'type="text" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci].name[:maxl].strip()}"></td>'
                 )
         else:
             tbl += (
                 indent(7)
-                + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" type="text" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci].name[:maxl].strip()}"></td>'
+                + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" '
+                + f'type="text" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci].name[:maxl].strip()}"></td>'
             )
         if key in ["leds", "buttons", "dir_cmds"]:
-            tbl += f'<td><input name="data[{ci},1]" type="text" id="{id_name}" maxlength="14" value="{tbl_data[ci].name[18:].strip()}"></td>'
+            tbl += (
+                f'<td><input name="data[{ci},1]" type="text" id="{id_name}" maxlength="14" '
+                + f'value="{tbl_data[ci].name[18:].strip()}"></td>'
+            )
         elif key == "inputs":
             if tbl_data[ci].type == 1:
                 btn_checked = "checked"
@@ -559,8 +586,14 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             elif tbl_data[ci].type == 2:
                 btn_checked = ""
                 sw_checked = "checked"
-            tbl += f'<td><label for="{id_name}_sw">Schalter</label><input type="radio" name="data[{ci},1]" id="{id_name}_sw" value = "sw" {sw_checked}></td>'
-            tbl += f'<td><label for="{id_name}_btn">Taster</label><input type="radio" name="data[{ci},1]" id="{id_name}_btn" value = "btn" {btn_checked}></td>'
+            tbl += (
+                f'<td><label for="{id_name}_sw">Schalter</label><input type="radio" '
+                + f'name="data[{ci},1]" id="{id_name}_sw" value = "sw" {sw_checked}></td>'
+            )
+            tbl += (
+                f'<td><label for="{id_name}_btn">Taster</label><input type="radio" '
+                + f'name="data[{ci},1]" id="{id_name}_btn" value = "btn" {btn_checked}></td>'
+            )
         elif key == "outputs":
             if (ci < 2 * len(covers)) and ((ci % 2) == 0):
                 if tbl_data[ci].type == -10:
@@ -569,8 +602,14 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                 else:
                     out_chkd = "checked"
                     cvr_chkd = ""
-                tbl += f'<td><label for="{id_name}_out">Ausgang</label><input type="radio" name="data[{ci},1]" id="{id_name}_out" value="out" {out_chkd}></td>'
-                tbl += f'<td><label for="{id_name}_cvr">Rollladen</label><input type="radio" name="data[{ci},1]" id="{id_name}_cvr" value="cvr" {cvr_chkd}></td>'
+                tbl += (
+                    f'<td><label for="{id_name}_out">Ausgang</label><input type="radio" '
+                    + f'name="data[{ci},1]" id="{id_name}_out" value="out" {out_chkd}></td>'
+                )
+                tbl += (
+                    f'<td><label for="{id_name}_cvr">Rollladen</label><input type="radio" '
+                    + f'name="data[{ci},1]" id="{id_name}_cvr" value="cvr" {cvr_chkd}></td>'
+                )
         elif key == "covers":
             if covers[ci].type != 0:
                 cov_t = main_app["settings"].cover_times
@@ -579,18 +618,28 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                     ipol_chkd = "checked"
                 else:
                     ipol_chkd = ""
-                tbl += f'<td></td><td><input name="data[{ci},1]" type="text" id="{id_name}_tc" maxlength="4" placeholder="Verfahrzeit in s" value = {cov_t[ci]} style="width: 40px;"></td>'
-                tbl += f'<td></td><td><input name="data[{ci},2]" type="text" id="{id_name}_tb" maxlength="4" placeholder="Jalousiezeit in s (0 falls Rollladen)" value = {bld_t[ci]} style="width: 40px;"></td>'
-                tbl += f'<td><input type="checkbox" name="data[{ci},3]" value="pol_nrm" id="{id_name}_pinv" {ipol_chkd}><label for="{id_name}_pinv">Polarität, Ausg. A: auf</label></td>'
+                tbl += (
+                    f'<td></td><td><input name="data[{ci},1]" type="text" id="{id_name}_tc" maxlength="4" '
+                    + f'placeholder="Verfahrzeit in s" value = {cov_t[ci]} style="width: 40px;"></td>'
+                )
+                tbl += (
+                    f'<td></td><td><input name="data[{ci},2]" type="text" id="{id_name}_tb" maxlength="4" '
+                    + f'placeholder="Jalousiezeit in s (0 falls Rollladen)" value = {bld_t[ci]} style="width: 40px;"></td>'
+                )
+                tbl += (
+                    f'<td><input type="checkbox" name="data[{ci},3]" value="pol_nrm" id="{id_name}_pinv" '
+                    + f'{ipol_chkd}><label for="{id_name}_pinv">Polarität, Ausg. A: auf</label></td>'
+                )
         elif key == "groups":
             if tbl_data[ci].nmbr != 0:
                 id_name = "group_dep"
-                prompt = "Abhängig von Gruppe 0"
-                tbl += (
-                    indent(7)
-                    + f'<td><label for="{id_name}" style="margin-left: 10px;">{prompt}</label></td><td><select name="data[{ci},1]" id="{id_name}">\n'
-                )
-                dep_names = ["Keine", "Tag/Nacht", "Alarm", "Tag/Nacht, Alarm"]
+                dep_names = [
+                    "unabhängig",
+                    "Tag/Nacht",
+                    "Alarm",
+                    "Tag/Nacht, Alarm",
+                ]
+                tbl += indent(7) + f'<td><select name="data[{ci},1]" id="{id_name}">\n'
                 for dep in range(4):
                     if dep == main_app["settings"].mode_dependencies[tbl_data[ci].nmbr]:
                         tbl += (
@@ -603,6 +652,8 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                             + f'<option value="{dep}">{dep_names[dep]}</option>\n'
                         )
                 tbl += indent(7) + "/select></td>\n"
+            else:
+                tbl += f"<td>&nbsp;&nbsp;Modi von Gruppe 0</td>"
         elif key == "users":
             # add radio buttons to select user
             id_name = "users_sel"
@@ -610,7 +661,10 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                 sel_chkd = "checked"
             else:
                 sel_chkd = ""
-            tbl += f'<td><label for="{id_name}">Auswahl</label><input type="radio" name="{id_name}" id="{id_name}" value="{ci}" {sel_chkd}></td>'
+            tbl += (
+                f'<td><label for="{id_name}">Auswahl</label><input type="radio" '
+                + f'name="{id_name}" id="{id_name}" value="{ci}" {sel_chkd}></td>'
+            )
         if key in [
             "glob_flags",
             "flags",
@@ -623,7 +677,10 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             "fingers",
         ]:
             # Add additional checkbox element
-            tbl += f'<td><input type="checkbox" class="sel_element" name="sel_{ci}" value="{ci}"></td>'
+            if key == "groups" and tbl_data[ci].nmbr == 0:
+                pass  # group 0 not removable
+            else:
+                tbl += f'<td><input type="checkbox" class="sel_element" name="sel_{ci}" value="{ci}"></td>'
         tbl += "</tr>\n"
     if key in [
         "glob_flags",
@@ -669,17 +726,20 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
         tbl += indent(7) + "<tr><td>&nbsp;</td></tr>"
         tbl += (
             indent(7)
-            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="new_entry" type="number" min="{min_new}" max="{max_new}" placeholder="Neue Nummer eintragen" id="{id_name}"/></td>\n'
+            + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="new_entry" '
+            + f'type="number" min="{min_new}" max="{max_new}" placeholder="Neue Nummer eintragen" id="{id_name}"/></td>\n'
         )
         if key in ["logic"]:
             tbl += (
                 indent(7)
-                + f'<td><button name="ModSettings" class="new_cntr_button" id="config_button" type="button" value="new-{mod_addr}-{step}">anlegen</button>\n'
+                + f'<td><button name="ModSettings" class="new_cntr_button" id="config_button" '
+                + f'type="button" value="new-{mod_addr}-{step}">anlegen</button>\n'
             )
         else:
             tbl += (
                 indent(7)
-                + f'<td><button name="ModSettings" class="new_button" id="config_button" type="submit" form="settings_table" value="new-{mod_addr}-{step}">anlegen</button>\n'
+                + f'<td><button name="ModSettings" class="new_button" id="config_button" type="submit" '
+                + f'form="settings_table" value="new-{mod_addr}-{step}">anlegen</button>\n'
             )
         if key in ["fingers"]:
             tbl = tbl.replace(
@@ -688,7 +748,8 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             )
         tbl += (
             indent(7)
-            + f'<button name="ModSettings" class="new_button" id="config_button" type="submit" form="settings_table" value="del-{mod_addr}-{step}">entfernen</button></td>\n'
+            + f'<button name="ModSettings" class="new_button" id="config_button" type="submit" '
+            + f'form="settings_table" value="del-{mod_addr}-{step}">entfernen</button></td>\n'
             + indent(7)
             + "</tr>\n"
         )
