@@ -64,6 +64,7 @@ class AutomationsSet:
                 line = list[0:line_len]
                 src_rt = int(line[0])
                 src_mod = int(line[1])
+                if ((src_rt == 0) or (src_rt == 199) or (src_rt == 250)) and (
                     src_mod == 0
                 ):  # local automation
                     self.local.append(
@@ -74,6 +75,7 @@ class AutomationsSet:
                     self.local.append(
                         AutomationDefinition(line, self.autmn_dict, settings)
                     )
+                elif (src_rt == settings.module.rt_id) or (src_rt == 250):
                     self.external.append(
                         ExtAutomationDefinition(line, self.autmn_dict, settings)
                     )
@@ -260,7 +262,7 @@ class AutomationDefinition:
         inp_no = log_inp - unit_no * 8
         l_units = self.settings.logic
         for lg_unit in l_units:
-            if (lg_unit.type == 5) and (lg_unit.nmbr == unit_no + 1):
+            if lg_unit.nmbr == unit_no + 1:
                 return unit_no + 1, inp_no, lg_unit.name
         return unit_no + 1, inp_no, ""
 
