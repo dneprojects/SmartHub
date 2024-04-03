@@ -151,8 +151,18 @@ class AdminHdlr(HdlrBase):
                 self.response = self.rt_msg._resp_msg
                 return
             case spec.MD_RESTART:
-                self.check_router_module_no(rt, mod)
+                self.check_router_no(rt)
+                self.check_arg(
+                    mod,
+                    [*range(1, 251), 255],
+                    "Error: module no out of range 1..250",
+                )
                 if self.args_err:
+                    return
+                if mod == 255:
+                    for mdl in self.api_srv.routers[rt - 1].get_module_list():
+                        module = self.api_srv.routers[rt - 1].get_module(mdl.id)
+                        await module.hdlr.mod_reboot()
                     return
                 module = self.api_srv.routers[rt - 1].get_module(mod)
                 return await module.hdlr.mod_reboot()

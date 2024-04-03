@@ -34,10 +34,12 @@ class ModuleSettings:
         self.user2_name: str = (
             module.get_rtr().user_modes[12:].decode("iso8859-1").strip()
         )
+        self.save_desc_file_needed: bool = False
+        self.upload_desc_info_needed: bool = False
         self.group = dpcopy(module.get_rtr().groups[self.id])
         self.get_io_interfaces()
-        self.get_names()
         self.get_settings()
+        self.get_names()
         self.get_descriptions()
         self.automtns_def = AutomationsSet(self)
 
@@ -381,10 +383,16 @@ class ModuleSettings:
     def get_descriptions(self) -> str | None:
         """Get descriptions of commands, etc."""
 
+        self.save_desc_file_needed = False
+        self.upload_desc_info_needed = False
+
         self.logger.debug("Getting module descriptions")
         resp = self.desc.encode("iso8859-1")
 
         no_lines = int.from_bytes(resp[:2], "little")
+        no_chars = int.from_bytes(resp[2:4], "little")
+        new_no_lines = no_lines
+        new_no_chars = no_chars
         resp = resp[4:]
         for _ in range(no_lines):
             if resp == b"":
@@ -395,9 +403,9 @@ class ModuleSettings:
             entry_no = int(line[3])
             entry_name = line[9:line_len].decode("iso8859-1").strip()
             if content_code == 767:  # FF 02: global flg (Merker)
-                self.glob_flags.append(IfDescriptor(entry_name, entry_no, 0))
+                pass  # self.glob_flags.append(IfDescriptor(entry_name, entry_no, 0))
             elif content_code == 1023:  # FF 03: collective commands (Sammelbefehle)
-                self.coll_cmds.append(IfDescriptor(entry_name, entry_no, 0))
+                pass  # self.coll_cmds.append(IfDescriptor(entry_name, entry_no, 0))
             elif content_code == 2303:  # FF 08: alarm commands
                 pass
             elif self.id == line[1]:
@@ -406,38 +414,95 @@ class ModuleSettings:
                     # local flag (Merker)
                     if self.unit_not_exists(self.flags, entry_name):
                         self.flags.append(IfDescriptor(entry_name, entry_no, 0))
+                        self.logger.info(
+                            f"Description entry of local flag '{entry_name}' found, will be stored in module."
+                        )
+                        self.upload_desc_info_needed = True
+                    else:
+                        # remove line
+                        self.desc = self.desc.replace(line.decode("iso8859-1"), "")
+                        self.logger.info(
+                            f"Description entry of local flag '{entry_name}' removed, already stored in module."
+                        )
+                        new_no_lines -= 1
+                        new_no_chars -= len(line)
+                        self.save_desc_file_needed = True
                 elif int(line[2]) == 4:
                     # local visualization command, needed if not stored in smc
                     entry_no = int.from_bytes(resp[3:5], "little")
                     if self.unit_not_exists(self.vis_cmds, entry_name):
                         self.vis_cmds.append(IfDescriptor(entry_name, entry_no, 0))
+                        self.logger.info(
+                            f"Description entry of visualization command '{entry_name}' found, will be stored in module."
+                        )
+                        self.upload_desc_info_needed = True
+                    else:
+                        # remove line
+                        self.desc = self.desc.replace(line.decode("iso8859-1"), "")
+                        self.logger.info(
+                            f"Description entry of visualization command '{entry_name}' removed, already stored in module."
+                        )
+                        new_no_lines -= 1
+                        new_no_chars -= len(line)
+                        self.save_desc_file_needed = True
                 elif int(line[2]) == 5:
                     # logic element, needed if not stored in smc
                     for lgc in self.logic:
                         if lgc.nmbr == entry_no:
-                            lgc.name = entry_name
+                            if lgc.name == entry_name:
+                                # remove line
+                                self.desc = self.desc.replace(
+                                    line.decode("iso8859-1"), ""
+                                )
+                                self.logger.info(
+                                    f"Description entry of counter '{entry_name}' removed, already stored in module."
+                                )
+                                new_no_lines -= 1
+                                new_no_chars -= len(line)
+                                self.save_desc_file_needed = True
+                            else:
+                                lgc.name = entry_name
+                                self.logger.info(
+                                    f"Description entry of counter '{entry_name}' found, will be stored in module."
+                                )
+                                self.upload_desc_info_needed = True
                             break
-                # 6: Logik input: line[3] logic unit, line[4] input no
+                elif int(line[2]) == 6:
+                    # Logik input: line[3] logic unit, line[4] input no
+                    # remove line
+                    self.desc = self.desc.replace(line.decode("iso8859-1"), "")
+                    self.logger.info(
+                        f"Description entry of logic input '{entry_name}' removed, not needed anymore."
+                    )
+                    new_no_lines -= 1
+                    new_no_chars -= len(line)
+                    self.save_desc_file_needed = True
                 # elif int(line[2]) == 7:
                 # Group name
             resp = resp[line_len:]
-        if (len(self.logic) > 0) & ("logic" not in self.prop_keys):
+        self.desc = (
+            chr(new_no_lines & 0xFF)
+            + chr(new_no_lines >> 8)
+            + chr(new_no_chars & 0xFF)
+            + chr(new_no_chars >> 8)
+        ) + self.desc[4:]
+        if (len(self.logic) > 0) and ("logic" not in self.prop_keys):
             self.properties["logic"] = len(self.logic)
             self.properties["no_keys"] += 1
             self.prop_keys.append("logic")
-        if (len(self.flags) > 0) & ("flags" not in self.prop_keys):
+        if (len(self.flags) > 0) and ("flags" not in self.prop_keys):
             self.properties["flags"] = len(self.flags)
             self.properties["no_keys"] += 1
             self.prop_keys.append("flags")
-        if (len(self.dir_cmds) > 0) & ("dir_cmds" not in self.prop_keys):
+        if (len(self.dir_cmds) > 0) and ("dir_cmds" not in self.prop_keys):
             self.properties["dir_cmds"] = len(self.dir_cmds)
             self.properties["no_keys"] += 1
             self.prop_keys.append("dir_cmds")
-        if (len(self.vis_cmds) > 0) & ("vis_cmds" not in self.prop_keys):
+        if (len(self.vis_cmds) > 0) and ("vis_cmds" not in self.prop_keys):
             self.properties["vis_cmds"] = len(self.vis_cmds)
             self.properties["no_keys"] += 1
             self.prop_keys.append("vis_cmds")
-        if (len(self.users) > 0) & ("users" not in self.prop_keys):
+        if (len(self.users) > 0) and ("users" not in self.prop_keys):
             self.properties["users"] = len(self.users)
             self.properties["no_keys"] += 1
             self.prop_keys.append("users")
@@ -532,7 +597,7 @@ class ModuleSettings:
         for line in list_lines[1:]:
             if len(line) > 0:
                 tok = line.split(";")
-                if (tok[0] == "252") | (tok[0] == "253") | (tok[0] == "255"):
+                if (tok[0] == "252") or (tok[0] == "253") or (tok[0] == "255"):
                     new_line = ""
                     for lchr in line.split(";")[:-1]:
                         new_line += chr(int(lchr))
@@ -554,7 +619,7 @@ class ModuleSettings:
         for line in list_lines[1:]:
             if len(line) > 0:
                 tok = line.split(";")
-                if (tok[0] != "252") & (tok[0] != "253") & (tok[0] != "255"):
+                if (tok[0] != "252") and (tok[0] != "253") and (tok[0] != "255"):
                     new_line = ""
                     for lchr in line.split(";")[:-1]:
                         new_line += chr(int(lchr))
@@ -818,6 +883,8 @@ class ModuleSettingsLight(ModuleSettings):
         self.blade_times = [0, 0, 0, 0, 0]
         self.user1_name = module.get_rtr().user_modes[1:11].decode("iso8859-1").strip()
         self.user2_name = module.get_rtr().user_modes[12:].decode("iso8859-1").strip()
+        self.save_desc_file_needed: bool = False
+        self.upload_desc_info_needed: bool = False
         self.group = dpcopy(module.get_rtr().groups[self.id])
         self.get_io_interfaces()
         self.get_names()

@@ -24,9 +24,9 @@ class HdlrBase:
         self.rt_msg = RtMessage(self, 0, "   ")  # initialize empty object
 
     def get_router_module(self) -> tuple[int, int]:
-        if (self._p4 == 0) & (len(self._args) > 0):
+        if (self._p4 == 0) and (len(self._args) > 0):
             return self._args[0], self._args[1]
-        elif (self._cmd_grp == 30) & (self._spec >= API_ACTIONS.OUTP_OFF):
+        elif (self._cmd_grp == 30) and (self._spec >= API_ACTIONS.OUTP_OFF):
             return self._p4, self._p5
         elif self._cmd_grp == 50:
             return self._p4, self._p5

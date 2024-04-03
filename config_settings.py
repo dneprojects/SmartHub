@@ -140,11 +140,11 @@ def show_router_overview(main_app) -> web.Response:
         props += "Betriebsart:&nbsp;&nbsp;Operate<br>"
     else:
         props += "Betriebsart:&nbsp;&nbsp;Client/Server<br>"
-    if api_srv.mirror_mode_enabled & api_srv._opr_mode:
+    if api_srv.mirror_mode_enabled and api_srv._opr_mode:
         props += "Spiegel:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aktiv<br>"
     else:
         props += "Spiegel:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inaktiv<br>"
-    if api_srv.event_mode_enabled & api_srv._opr_mode:
+    if api_srv.event_mode_enabled and api_srv._opr_mode:
         props += (
             "Events:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aktiv<br>"
         )
@@ -562,7 +562,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             tbl += f'<td><label for="{id_name}_sw">Schalter</label><input type="radio" name="data[{ci},1]" id="{id_name}_sw" value = "sw" {sw_checked}></td>'
             tbl += f'<td><label for="{id_name}_btn">Taster</label><input type="radio" name="data[{ci},1]" id="{id_name}_btn" value = "btn" {btn_checked}></td>'
         elif key == "outputs":
-            if (ci < 2 * len(covers)) & ((ci % 2) == 0):
+            if (ci < 2 * len(covers)) and ((ci % 2) == 0):
                 if tbl_data[ci].type == -10:
                     out_chkd = ""
                     cvr_chkd = "checked"
@@ -852,7 +852,7 @@ def parse_response_form(main_app, form_data):
                                 name += " " * (32 - len(name))
                             settings.__getattribute__(key)[indices[0]].name = name
                     case "groups":
-                        if (indices[0] > 0) & (indices[1] == 1):
+                        if (indices[0] > 0) and (indices[1] == 1):
                             if indices[0] == 1:
                                 # Empty dependencies
                                 settings.mode_dependencies = b"P" + b"\0" * 80

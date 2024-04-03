@@ -71,9 +71,9 @@ def is_outdated(cur_fw: str, new_fw: str) -> bool:
     new_month = new_date.split("/")[0][-2:]
     if int(new_year) > int(cur_year):
         return True
-    if (int(new_year) == int(cur_year)) & (int(new_month) > int(cur_month)):
+    if (int(new_year) == int(cur_year)) and (int(new_month) > int(cur_month)):
         return True
-    # if (new_date == cur_date) & ():
+    # if (new_date == cur_date) and ():
     #     return True
     return False
 

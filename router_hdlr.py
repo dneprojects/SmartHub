@@ -37,7 +37,7 @@ class RtHdlr(HdlrBase):
         router_running = False
         while not (router_running):
             ret_msg = await self.get_rt_status()
-            router_running = (len(ret_msg) > 40) & (
+            router_running = (len(ret_msg) > 40) and (
                 ret_msg[-3] == RT_STAT_CODES.SYS_RUNNING
             )
             if not router_running:
@@ -85,7 +85,7 @@ class RtHdlr(HdlrBase):
             rt_cmd = RT_CMDS.GET_GRP_MODE.replace("<grp>", chr(group))
         await self.handle_router_cmd_resp(self.rt_id, rt_cmd)
 
-        if (len(self.rt_msg._resp_msg) > 1) & (group != 255):
+        if (len(self.rt_msg._resp_msg) > 1) and (group != 255):
             self.logger.warning(
                 f"Response to get mode {group} command too long: {self.rt_msg._resp_buffer}"
             )
@@ -241,7 +241,7 @@ class RtHdlr(HdlrBase):
 
     async def get_rt_status(self) -> bytes:
         """Get router system status."""
-        if self.api_srv._init_mode & (len(self.rtr.chan_status) > 40):
+        if self.api_srv._init_mode and (len(self.rtr.chan_status) > 40):
             self.logger.debug("Returning stored channel status")
             return self.rtr.chan_status
         await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.GET_RT_STATUS)
@@ -466,7 +466,7 @@ class RtHdlr(HdlrBase):
 
         await self.handle_router_cmd_resp(self.rt_id, cmd_str)
         resp = self.rt_msg._resp_buffer[-self.rt_msg._resp_buffer[2] + 4 : -1]
-        if (resp[0] == 0x42) & (resp[1] == 0x4C) & (resp[2] == 0) & (resp[3] == 0):
+        if (resp[0] == 0x42) and (resp[1] == 0x4C) and (resp[2] == 0) and (resp[3] == 0):
             self.logger.warning("Router set into update mode")
         else:
             self.logger.error("Failed to enter router ISP mode")
@@ -477,7 +477,7 @@ class RtHdlr(HdlrBase):
         await asyncio.sleep(1)
         await self.handle_router_cmd_resp(self.rt_id, cmd_str)
         resp = self.rt_msg._resp_buffer[-self.rt_msg._resp_buffer[2] + 4 : -1]
-        if (resp[0] == 0x42) & (resp[1] == 0x4C) & (resp[2] == 0) & (resp[3] == 0):
+        if (resp[0] == 0x42) and (resp[1] == 0x4C) and (resp[2] == 0) and (resp[3] == 0):
             self.logger.warning("Router starting to update")
         else:
             self.logger.error("Failed to enter router ISP mode")
@@ -507,8 +507,8 @@ class RtHdlr(HdlrBase):
             await self.handle_router_cmd_resp(self.rt_id, cmd_str)
             resp_code = self.rt_msg._resp_code
             resp_msg = self.rt_msg._resp_buffer[-self.rt_msg._resp_buffer[2] + 4 : -1]
-            if (resp_code == 201) & (len(resp_msg) > 3):
-                if (resp_msg[0] == 0x42) & (resp_msg[1] == 0x4C):
+            if (resp_code == 201) and (len(resp_msg) > 3):
+                if (resp_msg[0] == 0x42) and (resp_msg[1] == 0x4C):
                     await progress_fun(resp_msg[2], resp[resp_msg[3]], no_pkgs)
                 else:
                     self.logger.error(
@@ -597,7 +597,7 @@ class RtHdlr(HdlrBase):
                 else:
                     await progress_fun(pi + 1, no_pkgs, RT_STAT_CODES.PKG_ERR)
                     break  # abort upload
-            if (self.rt_msg._resp_buffer[4] == pi + 1) & (
+            if (self.rt_msg._resp_buffer[4] == pi + 1) and (
                 self.rt_msg._resp_buffer[5] == RT_STAT_CODES.PKG_OK
             ):
                 self.logger.debug(

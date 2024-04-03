@@ -503,7 +503,7 @@ async def send_to_module(app, content: str, mod_addr: int):
     module.smg_upload, module.list_upload = seperate_upload(content)
     list_update = ModbusComputeCRC(module.list_upload) != module.get_smc_crc()
     stat_update = module.different_smg_crcs()
-    if list_update | stat_update:
+    if list_update or stat_update:
         await rtr.api_srv.block_network_if(rtr._id, True)
     try:
         if list_update:
@@ -527,7 +527,7 @@ async def send_to_module(app, content: str, mod_addr: int):
             )
     except Exception as err_msg:
         app.logger.error(f"Error while uploading module settings: {err_msg}")
-    if list_update | stat_update:
+    if list_update or stat_update:
         await rtr.api_srv.block_network_if(rtr._id, False)
     module.smg_upload = b""
     module.list_upload = b""

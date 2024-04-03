@@ -242,7 +242,7 @@ class FilesHdlr(HdlrBase):
         for module in self.api_srv.routers[rt - 1].modules:
             if len(module.smg_upload) > 0:
                 no_uploads += 1
-                if module.different_smg_crcs() | (self._p5 != 0):
+                if module.different_smg_crcs() or (self._p5 != 0):
                     await rtr.set_config_mode(True)
                     await module.hdlr.send_module_smg(module._id)
                     summary += chr(module._id) + chr(1)
@@ -261,7 +261,7 @@ class FilesHdlr(HdlrBase):
         for module in self.api_srv.routers[rt - 1].modules:
             if len(module.list_upload) > 0:
                 no_uploads += 1
-                if ModbusComputeCRC(module.list_upload) != module.get_smc_crc() | (
+                if ModbusComputeCRC(module.list_upload) != module.get_smc_crc() or (
                     self._p5 != 0
                 ):
                     await rtr.set_config_mode(True)

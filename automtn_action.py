@@ -193,7 +193,7 @@ class AutomationAction:
                 SelActCodes["counter"]: "Zähler",
                 SelActCodes["buzzer"]: "Summton",
             }
-        elif (typ[0] == 10) & (typ[1] in [20, 21, 22]):  # dimm output modules
+        elif (typ[0] == 10) and (typ[1] in [20, 21, 22]):  # dimm output modules
             self.actions_dict = {
                 SelActCodes["output"]: "Ausgang",
                 SelActCodes["dimm"]: "Dimmen",
@@ -429,8 +429,8 @@ class AutomationAction:
         for act_key in sel_actions:
             if self.action_id in ActionsSets[act_key]:
                 if act_key in [1, 2]:
-                    if ((act_key == 1) & (self.unit in range(16))) | (
-                        (act_key == 2) & (self.unit in range(17, 25))
+                    if ((act_key == 1) and (self.unit in range(16))) or (
+                        (act_key == 2) and (self.unit in range(17, 25))
                     ):
                         opt_str += f'<option value="{act_key}" selected>{sel_actions[act_key]}</option>\n'
                     else:
@@ -467,7 +467,7 @@ class AutomationAction:
             if cov.type > 0:
                 opt_str += f'<option value="{cov.nmbr}">{cov.name}</option>'
                 no_covs += 1
-        if (no_covs == 0) & (SelActCodes["cover"] in self.actions_dict.keys()):
+        if (no_covs == 0) and (SelActCodes["cover"] in self.actions_dict.keys()):
             page = page.replace(
                 f'<option value="{SelActCodes["cover"]}">{self.actions_dict[SelActCodes["cover"]]}',
                 f'<option value="{SelActCodes["cover"]}" disabled>{self.actions_dict[SelActCodes["cover"]]}',
@@ -501,7 +501,7 @@ class AutomationAction:
                 max_cnt.append(app["settings"].status[MirrIdx.LOGIC - 2 + cnt.nmbr * 3])
                 opt_str += f'<option value="{cnt.nmbr}">{cnt.name}</option>\n'
         page = page.replace('<option value="">-- AcZähler wählen --</option>', opt_str)
-        if (no_counters == 0) & (SelActCodes["counter"] in self.actions_dict.keys()):
+        if (no_counters == 0) and (SelActCodes["counter"] in self.actions_dict.keys()):
             page = page.replace(
                 f'<option value="{SelActCodes["counter"]}">{self.actions_dict[SelActCodes["counter"]]}',
                 f'<option value="{SelActCodes["counter"]}" disabled>{self.actions_dict[SelActCodes["counter"]]}',

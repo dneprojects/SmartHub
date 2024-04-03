@@ -114,10 +114,10 @@ class ConfigAutomationsServer:
             else:
                 if (
                     (main_app["step"] == 1)
-                    & (len(main_app["automations_def"].external) == 0)
-                ) | (
+                    and (len(main_app["automations_def"].external) == 0)
+                ) or (
                     (main_app["step"] == 2)
-                    & (len(main_app["automations_def"].forward) == 0)
+                    and (len(main_app["automations_def"].forward) == 0)
                 ):
                     sel_atmtn = AutomationDefinition(
                         None, main_app["automations_def"].autmn_dict, settings
@@ -260,7 +260,7 @@ def fill_automations_template(main_app, title, subtitle, step) -> str:
         if len(main_app["api_srv"].routers) < 2:
             page = disable_button("weiter", page)
     if step == 2:
-        # if (len(app["automations_def"].external) == 0) & (
+        # if (len(app["automations_def"].external) == 0) and (
         #     len(app["automations_def"].forward) == 0
         # ):
         page = disable_button("weiter", page)
@@ -281,7 +281,7 @@ def enable_new_popup(settings, page: str) -> str:
     rtr = settings.module.get_rtr()
     opt_str = '<option value="">-- Modul wählen --</option>'
     for mod in rtr.modules:
-        if (mod._id != settings.id) & (mod._typ[0] != 20):
+        if (mod._id != settings.id) and (mod._typ[0] != 20):
             # not self module, no Smart Nature
             opt_str += (
                 f'<option value="modad-{mod._id}">{mod._id}: {mod._name}</option>'
@@ -292,11 +292,11 @@ def enable_new_popup(settings, page: str) -> str:
 
 def disable_chg_del_button(main_app, step, page: str) -> str:
     """Disable buttons 'change' 'delete' if list empty."""
-    if (step == 0) & (len(main_app["automations_def"].local) > 0):
+    if (step == 0) and (len(main_app["automations_def"].local) > 0):
         return page
-    if (step == 1) & (len(main_app["automations_def"].external) > 0):
+    if (step == 1) and (len(main_app["automations_def"].external) > 0):
         return page
-    if (step == 2) & (len(main_app["automations_def"].forward) > 0):
+    if (step == 2) and (len(main_app["automations_def"].forward) > 0):
         return page
     page = page.replace('id="change_button"', 'id="change_button" disabled')
     page = page.replace('id="del_button"', 'id="del_button" disabled')

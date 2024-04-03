@@ -70,7 +70,7 @@ class ApiServer:
             self._api_cmd_processing = False
             self._auto_restart_opr = False
             block_time = 0
-            while self._netw_blocked | self.evnt_srv.busy_starting:
+            while self._netw_blocked or self.evnt_srv.busy_starting:
                 # wait for end of block
                 await asyncio.sleep(1)
                 block_time += 1
@@ -135,7 +135,7 @@ class ApiServer:
             else:
                 self.logger.warning(f"API call failed: {response}")
             await self.respond_client(response)  # Aknowledge the api command at last
-            if self._auto_restart_opr & (not self._opr_mode) & (not self._init_mode):
+            if self._auto_restart_opr and (not self._opr_mode) and (not self._init_mode):
                 await self.set_operate_mode(rt)
             if self._netw_blocked:
                 self._netw_blocked = False
@@ -171,7 +171,7 @@ class ApiServer:
     async def block_network_if(self, rt_no, set_block):
         """Set or reset API mode pause."""
 
-        if self._opr_mode & set_block:
+        if self._opr_mode and set_block:
             api_time = 0
             while self._api_cmd_processing:
                 # wait for end of api command handling
@@ -199,7 +199,7 @@ class ApiServer:
         if not self.get_client_ip():
             self._opr_mode = False
             return False
-        if self._opr_mode & self.evnt_srv.running():
+        if self._opr_mode and self.evnt_srv.running():
             return True
         if self._opr_mode:
             self.logger.debug("Already in Operate mode, recovering event server")

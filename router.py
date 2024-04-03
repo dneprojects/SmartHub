@@ -70,6 +70,7 @@ class HbtnRouter:
 
         await self.hdlr.waitfor_rt_booted()
         modules = await self.get_full_status()
+        self.load_descriptions()
 
         for m_idx in range(modules[0]):
             self.mod_addrs.append(modules[m_idx + 1])
@@ -95,7 +96,6 @@ class HbtnRouter:
                 self.logger.warning(f"Module {mod_addr} removed")
         for mod_addr in mods_to_remove:
             self.mod_addrs.remove(mod_addr)
-        self.load_descriptions()
 
     async def get_status(self) -> bytes:
         """Returns router channel status"""
@@ -224,6 +224,7 @@ class HbtnRouter:
             self.logger.error(
                 f"Error saving description to file {file_path + file_name}: {err_msg}"
             )
+            fid.close()
 
     def load_descriptions(self) -> None:
         """Load descriptions from file."""
@@ -234,17 +235,23 @@ class HbtnRouter:
             file_path = DATA_FILES_DIR
             self.logger.info(f"Add-on config path not found, using {file_path}")
         if isfile(file_path + file_name):
-            fid = open(file_path + file_name, "r")
-            line = fid.readline().split(";")
-            for ci in range(len(line) - 1):
-                self.descriptions += chr(int(line[ci]))
-            desc_no = int(line[0]) + 256 * int(line[1])
-            for li in range(desc_no):
+            try:
+                fid = open(file_path + file_name, "r")
                 line = fid.readline().split(";")
                 for ci in range(len(line) - 1):
                     self.descriptions += chr(int(line[ci]))
-            fid.close()
-            self.logger.info(f"Descriptions loaded from {file_path + file_name}")
+                desc_no = int(line[0]) + 256 * int(line[1])
+                for li in range(desc_no):
+                    line = fid.readline().split(";")
+                    for ci in range(len(line) - 1):
+                        self.descriptions += chr(int(line[ci]))
+                fid.close()
+                self.logger.info(f"Descriptions loaded from {file_path + file_name}")
+            except Exception as err_msg:
+                self.logger.error(
+                    f"Error loading description to file {file_path + file_name}: {err_msg}"
+                )
+                fid.close()
         else:
             self.logger.warning(f"Descriptions file {file_path + file_name} not found")
 
@@ -337,3 +344,8 @@ class HbtnRouter:
         props["no_keys"] = no_keys
 
         return props, keys
+
+    async def cleanup_descriptions(self) -> None:
+        """If descriptions in desc file, store them into router and remove them from file."""
+        self.logger.info("Description storage in router not yet implemented")
+        pass

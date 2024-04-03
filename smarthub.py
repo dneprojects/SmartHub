@@ -320,17 +320,17 @@ async def init_serial(logger):
                     # sometimes just 0xff comes, needs another read
                     logger.debug(f"Unexpected short test response: {resp_buf}")
                     new_query = False
-                elif new_query & (resp_buf[4] == 0x87):
+                elif new_query and (resp_buf[4] == 0x87):
                     logger.info("Router available")
                     router_booting = False
-                elif (not new_query) & (resp_buf[3] == 0x87):
+                elif (not new_query) and (resp_buf[3] == 0x87):
                     logger.info("Router available")
                     router_booting = False
-                elif new_query & (resp_buf[4] == 0xFD):  # 253
+                elif new_query and (resp_buf[4] == 0xFD):  # 253
                     logger.info("Waiting for router booting...")
                     await asyncio.sleep(5)
                     new_query = True
-                elif (not new_query) & (resp_buf[3] == 0xFD):  # 253
+                elif (not new_query) and (resp_buf[3] == 0xFD):  # 253
                     logger.info("Waiting for router booting...")
                     await asyncio.sleep(5)
                     new_query = True
@@ -364,7 +364,7 @@ async def main(init_flag, ev_loop):
         # Instantiate SmartHub object
         sm_hub = SmartHub(ev_loop, logger)
         rt_serial = None
-        while (rt_serial is None) & (retry_serial >= 0):
+        while (rt_serial is None) and (retry_serial >= 0):
             if retry_serial < retry_max:
                 logger.warning(
                     f"Initialization of serial connection failed, retry {retry_max-retry_serial}"

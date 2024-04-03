@@ -191,7 +191,7 @@ class ModHdlr(HdlrBase):
                 f"List upload (SMC) returned: Count {resp_cnt} Flag {resp_flg}"
             )
             # await asyncio.sleep(0.1)
-        if (resp_flg == 8) & (resp_cnt == 0):
+        if (resp_flg == 8) and (resp_cnt == 0):
             self.logger.info(
                 f"List upload terminated successfully, transferred {l_len} bytes of {no_lines} definitions to module"
             )
@@ -490,7 +490,7 @@ class ModHdlr(HdlrBase):
         p2 = int((((self.mod.smg_upload[p2_idx] / 2) + 88) / 10) - 10)
         p3 = int((self.mod.smg_upload[p3_idx] / 7) - 4)
         p4 = int(self.mod.smg_upload[p4_idx])
-        if (p1 >= 10) | (p2 >= 10) | (p3 >= 10) | (p4 >= 10):
+        if (p1 >= 10) or (p2 >= 10) or (p3 >= 10) or (p4 >= 10):
             self.logger.error(f"Error decoding pin for module {self.mod._id}.")
             return "ERROR"
         cmd = (
