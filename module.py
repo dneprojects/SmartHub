@@ -395,7 +395,7 @@ class HbtnModule:
         return self.settings
 
     def get_settings_def(self):
-        """Return settings object."""
+        """Return default settings object without automations."""
         return ModuleSettingsLight(self)
 
     async def set_settings(self, settings: ModuleSettings):
@@ -542,7 +542,7 @@ class HbtnModule:
         if self._typ[0] not in [1, 10, 50]:
             return
         # Instantiate settings and parse descriptions
-        self.settings = self.get_module_settings()
+        self.settings = self.get_settings_def()
         if self.settings.save_desc_file_needed:
             self.get_rtr().descriptions = dpcopy(self.settings.desc)
             self.get_rtr().save_descriptions()

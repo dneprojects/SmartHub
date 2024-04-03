@@ -893,8 +893,8 @@ class ModuleSettingsLight(ModuleSettings):
         self.upload_desc_info_needed: bool = False
         self.group = dpcopy(module.get_rtr().groups[self.id])
         self.get_io_interfaces()
-        self.get_names()
         self.get_settings()
+        self.get_names()
         self.get_descriptions()
 
 

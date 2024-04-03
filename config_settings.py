@@ -312,7 +312,7 @@ def fill_settings_template(main_app, title, subtitle, step, settings, key: str) 
         page.replace("ContentTitle", title)
         .replace("ContentSubtitle", subtitle)
         .replace("controller.jpg", mod_image)
-        .replace("ModAddress", f"{settings.id}-{step}")
+        .replace("ModAddress", f"{mod_addr}-{step}")
     )
     if key == "fingers":
         finger_dict_str = "var fngrNames = {\n"
@@ -653,7 +653,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                         )
                 tbl += indent(7) + "/select></td>\n"
             else:
-                tbl += f"<td>&nbsp;&nbsp;Modi von Gruppe 0</td>"
+                tbl += "<td>&nbsp;&nbsp;Modi von Gruppe 0</td>"
         elif key == "users":
             # add radio buttons to select user
             id_name = "users_sel"
@@ -732,13 +732,13 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
         if key in ["logic"]:
             tbl += (
                 indent(7)
-                + f'<td><button name="ModSettings" class="new_cntr_button" id="config_button" '
+                + '<td><button name="ModSettings" class="new_cntr_button" id="config_button" '
                 + f'type="button" value="new-{mod_addr}-{step}">anlegen</button>\n'
             )
         else:
             tbl += (
                 indent(7)
-                + f'<td><button name="ModSettings" class="new_button" id="config_button" type="submit" '
+                + '<td><button name="ModSettings" class="new_button" id="config_button" type="submit" '
                 + f'form="settings_table" value="new-{mod_addr}-{step}">anlegen</button>\n'
             )
         if key in ["fingers"]:
@@ -748,7 +748,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             )
         tbl += (
             indent(7)
-            + f'<button name="ModSettings" class="new_button" id="config_button" type="submit" '
+            + '<button name="ModSettings" class="new_button" id="config_button" type="submit" '
             + f'form="settings_table" value="del-{mod_addr}-{step}">entfernen</button></td>\n'
             + indent(7)
             + "</tr>\n"
