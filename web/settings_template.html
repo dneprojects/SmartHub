@@ -144,6 +144,20 @@
         </div>
       </div>
     </div>
+    <div id="count_popup" class="popup">
+      <div class="popup-content">
+        <h1>ContentTitle</h1>
+        <h3>Maximalwert für neuen Zähler angeben</h3>
+        <form id="counter_max" action="/settings/new_counter">
+          <div style="position: relative; display: flex;">
+            <input type="number" id="max_count_input" name="max_number" value="2" min="2" max="16"/>
+            <button name="ModSettings" id="max_cnt" type="submit" form="settings_table" value="max_count-ModAddress-">OK</button>
+          </div>
+        </form>
+        <div> </div>
+      </div>
+    </div>
+    
     <div id="teach_popup" class="popup">
       <div class="popup-content">
         <h1>ContentTitle</h1>
@@ -164,57 +178,6 @@
 
 
   </div>
-  <script type="text/javascript">
-    const save_btn = document.getElementById("config_button_sv");
-    const teach_btn = document.getElementsByName("TeachNewFinger")[0];
-    const check_boxes = document.getElementsByClassName("sel_element");
-    const del_btn = document.getElementsByName("ModSettings")[1]
-    for (let i = 0; i < check_boxes.length; i++) {
-        check_boxes[i].addEventListener("change", function () {
-            control_delbutton();
-        })
-    }
-    control_delbutton();
-
-    function control_delbutton()  {
-      if (del_btn.innerHTML == "entfernen") {
-        del_btn.disabled = true;  // for modules only
-        for (let i = 0; i < check_boxes.length; i++) {
-            if (check_boxes[i].checked) {
-                del_btn.disabled = false;
-                break;
-            }
-        }
-      }
-        
-    }
-
-    var fngrNames = {}
-    save_btn.addEventListener("click", function () {
-      openMsgPopup();
-    });
-    teach_btn.addEventListener("click", function () {
-      openTeachPopup();
-    });
-    close_popup.addEventListener("click", function () {
-      teach_popup.classList.remove("show");
-    });
-
-    window.addEventListener("click", function (event) {
-      if (event.target == myPopup) {
-        openMsgPopup();
-      };
-    });
-    function openMsgPopup() {
-      sav_popup.classList.add("show");
-    };
-    function openTeachPopup() {
-      fngrNmbr = settings_table.elements["new_entry"].value;
-      fngr_nmbr_2_teach.value = fngrNmbr + ' ' + fngrNames[fngrNmbr];
-      teach_start.value = teach_start.value.slice(0, -1) + fngrNmbr;
-      teach_popup.classList.add("show");
-    };
-  </script>
 </body>
-
 </html>
+<script type="text/javascript" src="/configurator_files/settings.js"></script>

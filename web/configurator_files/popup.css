@@ -12,16 +12,16 @@
     display: none;
 }
 
-#file_popup, #updates_popup .popup-content {
+#count_popup .popup-content, #file_popup .popup-content, #updates_popup .popup-content {
     background-color: white;
     margin: 10% auto;
     padding: 20px;
     border: 1px solid #888888;
-    width: 500px;
-    height: 240px;
     color: #6b6c6e;
     font-size: 11px;
     line-height: 16px;
+    height: fit-content;
+    width: fit-content;
 }
 
 #msg_popup .popup-content {
@@ -123,6 +123,10 @@
     font: 11px arial, helvetica, clean, sans-serif;
 }
 
+#max_count_input {
+    width: 80px;
+    margin-left: 30px;
+}
 
 #close_file_popup_box,
 #del_buttons,
@@ -153,6 +157,17 @@
     width: 80px;
     float: left;
     margin-top: 20px;
+    margin-left: 12px;
+    margin-right: auto;
+    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+    font: 11px arial, helvetica, clean, sans-serif;
+}
+
+#max_cnt {
+    height: 22px;
+    width: 80px;
+    float: left;
+    margin-top: 0px;
     margin-left: 12px;
     margin-right: auto;
     font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;

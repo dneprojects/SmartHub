@@ -785,7 +785,7 @@ body.produkte.sub #right h1 {
 
 }
 
-#config_button.new_button {
+#config_button.new_button, #config_button.new_cntr_button {
    height: 21.78px;
    width: 70px;
    margin-left: 5px;

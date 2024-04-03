@@ -496,10 +496,9 @@ class AutomationAction:
         max_cnt = []
         no_counters = 0
         for cnt in app["settings"].logic:
-            if cnt.type == 5:
-                no_counters += 1
-                max_cnt.append(app["settings"].status[MirrIdx.LOGIC - 2 + cnt.nmbr * 3])
-                opt_str += f'<option value="{cnt.nmbr}">{cnt.name}</option>\n'
+            no_counters += 1
+            max_cnt.append(app["settings"].status[MirrIdx.LOGIC - 2 + cnt.nmbr * 3])
+            opt_str += f'<option value="{cnt.nmbr}">{cnt.name}</option>\n'
         page = page.replace('<option value="">-- AcZähler wählen --</option>', opt_str)
         if (no_counters == 0) and (SelActCodes["counter"] in self.actions_dict.keys()):
             page = page.replace(

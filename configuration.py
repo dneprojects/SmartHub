@@ -132,7 +132,13 @@ class ModuleSettings:
         for l_idx in range(10):
             if conf[MirrIdx.LOGIC + 3 * l_idx] == 5:
                 # counter found
-                self.logic.append(IfDescriptor(f"Counter_{l_idx + 1}", l_idx + 1, 5))
+                self.logic.append(
+                    IfDescriptor(
+                        f"Counter_{l_idx + 1}",
+                        l_idx + 1,
+                        conf[MirrIdx.LOGIC + 3 * l_idx + 1],
+                    )
+                )
         return True
 
     def set_module_settings(self, status: bytes) -> bytes:
@@ -238,13 +244,13 @@ class ModuleSettings:
         for l_idx in range(10):
             status = replace_bytes(
                 status,
-                b"\0",
-                MirrIdx.LOGIC + 3 * l_idx,
+                b"\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00",
+                MirrIdx.LOGIC,
             )
         for lgk in self.logic:
             status = replace_bytes(
                 status,
-                int.to_bytes(lgk.type),
+                b"\x05" + int.to_bytes(lgk.type),  # type 5 counter + max_count
                 MirrIdx.LOGIC + 3 * (lgk.nmbr - 1),
             )
         return status
@@ -446,7 +452,7 @@ class ModuleSettings:
                         new_no_chars -= len(line)
                         self.save_desc_file_needed = True
                 elif int(line[2]) == 5:
-                    # logic element, needed if not stored in smc
+                    # logic element, overwrite default name, if not stored in smc
                     for lgc in self.logic:
                         if lgc.nmbr == entry_no:
                             if lgc.name == entry_name:
@@ -893,7 +899,7 @@ class ModuleSettingsLight(ModuleSettings):
 
 
 def replace_bytes(in_bytes: bytes, repl_bytes: bytes, idx: int) -> bytes:
-    """Replaces bytes array from idx:idx+len(in_bytes)."""
+    """Replaces bytes array from idx:idx+len(repl_bytes)."""
     return in_bytes[:idx] + repl_bytes + in_bytes[idx + len(repl_bytes) :]
 
 

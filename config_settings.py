@@ -671,10 +671,16 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             indent(7)
             + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="new_entry" type="number" min="{min_new}" max="{max_new}" placeholder="Neue Nummer eintragen" id="{id_name}"/></td>\n'
         )
-        tbl += (
-            indent(7)
-            + f'<td><button name="ModSettings" class="new_button" id="config_button" type="submit" form="settings_table" value="new-{mod_addr}-{step}">anlegen</button>\n'
-        )
+        if key in ["logic"]:
+            tbl += (
+                indent(7)
+                + f'<td><button name="ModSettings" class="new_cntr_button" id="config_button" type="button" value="new-{mod_addr}-{step}">anlegen</button>\n'
+            )
+        else:
+            tbl += (
+                indent(7)
+                + f'<td><button name="ModSettings" class="new_button" id="config_button" type="submit" form="settings_table" value="new-{mod_addr}-{step}">anlegen</button>\n'
+            )
         if key in ["fingers"]:
             tbl = tbl.replace(
                 '<button name="ModSettings" class="new_button" id="config_button" type="submit" ',
@@ -710,6 +716,11 @@ def parse_response_form(main_app, form_data):
             pass  # checked, but no delete command
         elif form_key == "new_entry":
             # add element
+            if (
+                form_data["ModSettings"][0][:4] == "next"
+                or form_data["ModSettings"][0][:4] == "back"
+            ):
+                continue  # skip "new_entry" if step buttons pressed
             entry_found = False
             for elem in settings.__getattribute__(key):
                 if elem.nmbr == int(form_data[form_key][0]):
@@ -722,6 +733,15 @@ def parse_response_form(main_app, form_data):
                             FingerNames[int(form_data[form_key][0]) - 1],
                             int(form_data[form_key][0]),
                             settings.users[settings.users_sel].nmbr,
+                        )
+                    )
+                elif key == "logic":
+                    max_cnt = int(form_data["ModSettings"][0].split("-")[-1])
+                    settings.__getattribute__(key).append(
+                        IfDescriptor(
+                            f"Counter_{int(form_data[form_key][0])}",
+                            int(form_data[form_key][0]),
+                            max_cnt,
                         )
                     )
                 else:

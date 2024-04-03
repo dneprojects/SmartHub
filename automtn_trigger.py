@@ -721,15 +721,9 @@ class AutomationTrigger:
         max_cnt = []
         no_counters = 0
         for cnt in self.settings.logic:
-            if cnt.type == 5:
-                no_counters += 1
-                max_cnt.append(self.settings.status[MirrIdx.LOGIC - 2 + cnt.nmbr * 3])
-                if self.unit == cnt.nmbr:
-                    opt_str += (
-                        f'<option value="{cnt.nmbr}" selected>{cnt.name}</option>\n'
-                    )
-                else:
-                    opt_str += f'<option value="{cnt.nmbr}">{cnt.name}</option>\n'
+            no_counters += 1
+            max_cnt.append(self.settings.status[MirrIdx.LOGIC - 2 + cnt.nmbr * 3])
+            opt_str += f'<option value="{cnt.nmbr}">{cnt.name}</option>\n'
         page = page.replace('<option value="">-- TrZähler wählen --</option>', opt_str)
         page = page.replace(
             "max_count = [16, 16, 16, 16, 16, 16, 16, 16, 16, 16]",
