@@ -1,4 +1,4 @@
-from pymodbus.utilities import computeCRC as ModbusComputeCRC
+from messages import calc_crc
 from os.path import isfile
 from const import (
     RT_STAT_CODES,
@@ -163,7 +163,7 @@ class HbtnRouter:
 
     def calc_SMR_crc(self, smr_buf: bytes) -> None:
         """Calculate and store crc of SMR data."""
-        self.smr_crc = ModbusComputeCRC(smr_buf)
+        self.smr_crc = calc_crc(smr_buf)
 
     async def set_config_mode(self, set_not_reset: bool) -> None:
         """Switches to config mode and back."""
