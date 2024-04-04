@@ -210,10 +210,10 @@ class HbtnRouter:
     def save_descriptions(self) -> None:
         """Save descriptions to file."""
         file_name = f"Rtr_{self._id}_descriptions.smb"
-        if self.api_srv.is_addon:
-            file_path = DATA_FILES_ADDON_DIR
-        else:
+        file_path = DATA_FILES_ADDON_DIR
+        if not isfile(file_path + file_name):
             file_path = DATA_FILES_DIR
+            self.logger.debug(f"Add-on config path not found, using {file_path}")
         try:
             fid = open(file_path + file_name, "w")
             desc_buf = self.pack_descriptions()
@@ -233,7 +233,7 @@ class HbtnRouter:
         file_path = DATA_FILES_ADDON_DIR
         if not isfile(file_path + file_name):
             file_path = DATA_FILES_DIR
-            self.logger.info(f"Add-on config path not found, using {file_path}")
+            self.logger.debug(f"Add-on config path not found, using {file_path}")
         if isfile(file_path + file_name):
             try:
                 fid = open(file_path + file_name, "r")

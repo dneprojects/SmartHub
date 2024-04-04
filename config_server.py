@@ -515,7 +515,7 @@ async def send_to_module(app, content: str, mod_addr: int):
                 mod_addr
             )  # module.list_upload
             module.calc_SMC_crc(module.list)
-            app.logger.debug("Module list upload from configuration server finished")
+            app.logger.info("Module list upload from configuration server finished")
         else:
             app.logger.info(
                 "Module list upload from configuration server skipped: Same CRC"
@@ -523,7 +523,7 @@ async def send_to_module(app, content: str, mod_addr: int):
         if stat_update:
             await module.hdlr.send_module_smg(module._id)
             await module.hdlr.get_module_status(module._id)
-            app.logger.debug("Module status upload from configuration server finished")
+            app.logger.info("Module status upload from configuration server finished")
         else:
             app.logger.info(
                 "Module status upload from configuration server skipped: Same CRC"

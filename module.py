@@ -547,7 +547,6 @@ class HbtnModule:
             self.get_rtr().descriptions = dpcopy(self.settings.desc)
             self.get_rtr().save_descriptions()
         if self.settings.upload_desc_info_needed:
-            self.status = self.settings.set_module_settings(self.status)
             self.list = await self.settings.set_list()
             self.list_upload = self.list
             await self.hdlr.send_module_list(self._id)
