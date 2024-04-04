@@ -2,7 +2,7 @@ import struct
 import os
 import json
 import socket
-from pymodbus.utilities import computeCRC
+from messages import calc_crc
 from const import API_FORWARD as spec
 from const import DATA_FILES_DIR, DATA_FILES_ADDON_DIR, FWD_TABLE_FILE, SMHUB_PORT
 from hdlr_class import HdlrBase
@@ -111,7 +111,7 @@ class ForwardHdlr(HdlrBase):
             + chr(cmd_len >> 8)
             + full_string[3 : cmd_len - 3]
         )
-        cmd_crc = computeCRC(full_string.encode("iso8859-1"))
+        cmd_crc = calc_crc(full_string.encode("iso8859-1"))
         cmd_postfix = chr(cmd_crc >> 8) + chr(cmd_crc & 0xFF) + cmd_postfix
         full_string += cmd_postfix
 
