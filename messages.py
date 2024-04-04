@@ -1,6 +1,4 @@
 import logging
-from pymodbus.utilities import checkCRC as ModbusCheckCRC
-from pymodbus.utilities import computeCRC as ModbusComputeCRC
 
 
 class BaseMessage:
@@ -44,11 +42,11 @@ class ApiMessage(BaseMessage):
 
     def check_CRC(self) -> bool:
         """Validates received api message."""
-        return ModbusCheckCRC(self._buffer[:-3], self._crc)
+        return calc_crc(self._buffer[:-3]) == self._crc
 
     def calc_CRC(self, buf) -> tuple[str, str]:
         """Compute CRC for api message."""
-        cmd_crc = ModbusComputeCRC(buf)
+        cmd_crc = calc_crc(buf)
         crc_low = cmd_crc & 0xFF
         crc_high = chr((cmd_crc - crc_low) >> 8)
         return chr(crc_low), crc_high
@@ -215,3 +213,31 @@ class RtResponse(BaseMessage):
             chksum ^= byt
         self._crc_ok = self._resp_buffer[-1] == chksum
         return self._crc_ok
+
+
+def init_crc16_tbl() -> list[int]:
+    """Prepare the crc16 table."""
+    res: list[int] = []
+    for byte in range(256):
+        crc = 0x0000
+        for _ in range(8):
+            if (byte ^ crc) & 0x0001:
+                crc = (crc >> 1) ^ 0xA001
+            else:
+                crc >>= 1
+            byte >>= 1
+        res.append(crc)
+    return res
+
+
+__crc16_tbl: list[int] = init_crc16_tbl()
+
+
+def calc_crc(data: bytes) -> int:
+    """Calculate a crc16 for the given byte string."""
+    crc = 0xFFFF
+    for byt in data:
+        idx = __crc16_tbl[(crc ^ int(byt)) & 0xFF]
+        crc = ((crc >> 8) & 0xFF) ^ idx
+    crc_res = ((crc << 8) & 0xFF00) | ((crc >> 8) & 0x00FF)
+    return crc_res
