@@ -1,5 +1,5 @@
 import struct
-from pymodbus.utilities import computeCRC as ModbusComputeCRC
+from messages import calc_crc
 import math
 import os
 from const import API_FILES as spec
@@ -261,7 +261,7 @@ class FilesHdlr(HdlrBase):
         for module in self.api_srv.routers[rt - 1].modules:
             if len(module.list_upload) > 0:
                 no_uploads += 1
-                if ModbusComputeCRC(module.list_upload) != module.get_smc_crc() or (
+                if calc_crc(module.list_upload) != module.get_smc_crc() or (
                     self._p5 != 0
                 ):
                     await rtr.set_config_mode(True)
@@ -283,7 +283,7 @@ class FilesHdlr(HdlrBase):
                     summary += chr(module._id) + chr(0) + chr(0) + chr(1)
                 module.list = module.list_upload  # take current list
                 module.list_upload = b""  # clear list buffer after transfer
-                module.set_smc_crc(ModbusComputeCRC(module.list))
+                module.set_smc_crc(calc_crc(module.list))
         await rtr.set_config_mode(False)
         return chr(no_uploads) + summary
 
