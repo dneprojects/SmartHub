@@ -2,7 +2,6 @@ from os import path
 from aiohttp import web
 from urllib.parse import parse_qs
 from multidict import MultiDict
-from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from config_settings import (
     ConfigSettingsServer,
     show_router_overview,
@@ -20,6 +19,7 @@ from config_commons import (
     show_update_router,
     show_update_modules,
 )
+from messages import calc_crc
 from module import HbtnModule
 from module_hdlr import ModHdlr
 import asyncio
@@ -504,7 +504,7 @@ async def send_to_module(app, content: str, mod_addr: int):
 
     module = rtr.get_module(mod_addr)
     module.smg_upload, module.list_upload = seperate_upload(content)
-    list_update = ModbusComputeCRC(module.list_upload) != module.get_smc_crc()
+    list_update = calc_crc(module.list_upload) != module.get_smc_crc()
     stat_update = module.different_smg_crcs()
     if list_update or stat_update:
         await rtr.api_srv.block_network_if(rtr._id, True)
