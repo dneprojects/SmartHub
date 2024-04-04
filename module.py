@@ -1,8 +1,8 @@
 import logging
 from copy import deepcopy as dpcopy
-from pymodbus.utilities import computeCRC as ModbusComputeCRC
 from const import MirrIdx, SMGIdx, MODULE_CODES, CStatBlkIdx, HA_EVENTS
 from configuration import ModuleSettings, ModuleSettingsLight
+from messages import calc_crc
 
 
 class HbtnModule:
@@ -313,7 +313,7 @@ class HbtnModule:
         smg = self.build_smg()
         if len(smg) > len(upl):
             smg = smg[:-1]
-        return ModbusComputeCRC(upl) != self.calc_SMG_crc(smg)
+        return calc_crc(upl) != self.calc_SMG_crc(smg)
 
     def calc_cover_times(self) -> bytes:
         """Calculate interpolation of times for 8 covers and 8 blinds"""
@@ -382,11 +382,11 @@ class HbtnModule:
 
     def calc_SMC_crc(self, smc_buf: bytes) -> None:
         """Calculate and store crc of SMC data."""
-        self.set_smc_crc(ModbusComputeCRC(smc_buf))
+        self.set_smc_crc(calc_crc(smc_buf))
 
     def calc_SMG_crc(self, smg_buf: bytes) -> int:
         """Calculate and store crc of SMG data."""
-        self.smg_crc = ModbusComputeCRC(smg_buf)
+        self.smg_crc = calc_crc(smg_buf)
         return self.smg_crc
 
     def get_module_settings(self):
