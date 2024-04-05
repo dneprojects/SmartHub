@@ -969,22 +969,22 @@ def get_property_kind(main_app, step) -> tuple[str, str, str]:
             break
     match key:
         case "buttons":
-            header = "Tasterbeschriftung"
+            header = "Einstellungen Tasterbeschriftung"
             prompt = "Taste"
         case "leds":
-            header = "LED-Beschriftung"
+            header = "Einstellungen LED-Beschriftung"
             prompt = "LED"
         case "inputs":
-            header = "Eingänge"
+            header = "Einstellungen Eingänge"
             prompt = "Eingang"
         case "outputs":
-            header = "Ausgänge"
+            header = "Einstellungen Ausgänge"
             prompt = "Ausgang"
         case "covers":
-            header = "Rollladen"
+            header = "Einstellungen Rollladen"
             prompt = "Rollladen"
         case "logic":
-            header = "Zähler"
+            header = "Einstellungen Zähler"
             prompt = "Zähler"
         case "users":
             header = "Benutzerverwaltung"
@@ -1007,21 +1007,21 @@ def get_property_kind(main_app, step) -> tuple[str, str, str]:
                 settings.fingers = []
             main_app["settings"] = settings
         case "flags":
-            header = "Lokale Merker"
+            header = "Einstellungen Lokale Merker"
             prompt = "Merker"
         case "dir_cmds":
-            header = "Direktbefehle"
+            header = "Einstellungen Direktbefehle"
             prompt = "Direktbefehl"
         case "vis_cmds":
-            header = "Visualisierungsbefehle"
+            header = "Einstellungen Visualisierungsbefehle"
             prompt = "Visualisierungsbefehl"
         case "glob_flags":
-            header = "Globale Merker"
+            header = "Einstellungen Globale Merker"
             prompt = "Merker"
         case "coll_cmds":
-            header = "Sammelbefehle"
+            header = "Einstellungen Sammelbefehle"
             prompt = "Sammelbefehl"
         case "groups":
-            header = "Gruppen"
+            header = "Einstellungen Gruppen"
             prompt = "Gruppe"
     return key, header, prompt
