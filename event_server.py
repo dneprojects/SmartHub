@@ -74,7 +74,7 @@ class EventServer:
         """Return token"""
         try:
             if self.api_srv.is_addon:
-                data_file_path = DATA_FILES_ADDON_DIR 
+                data_file_path = DATA_FILES_ADDON_DIR
             else:
                 data_file_path = DATA_FILES_DIR
             with open(data_file_path + "settings.set", mode="rb") as fid:
@@ -91,7 +91,8 @@ class EventServer:
             tok_str = id_str[ip_len + 2 : ip_len + 2 + tok_len]
             for nmbr in self.api_srv.sm_hub.lan_mac.split(":"):
                 idx = int("0x" + nmbr, 0) & 0x7F
-                tok_str = tok_str[:idx] + tok_str[-1] + tok_str[idx:-1]
+                if idx < tok_len:
+                    tok_str = tok_str[:idx] + tok_str[-1] + tok_str[idx:-1]
             return tok_str
         except Exception as err_msg:
             self.logger.error(
