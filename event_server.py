@@ -97,7 +97,7 @@ class EventServer:
             return tok_str
         except Exception as err_msg:
             self.logger.error(
-                f"Failed to open {DATA_FILES_DIR + 'settings.set'}: {err_msg}; event server can't transmit events"
+                f"Failed to open '{data_file_path}settings.set': {err_msg}; event server can't transmit events"
             )
             return None
 
