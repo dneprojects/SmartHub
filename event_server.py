@@ -89,10 +89,11 @@ class EventServer:
             self._hass_ip = self.api_srv._hass_ip
             tok_len = ord(id_str[ip_len + 1])
             tok_str = id_str[ip_len + 2 : ip_len + 2 + tok_len]
-            for nmbr in self.api_srv.sm_hub.lan_mac.split(":"):
-                idx = int("0x" + nmbr, 0) & 0x7F
-                if idx < tok_len:
-                    tok_str = tok_str[:idx] + tok_str[-1] + tok_str[idx:-1]
+            if not self.api_srv.is_addon:
+                for nmbr in self.api_srv.sm_hub.lan_mac.split(":"):
+                    idx = int("0x" + nmbr, 0) & 0x7F
+                    if idx < tok_len:
+                        tok_str = tok_str[:idx] + tok_str[-1] + tok_str[idx:-1]
             return tok_str
         except Exception as err_msg:
             self.logger.error(
