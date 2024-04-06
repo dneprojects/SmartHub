@@ -1,7 +1,7 @@
 import time
 import struct
 from const import API_ADMIN as spec
-from const import RT_CMDS, DATA_FILES_DIR
+from const import RT_CMDS, DATA_FILES_ADDON_DIR, DATA_FILES_DIR
 from hdlr_class import HdlrBase
 
 
@@ -188,6 +188,10 @@ class AdminHdlr(HdlrBase):
 
     def save_id(self, id: bytes):
         """Save id in local file."""
-        with open(DATA_FILES_DIR + "settings.set", mode="wb") as fid:
+        if self.api_srv.is_addon:
+            data_file_path = DATA_FILES_ADDON_DIR
+        else:
+            data_file_path = DATA_FILES_DIR
+        with open(data_file_path + "settings.set", mode="wb") as fid:
             fid.write(id)
         fid.close()

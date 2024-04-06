@@ -68,24 +68,16 @@ class EventServer:
         self.msg_appended = False
         self.busy_starting = False
         self.websck_is_closed = True
-
-    def get_default_token(self) -> str | None:
-        """Get default supervisor token from file."""
-        try:
-            with open(DATA_FILES_ADDON_DIR + "def_token.set", mode="rb") as fid:
-                id_str = fid.readlines()[0].decode("iso8859-1")
-            fid.close()
-            return id_str
-        except Exception as err_msg:
-            self.logger.error(
-                f"Failed to open {DATA_FILES_ADDON_DIR + 'settings.set'}: {err_msg}; event server can't transmit events"
-            )
-            return None
+        self.default_token: str
 
     def get_ident(self) -> str | None:
         """Return token"""
         try:
-            with open(DATA_FILES_DIR + "settings.set", mode="rb") as fid:
+            if self.api_srv.is_addon:
+                data_file_path = DATA_FILES_ADDON_DIR 
+            else:
+                data_file_path = DATA_FILES_DIR
+            with open(data_file_path + "settings.set", mode="rb") as fid:
                 id_str = fid.read().decode("iso8859-1")
             fid.close()
             ip_len = ord(id_str[0])
@@ -492,7 +484,7 @@ class EventServer:
             self.logger.debug(f"URI: {self._uri}")
             self.token = os.getenv(
                 "SUPERVISOR_TOKEN",
-                self.get_default_token(),
+                self.get_ident(),
             )
         else:
             # Stand-alone SmartHub, use external websocket connection to host ip
