@@ -413,78 +413,86 @@ class ModuleSettings:
             line_len = int(resp[8]) + 9
             line = resp[:line_len]
             mod_addr = int(line[1])
-            content_code = int(line[2])
+            content_code = int.from_bytes(line[1:3], "little")
             entry_no = int(line[3])
             entry_name = line[9:line_len].decode("iso8859-1").strip()
-            if mod_addr != self.id:  # global description or other module
-                resp = resp[line_len:]
-                continue
-            # entry for local module
-            if content_code == 1:
-                # local flag (Merker)
-                if self.unit_not_exists(self.flags, entry_no):
-                    self.flags.append(IfDescriptor(entry_name, entry_no, 0))
-                    self.logger.info(
-                        f"Description entry of local flag '{entry_name}' found, will be stored in module {self.id}."
-                    )
-                    self.upload_desc_info_needed = True
-                else:
+            # Settings for automations must also include global entities
+            if content_code == 767:  # FF 02: global flg (Merker)
+                self.glob_flags.append(IfDescriptor(entry_name, entry_no, 0))
+            elif content_code == 1023:  # FF 03: collective commands (Sammelbefehle)
+                self.coll_cmds.append(IfDescriptor(entry_name, entry_no, 0))
+            elif content_code == 2303:  # FF 08: alarm commands
+                pass
+            elif self.id == mod_addr:
+                # entry for local module
+                content_code = int(line[2])
+                if content_code == 1:
+                    # local flag (Merker)
+                    if self.unit_not_exists(self.flags, entry_no):
+                        self.flags.append(IfDescriptor(entry_name, entry_no, 0))
+                        self.logger.info(
+                            f"Description entry of local flag '{entry_name}' found, will be stored in module {self.id}."
+                        )
+                        self.upload_desc_info_needed = True
+                    else:
+                        # remove line
+                        self.desc = self.desc.replace(line.decode("iso8859-1"), "")
+                        self.logger.info(
+                            f"Description entry of local flag '{entry_name}' already stored in module {self.id}, will be removed."
+                        )
+                        new_no_lines -= 1
+                        new_no_chars -= len(line)
+                        self.save_desc_file_needed = True
+                elif content_code == 4:
+                    # local visualization command, needed if not stored in smc
+                    entry_no = int.from_bytes(resp[3:5], "little")
+                    if self.unit_not_exists(self.vis_cmds, entry_no):
+                        self.vis_cmds.append(IfDescriptor(entry_name, entry_no, 0))
+                        self.logger.info(
+                            f"Description entry of visualization command '{entry_name}' found, will be stored in module {self.id}."
+                        )
+                        self.upload_desc_info_needed = True
+                    else:
+                        # remove line
+                        self.desc = self.desc.replace(line.decode("iso8859-1"), "")
+                        self.logger.info(
+                            f"Description entry of visualization command '{entry_name}' already stored in module {self.id}, will be removed."
+                        )
+                        new_no_lines -= 1
+                        new_no_chars -= len(line)
+                        self.save_desc_file_needed = True
+                elif content_code == 5:
+                    # logic element, overwrite default name, if not stored in smc
+                    for lgc in self.logic:
+                        if lgc.nmbr == entry_no:
+                            if lgc.name == entry_name:
+                                # remove line
+                                self.desc = self.desc.replace(
+                                    line.decode("iso8859-1"), ""
+                                )
+                                self.logger.info(
+                                    f"Description entry of counter '{entry_name}' already stored in module {self.id}, will be removed."
+                                )
+                                new_no_lines -= 1
+                                new_no_chars -= len(line)
+                                self.save_desc_file_needed = True
+                            else:
+                                lgc.name = entry_name
+                                self.logger.info(
+                                    f"Description entry of counter '{entry_name}' found, will be stored in module {self.id}."
+                                )
+                                self.upload_desc_info_needed = True
+                            break
+                elif content_code == 6:
+                    # Logik input: line[3] logic unit, line[4] input no
                     # remove line
                     self.desc = self.desc.replace(line.decode("iso8859-1"), "")
                     self.logger.info(
-                        f"Description entry of local flag '{entry_name}' already stored in module {self.id}, will be removed."
+                        f"Description entry of logic input '{entry_name}' not needed anymore, will be removed."
                     )
                     new_no_lines -= 1
                     new_no_chars -= len(line)
                     self.save_desc_file_needed = True
-            elif content_code == 4:
-                # local visualization command, needed if not stored in smc
-                entry_no = int.from_bytes(resp[3:5], "little")
-                if self.unit_not_exists(self.vis_cmds, entry_no):
-                    self.vis_cmds.append(IfDescriptor(entry_name, entry_no, 0))
-                    self.logger.info(
-                        f"Description entry of visualization command '{entry_name}' found, will be stored in module {self.id}."
-                    )
-                    self.upload_desc_info_needed = True
-                else:
-                    # remove line
-                    self.desc = self.desc.replace(line.decode("iso8859-1"), "")
-                    self.logger.info(
-                        f"Description entry of visualization command '{entry_name}' already stored in module {self.id}, will be removed."
-                    )
-                    new_no_lines -= 1
-                    new_no_chars -= len(line)
-                    self.save_desc_file_needed = True
-            elif content_code == 5:
-                # logic element, overwrite default name, if not stored in smc
-                for lgc in self.logic:
-                    if lgc.nmbr == entry_no:
-                        if lgc.name == entry_name:
-                            # remove line
-                            self.desc = self.desc.replace(line.decode("iso8859-1"), "")
-                            self.logger.info(
-                                f"Description entry of counter '{entry_name}' already stored in module {self.id}, will be removed."
-                            )
-                            new_no_lines -= 1
-                            new_no_chars -= len(line)
-                            self.save_desc_file_needed = True
-                        else:
-                            lgc.name = entry_name
-                            self.logger.info(
-                                f"Description entry of counter '{entry_name}' found, will be stored in module {self.id}."
-                            )
-                            self.upload_desc_info_needed = True
-                        break
-            elif content_code == 6:
-                # Logik input: line[3] logic unit, line[4] input no
-                # remove line
-                self.desc = self.desc.replace(line.decode("iso8859-1"), "")
-                self.logger.info(
-                    f"Description entry of logic input '{entry_name}' not needed anymore, will be removed."
-                )
-                new_no_lines -= 1
-                new_no_chars -= len(line)
-                self.save_desc_file_needed = True
             resp = resp[line_len:]
         self.desc = (
             chr(new_no_lines & 0xFF)

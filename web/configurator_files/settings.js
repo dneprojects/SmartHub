@@ -1,7 +1,13 @@
 const save_btn = document.getElementById("config_button_sv");
 const teach_btn = document.getElementsByName("TeachNewFinger")[0];
 const check_boxes = document.getElementsByClassName("sel_element");
-const del_btn = document.getElementsByName("ModSettings")[1];
+const settngs_buttons = document.getElementsByName("ModSettings");
+for (let i = 0; i < settngs_buttons.length; i++) {
+    if (settngs_buttons[i].innerHTML == "entfernen") {
+        del_btn = settngs_buttons[i];
+        break;
+    }
+}
 var new_btn = document.getElementsByClassName("new_cntr_button")[0];
 if (new_btn == null) {
     new_btn = document.getElementsByClassName("new_button")[0];
@@ -43,13 +49,11 @@ function controlNewButton()  {
     
 }
 function controlDelButton()  {
-    if (del_btn.innerHTML == "entfernen") {
-        del_btn.disabled = true;  // for modules only
-        for (let i = 0; i < check_boxes.length; i++) {
-            if (check_boxes[i].checked) {
-                del_btn.disabled = false;
-                break;
-            }
+    del_btn.disabled = true;  // for modules only
+    for (let i = 0; i < check_boxes.length; i++) {
+        if (check_boxes[i].checked) {
+            del_btn.disabled = false;
+            break;
         }
     }
     

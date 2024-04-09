@@ -789,4 +789,5 @@ class HA_EVENTS:
     PERCNT = 11
     DIR_CMD = 12
     MOVE = 13
+    MODE = 15
     SYS_ERR = 16

@@ -495,6 +495,7 @@ class EventServer:
             self._client_ip = self.api_srv._client_ip
             self._uri = "ws://<ip>:8123/api/websocket".replace("<ip>", self._client_ip)
             self.logger.debug(f"URI: {self._uri}")
+            # supervisor_token "2f428d27e04db95b4c844b451af4858fba585aac82f70ee6259cf8ec1834a00abf6a448f49ee18d3fc162f628ce6f479fe4647c6f8624f88"
             # token for local docker:    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIxZDZkZWY4MjZmYzI0Yzg0OGUwMTAxYTUyMWE1ZTI0ZSIsImlhdCI6MTcxMDk1MTQ2MSwiZXhwIjoyMDI2MzExNDYxfQ.CG3kAoZSPHexOkztWk15Z3lg9v3avxbXJVb_PNXXU1I"
             # token for 192.168.178.133: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlYjQ2MTA4ZjUxOTU0NTY3Yjg4ZjUxM2Q5ZjBkZWRlYSIsImlhdCI6MTY5NDYxMDEyMywiZXhwIjoyMDA5OTcwMTIzfQ.3LtGwhonmV2rAbRnKqEy3WYRyqiS8DTh3ogx06pNz1g"
             # token for 192.168.178.160: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI4OTNlZDJhODU2ZmY0ZDQ3YmVlZDE2MzIyMmU1ODViZCIsImlhdCI6MTcwMjgyMTYxNiwiZXhwIjoyMDE4MTgxNjE2fQ.NT-WSwkG9JN8f2cCt5fXlP4A8FEOAgDTrS1sdhB0ioo"

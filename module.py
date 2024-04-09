@@ -176,12 +176,17 @@ class HbtnModule:
                     MirrIdx.TEMP_PWR,
                     MirrIdx.TEMP_EXT,
                 ]
+                im0 = MirrIdx.MODE
+                im1 = MirrIdx.MODE + 1
                 i0 = MirrIdx.DIM_1
                 i1 = MirrIdx.T_SHORT
                 i2 = MirrIdx.LOGIC
                 i3 = MirrIdx.FLAG_LOC + 2
                 i_diff = self.compare_status(
                     self.status[i2:i3], new_status[i2:i3], i_diff, i2
+                )
+                i_diff = self.compare_status(
+                    self.status[im0:im1], new_status[im0:im1], i_diff, im0
                 )
             i_diff = self.compare_status(
                 self.status[i0:i1], new_status[i0:i1], i_diff, i0
@@ -191,7 +196,11 @@ class HbtnModule:
                     ev_type = 0
                     ev_str = "-"
                     val = new_status[i_d]
-                    if i_d in range(MirrIdx.MOV, MirrIdx.MOV + 1):
+                    if i_d in range(MirrIdx.MODE, MirrIdx.MODE + 1):
+                        ev_type = HA_EVENTS.MODE
+                        ev_str = "Mode"
+                        idv = 0
+                    elif i_d in range(MirrIdx.MOV, MirrIdx.MOV + 1):
                         ev_type = HA_EVENTS.MOVE
                         ev_str = "Movement"
                         idv = 0

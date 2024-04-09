@@ -1,6 +1,7 @@
 import struct
 import const
 import asyncio
+import os
 from asyncio.streams import StreamReader, StreamWriter
 
 from const import RT_CMDS, API_CATEGS
@@ -47,6 +48,9 @@ class ApiServer:
         self._init_mode: bool = True
         self._first_api_cmd: bool = True
         self.is_offline: bool = False
+        self.token = os.getenv("SUPERVISOR_TOKEN")
+        if self.token is None:
+            self.logger.warning("SUPERVISOR_TOKEN is None")
 
     async def get_initial_status(self):
         """Starts router object and reads complete system status"""
