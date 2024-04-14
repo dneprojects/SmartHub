@@ -22,6 +22,7 @@ LOGGING_DEF_FILE = "logging_def.yaml"
 HOMEPAGE = "configurator.html"
 HUB_HOMEPAGE = "hub.html"
 CONF_HOMEPAGE = "home.html"
+NOT_AUTH_PAGE = "not_auth.html"
 SIDE_MENU_FILE = "side-menu.html"
 LICENSE_PAGE = "licenses.html"
 LICENSE_TABLE = "license_table.html"
@@ -30,12 +31,13 @@ CONFIG_TEMPLATE_FILE = "config_template.html"
 SETTINGS_TEMPLATE_FILE = "settings_template.html"
 AUTOMATIONS_TEMPLATE_FILE = "automations_template.html"
 AUTOMATIONEDIT_TEMPLATE_FILE = "automation_edit_template.html"
+ALLOWED_INGRESS_IPS = ["172.30.32.2"]
 
 
 class SMHUB_INFO:
     """Holds information."""
 
-    SW_VERSION = "1.1.4"
+    SW_VERSION = "1.1.7"
     TYPE = "Smart Hub"
     TYPE_CODE = "20"
     SERIAL = "RBPI"

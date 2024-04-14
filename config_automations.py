@@ -3,7 +3,13 @@ from urllib.parse import parse_qs
 from automation import AutomationDefinition
 from automtn_trigger import AutomationTrigger
 from configuration import ModuleSettings
-from config_commons import get_module_image, disable_button, indent
+from config_commons import (
+    get_module_image,
+    disable_button,
+    indent,
+    client_not_authorized,
+    show_not_authorized,
+)
 from config_settings import show_module_overview
 from const import (
     WEB_FILES_DIR,
@@ -29,6 +35,8 @@ class ConfigAutomationsServer:
 
     @routes.get("/list")
     async def get_list(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         args = request.query_string.split("=")
         mod_addr = int(args[1])
         main_app = request.app["parent"]
@@ -37,6 +45,8 @@ class ConfigAutomationsServer:
 
     @routes.post("/automtns")
     async def post_automtns(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         resp = await request.text()
         form_data = parse_qs(resp)
         main_app = request.app["parent"]
@@ -154,6 +164,8 @@ class ConfigAutomationsServer:
 
     @routes.post("/automtn_def")
     async def post_automtn_def(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         resp = await request.text()
         form_data = parse_qs(resp)
         main_app = request.app["parent"]

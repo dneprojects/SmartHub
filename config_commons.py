@@ -4,6 +4,8 @@ from const import (
     WEB_FILES_DIR,
     SIDE_MENU_FILE,
     CONFIG_TEMPLATE_FILE,
+    ALLOWED_INGRESS_IPS,
+    NOT_AUTH_PAGE,
 )
 
 
@@ -283,3 +285,18 @@ def adjust_automations_button(page: str) -> str:
 
 def disable_button(key: str, page) -> str:
     return page.replace(f">{key}<", f" disabled>{key}<")
+
+
+def client_not_authorized(request):
+    """If addon, check allowed ingress internal IP address, return True if not authorized."""
+    if not request.app["api_srv"].is_addon:
+        # No checks if not addon
+        return False
+    return request.remote not in ALLOWED_INGRESS_IPS
+
+
+def show_not_authorized(request) -> web.Response:
+    """Return web page with 'not authorized' message'."""
+    return web.Response(
+        text=get_html(NOT_AUTH_PAGE), content_type="text/html", charset="utf-8"
+    )

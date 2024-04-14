@@ -18,6 +18,8 @@ from config_commons import (
     show_modules,
     show_update_router,
     show_update_modules,
+    client_not_authorized,
+    show_not_authorized,
 )
 from messages import calc_crc
 from module import HbtnModule
@@ -107,23 +109,33 @@ class ConfigServer:
 
     @routes.get("/router")
     async def get_router(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         return show_router_overview(request.app)
 
     @routes.get("/hub")
     async def get_hub(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         return show_hub_overview(request.app)
 
     @routes.get("/modules")
     async def get_modules(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         return show_modules(request.app)
 
     @routes.get("/module-{mod_addr}")
     async def get_module_addr(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         mod_addr = int(request.match_info["mod_addr"])
         return show_module_overview(request.app, mod_addr)
 
     @routes.get("/download")
     async def get_download(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         file_name = request.query["file"]
         file_name = file_name.split(".")[0]
         rtr = request.app["api_srv"].routers[0]
@@ -174,6 +186,8 @@ class ConfigServer:
 
     @routes.post("/upload")
     async def get_upload(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         app = request.app
         data = await request.post()
         config_file = data["file"].file  # type: ignore
@@ -215,6 +229,8 @@ class ConfigServer:
 
     @routes.post("/upd_upload")
     async def get_upd_upload(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         app = request.app
         api_srv = app["api_srv"]
         rtr = api_srv.routers[0]
@@ -259,6 +275,8 @@ class ConfigServer:
 
     @routes.post("/update_router")
     async def get_update_router(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         app = request.app
         api_srv = app["api_srv"]
         rtr = api_srv.routers[0]
@@ -277,6 +295,8 @@ class ConfigServer:
 
     @routes.post("/update_modules")
     async def get_update_modules(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         app = request.app
         api_srv = app["api_srv"]
         rtr = api_srv.routers[0]
@@ -317,6 +337,8 @@ class ConfigServer:
 
     @routes.get("/update_status")
     async def get_update_status(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         app = request.app
         stat = app["api_srv"].routers[0].hdlr.upd_stat_dict
         return web.Response(

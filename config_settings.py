@@ -11,6 +11,8 @@ from config_commons import (
     indent,
     get_module_image,
     disable_button,
+    client_not_authorized,
+    show_not_authorized,
 )
 from const import (
     WEB_FILES_DIR,
@@ -40,11 +42,15 @@ class ConfigSettingsServer:
 
     @routes.get("/module-{mod_addr}")
     async def get_module(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         mod_addr = int(request.match_info["mod_addr"])
         return show_module_overview(request.app["parent"], mod_addr)
 
     @routes.get("/settings")
     async def get_settings(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         args = request.query_string.split("=")
         if args[0] == "ModSettings":
             mod_addr = int(args[1])
@@ -54,11 +60,17 @@ class ConfigSettingsServer:
 
     @routes.get("/step")
     async def get_step(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         args = request.query_string.split("=")
         return await show_next_prev(request.app["parent"], args[1])
 
     @routes.post("/settings")
     async def post_settings(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         resp = await request.text()
         form_data = parse_qs(resp)
         settings = request.app["parent"]["settings"]
@@ -69,6 +81,8 @@ class ConfigSettingsServer:
 
     @routes.post("/step")
     async def post_step(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         resp = await request.text()
         form_data = parse_qs(resp)
         args = parse_response_form(request.app["parent"], form_data)
@@ -76,6 +90,8 @@ class ConfigSettingsServer:
 
     @routes.get("/teach")
     async def get_teach(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
         args = request.query_string.split("=")
         return await show_next_prev(request.app["parent"], args[1])
 
