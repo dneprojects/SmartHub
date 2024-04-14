@@ -21,10 +21,10 @@
   <meta http-equiv="Content-Script-Type" content="text/javascript">
   <meta name="description" content="">
   <meta name="keywords" content="">
-  <link href="/configurator_files/style.css" rel="stylesheet" type="text/css" media="screen">
-  <link href="/configurator_files/nav.css" rel="stylesheet" type="text/css" media="screen">
-  <link href="/configurator_files/popup.css" rel="stylesheet" type="text/css" media="screen">
-  <link href="/configurator_files/tablesort.css" rel="stylesheet" type="text/css" media="screen">
+  <link href="configurator_files/style.css" rel="stylesheet" type="text/css" media="screen">
+  <link href="configurator_files/nav.css" rel="stylesheet" type="text/css" media="screen">
+  <link href="configurator_files/popup.css" rel="stylesheet" type="text/css" media="screen">
+  <link href="configurator_files/tablesort.css" rel="stylesheet" type="text/css" media="screen">
   <!--[if IE]>
 <link href="tl_files/habitron/style_ie.css" rel="stylesheet" type="text/css" media="screen"  />
 <![endif]-->
@@ -36,10 +36,10 @@
   <![CDATA[/*><!--*/
 /*]]>*/-->
   </style>
-  <link rel="stylesheet" href="/configurator_files/contao.css" type="text/css" media="screen">
+  <link rel="stylesheet" href="configurator_files/contao.css" type="text/css" media="screen">
   <!--[if lte IE 7]><link rel="stylesheet" href="system/iefixes.css" type="text/css" media="screen" /><![endif]-->
-  <link rel="stylesheet" href="/configurator_files/tinymce.css" type="text/css" media="screen">
-  <script type="text/javascript" src="/configurator_files/tablesort.js"></script>
+  <link rel="stylesheet" href="configurator_files/tinymce.css" type="text/css" media="screen">
+  <script type="text/javascript" src="configurator_files/tablesort.js"></script>
 </head>
 
 <body id="top" class="modules">
@@ -48,9 +48,9 @@
       <div id="header">
         <div class="inside">
           <div style="height:20px; text-align: right; padding-top: 35px; padding-right: 60px;">
-            <a href="http://habitron.de/habitron.html"><img id="logo_habitron" src="/configurator_files/logo.png"
+            <a href="http://habitron.de/habitron.html"><img id="logo_habitron" src="configurator_files/logo.png"
                 width="267" height="47"></a>
-            <a href="/">
+            <a href="./">
               <div>
                 <h0>Smart Configurator</h0>
               </div>
@@ -62,7 +62,7 @@
             <div class="ce_image block">
 
               <div class="image_container">
-                <img src="/configurator_files/configuration.jpg" width="980" height="200" alt="Habitron GmbH">
+                <img src="configurator_files/configuration.jpg" width="980" height="200" alt="Habitron GmbH">
               </div>
 
             </div>
@@ -77,7 +77,7 @@
             <div class="mod_article block" id="bild-links">
               <div class="ce_image block">
                 <div class="image_container">
-                  <img id="hbtn_module_left" src="/configurator_files/controller.jpg" alt="Habitron GmbH">
+                  <img id="hbtn_module_left" src="configurator_files/controller.jpg" alt="Habitron GmbH">
                 </div>
               </div>
             </div>
@@ -112,7 +112,7 @@
       <div id="footer">
         <div class="inside">
           <div id="confbuttons">
-            <form action="/automations/step">
+            <form action="automations/step">
               <button name="ModSettings" class="config_button" id="config_button_bck" type="submit" form="automations_table"
                 value="back-ModAddress">zurück</button>
               <button name="ModSettings" class="config_button" id="config_button_cnc" type="submit" form="automations_table"
@@ -144,7 +144,7 @@
       <h1 id="msg_popup_txt">ContentTitle</h1>
       <h3 id="msg_popup_txt">Einstellungen speichern</h3>
       <div id="image_container_wait">
-        <img src="/configurator_files/wait_red.gif" alt="Please wait" id="msg_popup_img">
+        <img src="configurator_files/wait_red.gif" alt="Please wait" id="msg_popup_img">
       </div>
     </div>
   </div>
@@ -153,7 +153,7 @@
       <h1>ContentTitle</h1>
       <h2>Neue externe Automatisierung</h2>
       <h3>Auslösendes Modul auswählen</h3>
-      <form id="sel-src-module" action="/automations/automtns" method="post">
+      <form id="sel-src-module" action="automations/automtns" method="post">
         <select name="src_module" style="position: absolute; width: 385px" id="src-module">
           <option value="">-- Modul wählen --</option>
         </select>
