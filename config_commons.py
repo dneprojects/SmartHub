@@ -4,7 +4,7 @@ from const import (
     WEB_FILES_DIR,
     SIDE_MENU_FILE,
     CONFIG_TEMPLATE_FILE,
-    ALLOWED_INGRESS_IPS,
+    ALLOWED_INGRESS_IP,
     NOT_AUTH_PAGE,
 )
 
@@ -289,10 +289,13 @@ def disable_button(key: str, page) -> str:
 
 def client_not_authorized(request):
     """If addon, check allowed ingress internal IP address, return True if not authorized."""
-    if not request.app["api_srv"].is_addon:
+    app = request.app
+    if "parent" in app._state.keys():
+        app = app["parent"]
+    if not app["api_srv"].is_addon:
         # No checks if not addon
         return False
-    return request.remote not in ALLOWED_INGRESS_IPS
+    return request.remote not in ALLOWED_INGRESS_IP
 
 
 def show_not_authorized(request) -> web.Response:

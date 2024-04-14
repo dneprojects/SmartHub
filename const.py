@@ -31,7 +31,8 @@ CONFIG_TEMPLATE_FILE = "config_template.html"
 SETTINGS_TEMPLATE_FILE = "settings_template.html"
 AUTOMATIONS_TEMPLATE_FILE = "automations_template.html"
 AUTOMATIONEDIT_TEMPLATE_FILE = "automation_edit_template.html"
-ALLOWED_INGRESS_IPS = ["172.30.32.2"]
+OWN_INGRESS_IP = ["172.30.32.1"]
+ALLOWED_INGRESS_IP = ["172.30.32.2"]
 
 
 class SMHUB_INFO:
