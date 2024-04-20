@@ -30,7 +30,7 @@ async function watchUpdateStatus() {
 }
 
 function getStatus() {
-    const statusUrl = "/update_status"
+    const statusUrl = "update_status"
     fetch(statusUrl)
         .then((resp) => resp.text())
         .then(function(text) {

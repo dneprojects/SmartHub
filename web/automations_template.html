@@ -1,5 +1,4 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<!-- saved from url=(0042)http://habitron.de/sortiment-habitron.html -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
 
 <head>
@@ -11,20 +10,19 @@
 	Visit the project website at http://www.contao.org for more information
 
 //-->
-  <!--<base href="http://habitron.de/">-->
-  <base href=".">
+  <base href="/">
 
-  <title>habitron - Hausautomation und Gebäudesteuerung - Sortiment habitron</title>
-  <link rel="shortcut icon" href="http://habitron.de/tl_files/habitron/design/favicon.ico" type="image/x-icon">
+  <title>habitron - Smart Configurator</title>
+  <link rel="shortcut icon" href="configurator_files/habitron.ico" type="image/x-icon">
 
   <meta http-equiv="Content-Style-Type" content="text/css">
   <meta http-equiv="Content-Script-Type" content="text/javascript">
   <meta name="description" content="">
   <meta name="keywords" content="">
-  <link href="../configurator_files/style.css" rel="stylesheet" type="text/css" media="screen">
-  <link href="../configurator_files/nav.css" rel="stylesheet" type="text/css" media="screen">
-  <link href="../configurator_files/popup.css" rel="stylesheet" type="text/css" media="screen">
-  <link href="../configurator_files/tablesort.css" rel="stylesheet" type="text/css" media="screen">
+  <link href="configurator_files/style.css" rel="stylesheet" type="text/css" media="screen">
+  <link href="configurator_files/nav.css" rel="stylesheet" type="text/css" media="screen">
+  <link href="configurator_files/popup.css" rel="stylesheet" type="text/css" media="screen">
+  <link href="configurator_files/tablesort.css" rel="stylesheet" type="text/css" media="screen">
   <!--[if IE]>
 <link href="tl_files/habitron/style_ie.css" rel="stylesheet" type="text/css" media="screen"  />
 <![endif]-->
@@ -36,10 +34,10 @@
   <![CDATA[/*><!--*/
 /*]]>*/-->
   </style>
-  <link rel="stylesheet" href="../configurator_files/contao.css" type="text/css" media="screen">
+  <link rel="stylesheet" href="configurator_files/contao.css" type="text/css" media="screen">
   <!--[if lte IE 7]><link rel="stylesheet" href="system/iefixes.css" type="text/css" media="screen" /><![endif]-->
-  <link rel="stylesheet" href="../configurator_files/tinymce.css" type="text/css" media="screen">
-  <script type="text/javascript" src="../configurator_files/tablesort.js"></script>
+  <link rel="stylesheet" href="configurator_files/tinymce.css" type="text/css" media="screen">
+  <script type="text/javascript" src="configurator_files/tablesort.js"></script>
 </head>
 
 <body id="top" class="modules">
@@ -48,9 +46,9 @@
       <div id="header">
         <div class="inside">
           <div style="height:20px; text-align: right; padding-top: 35px; padding-right: 60px;">
-            <a href="http://habitron.de/habitron.html"><img id="logo_habitron" src="../configurator_files/logo.png"
+            <a href="http://habitron.de/habitron.html"><img id="logo_habitron" src="configurator_files/logo.png"
                 width="267" height="47"></a>
-            <a href="../">
+            <a href="./">
               <div>
                 <h0>Smart Configurator</h0>
               </div>
@@ -62,7 +60,7 @@
             <div class="ce_image block">
 
               <div class="image_container">
-                <img src="../configurator_files/configuration.jpg" width="980" height="200" alt="Habitron GmbH">
+                <img src="configurator_files/configuration.jpg" width="980" height="200" alt="Habitron GmbH">
               </div>
 
             </div>
@@ -77,7 +75,7 @@
             <div class="mod_article block" id="bild-links">
               <div class="ce_image block">
                 <div class="image_container">
-                  <img id="hbtn_module_left" src="../configurator_files/controller.jpg" alt="Habitron GmbH">
+                  <img id="hbtn_module_left" src="configurator_files/controller.jpg" alt="Habitron GmbH">
                 </div>
               </div>
             </div>
@@ -132,6 +130,7 @@
     <div class="popup-content">
       <h1>ContentTitle</h1>
       <h2>Löschen der ausgewählten Automatisierung</h2>
+      <p id="automtn_desc">automation_description</p>
       <h3>Sind Sie sicher?</h3>
       <div id="del_buttons">
         <button id="close_del_popup">Abbruch</button>
@@ -144,7 +143,7 @@
       <h1 id="msg_popup_txt">ContentTitle</h1>
       <h3 id="msg_popup_txt">Einstellungen speichern</h3>
       <div id="image_container_wait">
-        <img src="../configurator_files/wait_red.gif" alt="Please wait" id="msg_popup_img">
+        <img src="configurator_files/wait_red.gif" alt="Please wait" id="msg_popup_img">
       </div>
     </div>
   </div>
@@ -192,12 +191,44 @@
     });
   function openDelPopup() {
     var sel = 0
+    const atm_desc = document.getElementById("automtn_desc")
+    const atm_tbl = document.getElementById("atm-table")
+    var tbl_row
     for (let l = 0; l < frm.length; l++) {
       if (frm[l].checked) {
         sel = l;
       }
     }
     del_automtn.value = "del_automtn-" + sel;
+    tbl_row = atm_tbl.rows[sel+1];
+    var header_rows = []
+    var header_positions = []
+    var autom_rows = []
+    var hr = 0
+    var sel_position = 0
+    if (atm_tbl.rows[0].cells[0].innerText.search("Modul") > 0) {
+      for (let r = 0; r < atm_tbl.rows.length; r++) {
+        if (atm_tbl.rows[r].id == "atm-th") {
+          header_rows.push(r);
+          header_positions.push(atm_tbl.rows[r].offsetTop);
+        }
+        else {
+          autom_rows.push(r)
+        }
+      }
+      tbl_row = atm_tbl.rows[autom_rows[sel]];
+      sel_position = tbl_row.offsetTop;
+      for (hr = 0; hr < header_rows.length; hr++) {
+        if (sel_position < header_positions[hr])
+          break
+      }
+      desc_txt = atm_tbl.rows[header_rows[hr - 1]].cells[0].innerText + ":<br>";
+    }
+    else {
+      desc_txt = "";
+    }
+    desc_txt += tbl_row.cells[0].innerText + "&nbsp;(" + tbl_row.cells[1].innerText + ")<br>" + tbl_row.cells[2].innerText + tbl_row.cells[3].innerText
+    atm_desc.innerHTML = desc_txt;
     automtn_del_popup.classList.add("show");
   };
   function openNewPopup() {

@@ -1,4 +1,4 @@
-"""Constants for SmartIP2"""
+"""Constants for SmartHub"""
 
 from typing import Final
 
@@ -7,7 +7,7 @@ OWN_IP = "192.168.178.110"
 ANY_IP = "0.0.0.0"
 SMHUB_PORT = 7777
 EVENT_PORT = 7778
-CONF_PORT = 7780
+CONF_PORT = 8099
 QUERY_PORT = 30718
 RT_DEF_ADDR = 1
 RT_BAUDRATE = 19200
@@ -38,7 +38,7 @@ ALLOWED_INGRESS_IP = ["172.30.32.2"]
 class SMHUB_INFO:
     """Holds information."""
 
-    SW_VERSION = "1.1.7"
+    SW_VERSION = "1.1.9"
     TYPE = "Smart Hub"
     TYPE_CODE = "20"
     SERIAL = "RBPI"

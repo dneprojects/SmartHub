@@ -40,6 +40,7 @@ class SmartHub:
         self.api_srv: ApiServer
         self._serial: str = ""
         self._pi_model: str = ""
+        self._cpu_type: str = ""
         self._cpu_info: dict
         self._host: str = ""
         self._host_ip: str = ""
@@ -100,24 +101,37 @@ class SmartHub:
         if self._serial == "":
             get_all = True
             try:
-                with open("/sys/firmware/devicetree/base/model") as f:
+                with open("/device-tree/model") as f:
                     self._pi_model = f.read()[:-1]
                     f.close()
-                with open("/sys/firmware/devicetree/base/serial-number") as f:
+                with open("/device-tree/serial-number") as f:
                     self._serial = f.read()[:-1]
                     f.close()
+                with open("/device-tree/cpus/cpu@0/compatible") as f:
+                    self._cpu_type = f.read()[:-1].split(",")[1]
+                    f.close()
             except Exception:
-                self.logger.info("Using default devicetree")
-                self._pi_model = "Raspberry Pi"
-                self._serial = "10000000e3d90xxx"
+                try:
+                    with open("/sys/firmware/devicetree/base/model") as f:
+                        self._pi_model = f.read()[:-1]
+                        f.close()
+                    with open("/sys/firmware/devicetree/base/serial-number") as f:
+                        self._serial = f.read()[:-1]
+                        f.close()
+                    with open(
+                        "/sys/firmware/devicetree/base/cpus/cpu@0/compatible"
+                    ) as f:
+                        self._cpu_type = f.read()[:-1].split(",")[1]
+                        f.close()
+                except Exception:
+                    self.logger.info("Using default devicetree")
+                    self._pi_model = "Raspberry Pi"
+                    self._serial = "10000000e3d90xxx"
+                    self._cpu_type = "unknown"
             self._cpu_info = cpuinfo.get_cpu_info()
         else:
             get_all = False
 
-        if "hardware_raw" in self._cpu_info.keys():
-            hardware_raw = self._cpu_info["hardware_raw"]
-        else:
-            hardware_raw = "BCM2712"
         info_str = "hardware:\n  platform:\n"
         info_str = info_str + "    type: " + self._pi_model + "\n"
         info_str = info_str + "    serial: " + self._serial + "\n"
@@ -127,7 +141,7 @@ class SmartHub:
             + "    type: "
             + self._cpu_info["arch_string_raw"]
             + " "
-            + hardware_raw
+            + self._cpu_type
             + "\n"
         )
         info_str = (

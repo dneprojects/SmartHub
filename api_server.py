@@ -39,7 +39,6 @@ class ApiServer:
         self._running = True
         self._client_ip: str = ""
         self._hass_ip: str = ""
-        self.is_addon: bool = False
         self.mirror_mode_enabled: bool = True
         self.event_mode_enabled: bool = True
         self._api_cmd_processing: bool = False  # Blocking of config server io requests
@@ -50,7 +49,11 @@ class ApiServer:
         self.is_offline: bool = False
         self.token = os.getenv("SUPERVISOR_TOKEN")
         if self.token is None:
-            self.logger.warning("SUPERVISOR_TOKEN is None")
+            self.is_addon: bool = False
+            self.logger.info("Running Smart Hub")
+        else:
+            self.is_addon: bool = True
+            self.logger.info("Running Smart Center")
 
     async def get_initial_status(self):
         """Starts router object and reads complete system status"""
@@ -306,7 +309,6 @@ class ApiServer:
             # no command received yet
             return False
         self._client_ip = self.ip_writer.get_extra_info("peername")[0]
-        self.is_addon = self._client_ip == self.sm_hub.get_host_ip()
         return True
         # SmartHub running with Home Assistant, use internal websocket
 
@@ -323,7 +325,6 @@ class ApiServerMin(ApiServer):
         self.hdlr = []
         self.routers = []
         self.routers.append(HbtnRouter(self, 1))
-        self.is_addon: bool = False
         self.mirror_mode_enabled: bool = True
         self.event_mode_enabled: bool = True
         self._api_cmd_processing: bool = False  # Blocking of config server io requests
@@ -332,6 +333,11 @@ class ApiServerMin(ApiServer):
         self._init_mode: bool = True
         self._first_api_cmd: bool = True
         self.is_offline = True  # Always offline
+        self.token = os.getenv("SUPERVISOR_TOKEN")
+        if self.token is None:
+            self.is_addon: bool = False
+        else:
+            self.is_addon: bool = True
 
     async def shutdown(self, rt, restart_flg):
         """Terminating all tasks and self."""

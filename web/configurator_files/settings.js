@@ -49,14 +49,15 @@ function controlNewButton()  {
     
 }
 function controlDelButton()  {
-    del_btn.disabled = true;  // for modules only
-    for (let i = 0; i < check_boxes.length; i++) {
-        if (check_boxes[i].checked) {
-            del_btn.disabled = false;
-            break;
+    if (del_btn != null) {
+        del_btn.disabled = true;  // for modules only
+        for (let i = 0; i < check_boxes.length; i++) {
+            if (check_boxes[i].checked) {
+                del_btn.disabled = false;
+                break;
+            }
         }
     }
-    
 }
 
 var fngrNames = {}

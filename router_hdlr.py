@@ -466,7 +466,12 @@ class RtHdlr(HdlrBase):
 
         await self.handle_router_cmd_resp(self.rt_id, cmd_str)
         resp = self.rt_msg._resp_buffer[-self.rt_msg._resp_buffer[2] + 4 : -1]
-        if (resp[0] == 0x42) and (resp[1] == 0x4C) and (resp[2] == 0) and (resp[3] == 0):
+        if (
+            (resp[0] == 0x42)
+            and (resp[1] == 0x4C)
+            and (resp[2] == 0)
+            and (resp[3] == 0)
+        ):
             self.logger.warning("Router set into update mode")
         else:
             self.logger.error("Failed to enter router ISP mode")
@@ -477,7 +482,12 @@ class RtHdlr(HdlrBase):
         await asyncio.sleep(1)
         await self.handle_router_cmd_resp(self.rt_id, cmd_str)
         resp = self.rt_msg._resp_buffer[-self.rt_msg._resp_buffer[2] + 4 : -1]
-        if (resp[0] == 0x42) and (resp[1] == 0x4C) and (resp[2] == 0) and (resp[3] == 0):
+        if (
+            (resp[0] == 0x42)
+            and (resp[1] == 0x4C)
+            and (resp[2] == 0)
+            and (resp[3] == 0)
+        ):
             self.logger.warning("Router starting to update")
         else:
             self.logger.error("Failed to enter router ISP mode")
@@ -552,9 +562,9 @@ class RtHdlr(HdlrBase):
         cur_pkg = pkg_high * 256 + pkg_low
         self.upd_stat_dict["cur_mod"] = 0
         self.upd_stat_dict["mod_0"]["progress"] = round(100 * cur_pkg / max_count)
-        self.logger.info(
-            f"Router update progress: {cur_pkg} of {max_count +1} : {100 * cur_pkg / max_count} %"
-        )
+        # self.logger.info(
+        #     f"Router update progress: {cur_pkg} of {max_count +1} : {100 * cur_pkg / max_count} %"
+        # )
 
     async def upload_module_firmware(
         self, mod_type: bytes, progress_fun: Callable[[int, int, int], Awaitable[None]]
@@ -627,9 +637,9 @@ class RtHdlr(HdlrBase):
         if code == RT_STAT_CODES.PKG_OK:
             self.upd_stat_dict["cur_mod"] = -1
             self.upd_stat_dict["upload"] = round(pckg * 100 / no_pkgs)
-            self.logger.info(
-                f"Firmware upload package {pckg} of {no_pkgs} : {round(pckg * 100 / no_pkgs)}%"
-            )
+            # self.logger.info(
+            #     f"Firmware upload package {pckg} of {no_pkgs} : {round(pckg * 100 / no_pkgs)}%"
+            # )
         else:
             self.logger.error(f"Firmware upload package {pckg} of {no_pkgs} : failed")
 
@@ -693,7 +703,7 @@ class RtHdlr(HdlrBase):
             self.upd_stat_dict["mod_" + str(md)]["errors"] = no_errs
             self.upd_stat_dict["mod_" + str(md)]["success"] = md_stat
             log_info += f"  Mod {ord(protocol[3 + 3 * mod_rdy_i])}: {md_stat}"
-        self.logger.info(log_info)
+        # self.logger.info(log_info)
 
     async def forward_message(self, src_rt: int, fwd_cmd: bytes) -> bytes:
         """Forward message from other router."""

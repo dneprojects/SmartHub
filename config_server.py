@@ -61,13 +61,40 @@ class ConfigServer:
 
     def __init__(self, api_srv):
         self.api_srv = api_srv
-        self._ip = api_srv.sm_hub._host_ip
+        self._ip = OWN_INGRESS_IP  # api_srv.sm_hub._host_ip
         self._port = CONF_PORT
         self.conf_running = False
 
     async def initialize(self):
         """Initialize config server."""
-        self.app = web.Application()
+
+        @web.middleware
+        async def ingress_middleware(request: web.Request, handler) -> web.Response:  # type: ignore
+
+            response = await handler(request)
+            if (
+                request.app["api_srv"].is_addon
+                and request.headers["Accept"].find("text/html") >= 0
+                and "body" in response.__dir__()
+                and response.status == 200
+            ):
+                ingress_path = request.headers["X-Ingress-Path"]
+                request.app.logger.debug(f"Request path: {request.path_qs}")
+                request.app.logger.debug(
+                    f"Response status: {response.status} , Body type: {type(response.body)}"
+                )
+                if isinstance(response.body, bytes):
+                    response.body = (
+                        response.body.decode("utf_8")
+                        .replace(
+                            '<base href="/">',
+                            f'<base href="{ingress_path}/">',
+                        )
+                        .encode("utf_8")
+                    )
+            return response
+
+        self.app = web.Application(middlewares=[ingress_middleware])
         self.app.logger = logging.getLogger(__name__)
         self.settings_srv = ConfigSettingsServer(self.app, self.api_srv)
         self.app.add_subapp("/settings", self.settings_srv.app)
@@ -391,7 +418,7 @@ def show_hub_overview(app) -> web.Response:
     """Show hub overview page."""
     api_srv = app["api_srv"]
     smhub = api_srv.sm_hub
-    smhub_info = smhub.info
+    smhub_info = smhub.get_info()
     hub_name = smhub._host
     if api_srv.is_offline:
         pic_file, subtitle = get_module_image(b"\xc9\x00")

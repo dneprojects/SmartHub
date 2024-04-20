@@ -68,6 +68,19 @@ class ActionsHdlr(HdlrBase):
                     .replace("<out>", chr(self._args[2]))
                     .replace("<val>", chr(self._args[3]))
                 )
+                await self.handle_router_cmd(rt, self._rt_command)
+                await asyncio.sleep(0.1)
+                out_offs = 0
+                if self.api_srv.routers[rt - 1].get_module(mod)._typ[0] == 1:
+                    out_offs = 10  # on SC Dimm1 = Out 11
+                outp_bit = 1 << (self._args[2] + out_offs - 1)
+                self._rt_command = (
+                    RT_CMDS.SET_OUT_ON.replace("<rtr>", chr(rt))
+                    .replace("<mod>", chr(mod))
+                    .replace("<outl>", chr(outp_bit & 0xFF))
+                    .replace("<outm>", chr((outp_bit >> 8) & 0xFF))
+                    .replace("<outh>", chr((outp_bit >> 16) & 0xFF))
+                )
                 self.logger.debug(
                     f"Router {rt}, module {mod}: set dimm value output {self._args[2]} to {self._args[3]}"
                 )

@@ -38,9 +38,9 @@ def show_update_router(rtr, new_fw: str) -> web.Response:
     page = get_html("modules.html")
     page = page.replace(
         "</html>",
-        '</html>\n<script type="text/javascript" src="/configurator_files/update_status.js"></script>',
+        '</html>\n<script type="text/javascript" src="configurator_files/update_status.js"></script>',
     )
-    images = '<form id="mod-update-grid" action="/update_modules" method="post">'
+    images = '<form id="mod-update-grid" action="update_modules" method="post">'
     pic_file, title = get_module_image(b"\x00\x00")
     images += '<div class="figd_grid">\n'
     images += f'<img src="configurator_files/{pic_file}" alt="{rtr.name}">&nbsp;&nbsp;&nbsp;{rtr._name}&nbsp;&nbsp;&nbsp;\n'
@@ -57,7 +57,7 @@ def show_update_router(rtr, new_fw: str) -> web.Response:
     page = page.replace("<h1>Module</h1>", "<h1>Firmware Update</h1>")
     page = page.replace("Overview", f"Version {new_fw} für Smart Router")
     page = page.replace("Wählen Sie ein Modul aus", "")
-    page = page.replace('action="/update_modules"', 'action="/update_router"')
+    page = page.replace('action="update_modules"', 'action="update_router"')
     return web.Response(text=page, content_type="text/html", charset="utf-8")
 
 
@@ -85,10 +85,10 @@ def show_update_modules(mod_list, new_fw: str, mod_type: str) -> web.Response:
     page = get_html("modules.html")
     page = page.replace(
         "</html>",
-        '</html>\n<script type="text/javascript" src="/configurator_files/update_status.js"></script>',
+        '</html>\n<script type="text/javascript" src="configurator_files/update_status.js"></script>',
     )
     page = page.replace("Overview", f"Version {new_fw} für {mod_type}")
-    images = '<form id="mod-update-grid" action="/update_modules" method="post">'
+    images = '<form id="mod-update-grid" action="update_modules" method="post">'
     for module in mod_list:
         pic_file, title = get_module_image(module.typ)
         images += '<div class="figd_grid">\n'
@@ -287,7 +287,7 @@ def disable_button(key: str, page) -> str:
     return page.replace(f">{key}<", f" disabled>{key}<")
 
 
-def client_not_authorized(request):
+def client_not_authorized(request) -> bool:
     """If addon, check allowed ingress internal IP address, return True if not authorized."""
     app = request.app
     if "parent" in app._state.keys():
