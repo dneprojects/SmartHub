@@ -4,7 +4,7 @@ from const import (
     WEB_FILES_DIR,
     SIDE_MENU_FILE,
     CONFIG_TEMPLATE_FILE,
-    ALLOWED_INGRESS_IP,
+    ALLOWED_INGRESS_IPS,
     NOT_AUTH_PAGE,
 )
 
@@ -295,7 +295,7 @@ def client_not_authorized(request) -> bool:
     if not app["api_srv"].is_addon:
         # No checks if not addon
         return False
-    return request.remote not in ALLOWED_INGRESS_IP
+    return request.remote not in ALLOWED_INGRESS_IPS
 
 
 def show_not_authorized(request) -> web.Response:

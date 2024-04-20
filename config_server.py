@@ -39,6 +39,7 @@ from const import (
     HUB_HOMEPAGE,
     OWN_INGRESS_IP,
     CONF_PORT,
+    INGRESS_PORT,
     MirrIdx,
 )
 
@@ -61,8 +62,12 @@ class ConfigServer:
 
     def __init__(self, api_srv):
         self.api_srv = api_srv
-        self._ip = OWN_INGRESS_IP  # api_srv.sm_hub._host_ip
-        self._port = CONF_PORT
+        if api_srv.is_addon:
+            self._ip = OWN_INGRESS_IP  # api_srv.sm_hub._host_ip
+            self._port = INGRESS_PORT
+        else:
+            self._ip = api_srv.sm_hub._host_ip
+            self._port = CONF_PORT
         self.conf_running = False
 
     async def initialize(self):

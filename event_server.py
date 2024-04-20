@@ -436,7 +436,6 @@ class EventServer:
             self.evnt_running = False
             await self.stop()
             await self.api_srv.set_server_mode(1)
-            self.websck = None
         except Exception as error_msg:
             # Use to get cancel event in api_server
             self.logger.error(f"Could not connect to event server: {error_msg}")
@@ -446,7 +445,6 @@ class EventServer:
                 await self.websck.send(json.dumps(event_cmd))  # Send command
                 resp = await self.websck.recv()
                 self.logger.debug(f"Notify returned {resp}")
-            self.websck = None
 
     async def ping_pong_reconnect(self) -> bool:
         """Check for living websocket connection, reconnect if needed."""
@@ -496,9 +494,8 @@ class EventServer:
             self.logger.debug(f"URI: {self._uri}")
             # supervisor_token  "2f428d27e04db95b4c844b451af4858fba585aac82f70ee6259cf8ec1834a00abf6a448f49ee18d3fc162f628ce6f479fe4647c6f8624f88"
             # token for local docker:    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIxZDZkZWY4MjZmYzI0Yzg0OGUwMTAxYTUyMWE1ZTI0ZSIsImlhdCI6MTcxMDk1MTQ2MSwiZXhwIjoyMDI2MzExNDYxfQ.CG3kAoZSPHexOkztWk15Z3lg9v3avxbXJVb_PNXXU1I"
-            # token for 192.168.178.133: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlYjQ2MTA4ZjUxOTU0NTY3Yjg4ZjUxM2Q5ZjBkZWRlYSIsImlhdCI6MTY5NDYxMDEyMywiZXhwIjoyMDA5OTcwMTIzfQ.3LtGwhonmV2rAbRnKqEy3WYRyqiS8DTh3ogx06pNz1g"
-            # token for 192.168.178.160: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI4OTNlZDJhODU2ZmY0ZDQ3YmVlZDE2MzIyMmU1ODViZCIsImlhdCI6MTcwMjgyMTYxNiwiZXhwIjoyMDE4MTgxNjE2fQ.NT-WSwkG9JN8f2cCt5fXlP4A8FEOAgDTrS1sdhB0ioo"
-            # token for SmartCenter 5: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmN2UxMGFhNzcyZTE0ZWY0OGFmOTkzNDVlOTIwNTNlNiIsImlhdCI6MTcxMzUxNDM4MSwiZXhwIjoyMDI4ODc0MzgxfQ.9kpjxhElmWAqTY2zwSsTyLSZiJQZkaV5FX8Pyj9j8HQ"
+            # token for 192.168.178.160: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI5NGY2ZjMyZjdhYjE0NzAzYmI4MTc5YjZhOTdhYzdjNSIsImlhdCI6MTcxMzYyMjgxNywiZXhwIjoyMDI4OTgyODE3fQ.2iJQuKgpavJOelH_WHEDe06X2XmAmyHB3FlzkDPl4e0"
+            # token for SmartCenter 5:   token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmN2UxMGFhNzcyZTE0ZWY0OGFmOTkzNDVlOTIwNTNlNiIsImlhdCI6MTcxMzUxNDM4MSwiZXhwIjoyMDI4ODc0MzgxfQ.9kpjxhElmWAqTY2zwSsTyLSZiJQZkaV5FX8Pyj9j8HQ"
 
         if self.auth_token is None or not self.token_ok:
             self.auth_token = self.get_ident()
@@ -577,7 +574,6 @@ class EventServer:
                 self.logger.debug("Websocket still closing")
             except Exception as err_msg:
                 self.logger.warning(f"Websocket close failed: {err_msg}")
-            self.websck = None
 
     async def start(self):
         """Start event server task."""
