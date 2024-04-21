@@ -348,13 +348,18 @@ async def init_serial(logger):
                     logger.info("Waiting for router booting...")
                     await asyncio.sleep(5)
                     new_query = True
+                elif resp_buf[1:-1] == b"#\x01\x06\xc9\xff":
+                    logger.info("Router in ISP mode? Restarting system...")
+                    rt_cmd = prepare_buf_crc(
+                        RT_CMDS.SYSTEM_RESTART.replace("<rtr>", chr(RT_DEF_ADDR))
+                    )
+                    rt_serial[1].write(rt_cmd.encode("iso8859-1"))
                 else:
                     logger.info("Retry to connect router")
                     logger.debug(f"Unexpected test response: {resp_buf}")
                     new_query = True
             else:
                 raise Exception("No test response received")
-                new_query = True
     except Exception as err_msg:
         logger.error(f"Error during test stop mirror command: {err_msg}")
         rt_serial = None
@@ -367,7 +372,7 @@ async def close_serial_interface(rt_serial):
     await rt_serial[1].wait_closed()
 
 
-async def main(init_flag, ev_loop):
+async def main(ev_loop):
     """Open serial connection, start server, and tasks"""
     init_flag = True
     startup_ok = False
@@ -450,12 +455,11 @@ async def main(init_flag, ev_loop):
 
 init_count = 0
 init_flag = True
-# init_flag = False
 ev_loop = asyncio.new_event_loop()
 while True:
     if init_count > 2:
         init_flag = False  # Restart without initialization
-    term_flg = ev_loop.run_until_complete(main(init_flag, ev_loop))
+    term_flg = ev_loop.run_until_complete(main(ev_loop))
     if term_flg == 0:
         init_count += 1
     elif term_flg == -1:

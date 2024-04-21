@@ -40,9 +40,13 @@ class RtHdlr(HdlrBase):
             router_running = (len(ret_msg) > 40) and (
                 ret_msg[-3] == RT_STAT_CODES.SYS_RUNNING
             )
-            if not router_running:
+            if not router_running and self.api_srv.sm_hub.wait_for_router:
                 self.logger.info("Waiting for router booting...")
                 await asyncio.sleep(2)
+            elif not router_running:
+                self.logger.warning(
+                    f"Router {self.rt_id} not running, don't wait anyway"
+                )
         if ret_msg[-2] == RT_STAT_CODES.SYS_PROBLEMS:
             self.logger.warning(
                 f"Router {self.rt_id} running, boot finished with module problems"
