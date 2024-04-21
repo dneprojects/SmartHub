@@ -26,7 +26,7 @@ async function watchUpdateStatus() {
     await setInterval(function() { 
         // alle 3 Sekunden ausführen 
         getStatus(); 
-    }, 1000);
+    }, 3000);
 }
 
 function getStatus() {
