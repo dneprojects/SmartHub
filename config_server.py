@@ -370,8 +370,6 @@ class ConfigServer:
 
     @routes.get("/update_status")
     async def get_update_status(request: web.Request) -> web.Response:  # type: ignore
-        if client_not_authorized(request):
-            return show_not_authorized(request.app)
         app = request.app
         stat = app["api_srv"].routers[0].hdlr.upd_stat_dict
         return web.Response(

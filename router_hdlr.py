@@ -538,7 +538,7 @@ class RtHdlr(HdlrBase):
                 await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
                 self.logger.info("Router restarted")
                 return "ERROR"
-            await asyncio.sleep(0.002)
+            await asyncio.sleep(0.01)
         self.logger.info("Successfully uploaded and flashed router firmware")
         await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
         self.logger.info("Router restarted")
@@ -547,7 +547,7 @@ class RtHdlr(HdlrBase):
     async def send_rtr_fw_update_protocol(
         self, pkg_high: int, pkg_low: int, max_count: int
     ) -> None:
-        """Send counter back to api."""
+        """Send firmware upload counter to ip client."""
         stat_msg = (
             API_RESPONSE.rtfw_flash_stat.replace("<rtr>", chr(self.rt_id))
             .replace("<pkgs>", chr(max_count + 1))
@@ -562,7 +562,7 @@ class RtHdlr(HdlrBase):
     async def log_rtr_fw_update_protocol(
         self, pkg_high: int, pkg_low: int, max_count: int
     ) -> None:
-        """Send counter back to api."""
+        """Log firmware upload counter."""
         cur_pkg = pkg_high * 256 + pkg_low
         self.upd_stat_dict["cur_mod"] = 0
         self.upd_stat_dict["mod_0"]["progress"] = round(100 * cur_pkg / max_count)
@@ -637,7 +637,7 @@ class RtHdlr(HdlrBase):
     async def log_mod_fw_upload_protocol(
         self, pckg: int, no_pkgs: int, code: int
     ) -> None:
-        """Send firmware upload status protocol to ip client."""
+        """Log firmware upload status protocol."""
         if code == RT_STAT_CODES.PKG_OK:
             self.upd_stat_dict["cur_mod"] = -1
             self.upd_stat_dict["upload"] = round(pckg * 100 / no_pkgs)
