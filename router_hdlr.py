@@ -523,7 +523,7 @@ class RtHdlr(HdlrBase):
             resp_msg = self.rt_msg._resp_buffer[-self.rt_msg._resp_buffer[2] + 4 : -1]
             if (resp_code == 201) and (len(resp_msg) > 3):
                 if (resp_msg[0] == 0x42) and (resp_msg[1] == 0x4C):
-                    await progress_fun(resp_msg[2], resp[resp_msg[3]], no_pkgs)
+                    await progress_fun(resp_msg[2], resp_msg[3], no_pkgs)
                 else:
                     self.logger.error(
                         f"Failed to flash router, returned message 201: {resp_msg}"
@@ -545,7 +545,7 @@ class RtHdlr(HdlrBase):
         return "OK"
 
     async def send_rtr_fw_update_protocol(
-        self, pkg_high: int, pkg_low: int, max_count: int
+        self, pkg_low: int, pkg_high: int, max_count: int
     ) -> None:
         """Send firmware upload counter to ip client."""
         stat_msg = (
@@ -560,7 +560,7 @@ class RtHdlr(HdlrBase):
         )
 
     async def log_rtr_fw_update_protocol(
-        self, pkg_high: int, pkg_low: int, max_count: int
+        self, pkg_low: int, pkg_high: int, max_count: int
     ) -> None:
         """Log firmware upload counter."""
         cur_pkg = pkg_high * 256 + pkg_low

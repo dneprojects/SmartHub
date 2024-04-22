@@ -349,7 +349,7 @@ async def init_serial(logger):
                     await asyncio.sleep(5)
                     new_query = True
                 elif resp_buf[1:-1] == b"#\x01\x06\xc9\xff":
-                    logger.info("Router in ISP mode? Restarting system...")
+                    logger.info("Router in ISP mode. Restarting system...")
                     rt_cmd = prepare_buf_crc(
                         RT_CMDS.SYSTEM_RESTART.replace("<rtr>", chr(RT_DEF_ADDR))
                     )
