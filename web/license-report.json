@@ -2,10 +2,13 @@ attrs:23.2.0                        MIT License                                 
 frozenlist:1.4.1                    Apache Software License                                 Permissive                                                   
 idna:3.7                            BSD License                                             Permissive                                                   
 multidict:6.0.5                     Apache Software License                                 Permissive                                                   
+pip-licenses:4.4.0                  MIT License                                             Permissive                                                   
+prettytable:3.10.0                  BSD License                                             Permissive                                                   
 psutil:5.9.8                        BSD License                                             Permissive                                                   
 py-cpuinfo:9.0.0                    MIT License                                             Permissive                                                   
 pyserial:3.5                        BSD License                                             Permissive                                                   
 pyserial-asyncio:0.6                BSD License                                             Permissive                                                   
 PyYAML:6.0.1                        MIT License                                             Permissive                                                   
+wcwidth:0.2.13                      MIT License                                             Permissive                                                   
 websockets:12.0                     BSD License                                             Permissive                                                   
 yarl:1.9.4                          Apache Software License                                 Permissive
