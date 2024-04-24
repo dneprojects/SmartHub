@@ -1,0 +1,35 @@
+python-hpilo - Manage iLO interfaces from python code
+Copyright (C) 2011-2021 Dennis Kaarsemaker <dennis@kaarsemaker.net>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of (at your option) either the Apache License,
+Version 2.0, or the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+For details and specific language governing permissions and
+limitations, see either
+
+ - http://www.gnu.org/licenses/ for the GNU GPL
+ - http://www.apache.org/licenses/LICENSE-2.0 for the Apache license
+
+The following people have generously contributed patches to python-hpilo:
+
+* Alexander Gubin       https://github.com/alxgu
+* Alexey Vekshin        https://github.com/veksh
+* Ali Asad Lotia        https://github.com/lotia
+* Andrew Glen-Young     https://github.com/agy
+* Christoph Handel      https://github.com/fragfutter
+* Frederic Brin         https://github.com/ExaneServerTeam
+* Hans Guthrie          https://github.com/hansdg1
+* Kevin Sweeney         https://github.com/kevints
+* Nathan Garabedian     https://github.com/ngara
+* Peter Fisher          https://github.com/peterfisher
+* Ronald van Zon        https://github.com/Eagllus
+* Sten Spans            https://github.com/sspans
+* Vinson Lee            https://github.com/vinsonlee
+* Vito Piserchia        https://github.com/vpiserchia

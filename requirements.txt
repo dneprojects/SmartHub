@@ -1,5 +1,6 @@
 aiohttp
 multidict
+pip-licenses
 psutil
 py_cpuinfo
 pyserial

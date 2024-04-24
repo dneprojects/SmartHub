@@ -1,4 +1,3 @@
-from os import path
 from aiohttp import web
 from urllib.parse import parse_qs
 from multidict import MultiDict
@@ -21,6 +20,7 @@ from config_commons import (
     client_not_authorized,
     show_not_authorized,
 )
+from licenses import get_package_licenses, show_license_text
 from messages import calc_crc
 from module import HbtnModule
 from module_hdlr import ModHdlr
@@ -601,112 +601,10 @@ async def terminate_delayed(api_srv):
 def show_license_table(app):
     """Return html page with license table."""
     page = get_html(LICENSE_PAGE)
-    table = get_html(LICENSE_TABLE).split("\n")
-    table_str = build_lic_table(table, "hub")
-    table_end = "  </tbody>\n</table>\n"
-    tablesort_str = (
-        "    <tr>\n"
-        + "      <td>tablesort</td>\n"
-        + "      <td>5.3.0</td>\n"
-        + set_license_link("      <td>T Brown License</td>\n")
-        + "      <td>Tristen Brown</td>\n"
-        + '      <td><a href="https://github.com/tristen/tablesort">github.com/tristen/tablesort</a></td>\n'
-        + "      <td>A small & simple sorting component for tables written in JavaScript</td>\n"
-        + "    </tr>\n"
-    )
-    table_str = table_str.replace(table_end, tablesort_str + table_end)
-    if path.isfile(WEB_FILES_DIR + "license_table_haint.html"):
-        table = get_html("license_table_haint.html").split("\n")
-        new_table = "<br><br>\n<h3>Home Assistant / Habitron Integration</h3>"
-        table_str += new_table + build_lic_table(table, "hai")
+    table_str = get_package_licenses()
     if app["is_offline"]:
         page = page.replace("Smart Hub", "Smart Configurator")
     elif app["api_srv"].is_addon:
         page = page.replace("Smart Hub", "Smart Center")
     page = page.replace("<table></table>", table_str)
     return web.Response(text=page, content_type="text/html", charset="utf-8")
-
-
-def build_lic_table(table, spec) -> str:
-    """Build html table string from table line list."""
-
-    table_str = ""
-    for line in table:
-        if line.find("<table>") >= 0:
-            line = line.replace("<table>", f'<table id="lic-{spec}-table">')
-        elif line.find("<th>Version") > 0:
-            line = line.replace("<th>Version", '<th data-sort-method="none">V.')
-        elif line.find("<th>Author") > 0:
-            line = line.replace("<th>", '<th data-sort-method="none">')
-        elif line.find("<th>URL") > 0:
-            line = line.replace("<th>", '<th data-sort-method="none">')
-        elif line.find("<th>Description") > 0:
-            line = line.replace("<th>", '<th data-sort-method="none">')
-        elif line.find("Artistic License") > 0:
-            line = line[: line.find("<td>")] + "<td>Artistic License</td>"
-        line = line.replace(">Apache Software License<", ">Apache License 2.0<")
-        line = line.replace(">Apache-2.0<", ">Apache License 2.0<")
-        line = line.replace(">MIT<", ">MIT License<")
-        line = line.replace("Python Software Foundation License", "PSF License")
-        line = set_license_link(line)
-        table_str += line + "\n"
-    return html_text_to_link(table_str, True)
-
-
-def set_license_link(line: str) -> str:
-    """Check for know license and set html link to local text file."""
-
-    known_licenses = {
-        "Apache License 2.0": "Apache_2_0.txt",
-        "Artistic License": "Artistic.txt",
-        "BSD License": "BSD_license.txt",
-        "MIT License": "MIT_license.txt",
-        "PSF License": "PSF_license.txt",
-        "T Brown License": "Tristen_Brown.txt",
-    }
-
-    for l_key in known_licenses.keys():
-        if line.find(l_key) > 0:
-            line = line.replace(l_key, f'<a href="{known_licenses[l_key]}">{l_key}</a>')
-            break
-    return line
-
-
-def show_license_text(request) -> web.Response:
-    """Return web page with license text."""
-    lic_file = open(LICENSE_PATH + request.path)
-    lic_text = lic_file.read()
-    lic_text = html_text_to_link(lic_text, False)
-    header = lic_text.split("\n")[0].strip()
-    lic_text = lic_text.replace(f"{header}\n", "").replace("\n", "<br>").strip()
-    lic_file.close()
-    html_str = (
-        get_html(LICENSE_PAGE)
-        .replace("Smart Hub", header)
-        .replace("<table></table>", f"<p>{lic_text}</p>")
-    )
-    return web.Response(text=html_str, content_type="text/html", charset="utf-8")
-
-
-def html_text_to_link(txt_str: str, shorten: bool) -> str:
-    """Search for written html links and convert to html syntax links."""
-    txt_lines = txt_str.split("\n")
-    txt_str = ""
-    for line in txt_lines:
-        if (i_l := line.find("https://")) > 0:
-            http_str = "https"
-        elif (i_l := line.find("http://")) > 0:
-            http_str = "http"
-        if i_l > 0:
-            h_link = line[i_l:].split()[0].split("<")[0]
-            short_link = h_link
-            if shorten:
-                short_link = h_link.replace(f"{http_str}://", "")
-                if short_link[-1] == "/":
-                    short_link = short_link[:-1]
-            txt_str += (
-                line.replace(h_link, f'<a href="{h_link}">{short_link}</a>') + "\n"
-            )
-        else:
-            txt_str += line + "\n"
-    return txt_str

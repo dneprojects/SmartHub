@@ -118,7 +118,7 @@
                 <h2>Smart Configurator</h2>
                 <h3>Passen Sie hier die Grundeinstellungen des Systems an.</h3>
                 <br><br><br><br><br><br><br><br><br><br>
-                <a href="licenses">Lizenzinformation</a>
+                <a id="lic-info" href="licenses">Lizenzinformation</a>
                 <!-- MainContentEnd -->
               </div>
 
@@ -140,6 +140,29 @@
       </div>
       
       
+    <div id="msg_popup" class="popup">
+      <div class="popup-content">
+        <h1 id="msg_popup_txt">Lizenzinformationen</h1>
+        <h3 id="msg_popup_txt">Erzeuge Tabelle</h3>
+        <div id="image_container_wait">
+          <img src="configurator_files/wait_red.gif" alt="Please wait" id="msg_popup_img">
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const build_lic_table = document.getElementById("lic-info");
+    
+    build_lic_table.addEventListener("click", function () {
+      openMsgPopup();
+    });
+
+    function openMsgPopup() {
+      msg_popup.classList.add("show");
+    };
+  </script>
       </body>
       
       </html>

@@ -1,0 +1,146 @@
+[
+  {
+    "Author": "Kirill Simonov",
+    "License": "MIT License",
+    "LicenseFile": "/home/dietm/.local/lib/python3.11/site-packages/PyYAML-6.0.1.dist-info/LICENSE",
+    "LicenseText": "Copyright (c) 2017-2021 Ingy d\u00f6t Net\nCopyright (c) 2006-2016 Kirill Simonov\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+    "Name": "PyYAML",
+    "URL": "https://pyyaml.org/",
+    "Version": "6.0.1"
+  },
+  {
+    "Author": "Kirill Simonov",
+    "License": "MIT License",
+    "LicenseFile": "/usr/local/lib/python3.11/site-packages/PyYAML-6.0.1.dist-info/LICENSE",
+    "LicenseText": "Copyright (c) 2017-2021 Ingy d\u00f6t Net\nCopyright (c) 2006-2016 Kirill Simonov\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+    "Name": "PyYAML",
+    "URL": "https://pyyaml.org/",
+    "Version": "6.0.1"
+  },
+  {
+    "Author": "UNKNOWN",
+    "License": "Apache Software License",
+    "LicenseFile": "/home/dietm/.local/lib/python3.11/site-packages/aiohttp-3.9.1.dist-info/LICENSE.txt",
+    "LicenseText": "   Copyright aio-libs contributors.\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.\n",
+    "Name": "aiohttp",
+    "URL": "https://github.com/aio-libs/aiohttp",
+    "Version": "3.9.1"
+  },
+  {
+    "Author": "UNKNOWN",
+    "License": "Apache Software License",
+    "LicenseFile": "/usr/local/lib/python3.11/site-packages/aiohttp-3.9.1.dist-info/LICENSE.txt",
+    "LicenseText": "   Copyright aio-libs contributors.\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.\n",
+    "Name": "aiohttp",
+    "URL": "https://github.com/aio-libs/aiohttp",
+    "Version": "3.9.1"
+  },
+  {
+    "Author": "Andrew Svetlov",
+    "License": "Apache Software License",
+    "LicenseFile": "/home/dietm/.local/lib/python3.11/site-packages/multidict-6.0.4.dist-info/LICENSE",
+    "LicenseText": "   Copyright 2016-2021 Andrew Svetlov and aio-libs team\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.\n",
+    "Name": "multidict",
+    "URL": "https://github.com/aio-libs/multidict",
+    "Version": "6.0.4"
+  },
+  {
+    "Author": "Andrew Svetlov",
+    "License": "Apache Software License",
+    "LicenseFile": "/usr/local/lib/python3.11/site-packages/multidict-6.0.4.dist-info/LICENSE",
+    "LicenseText": "   Copyright 2016-2021 Andrew Svetlov and aio-libs team\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.\n",
+    "Name": "multidict",
+    "URL": "https://github.com/aio-libs/multidict",
+    "Version": "6.0.4"
+  },
+  {
+    "Author": "Giampaolo Rodola",
+    "License": "BSD License",
+    "LicenseFile": "/home/dietm/.local/lib/python3.11/site-packages/psutil-5.9.6.dist-info/LICENSE",
+    "LicenseText": "BSD 3-Clause License\n\nCopyright (c) 2009, Jay Loden, Dave Daeschler, Giampaolo Rodola\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without modification,\nare permitted provided that the following conditions are met:\n\n * Redistributions of source code must retain the above copyright notice, this\n   list of conditions and the following disclaimer.\n\n * Redistributions in binary form must reproduce the above copyright notice,\n   this list of conditions and the following disclaimer in the documentation\n   and/or other materials provided with the distribution.\n\n * Neither the name of the psutil authors nor the names of its contributors\n   may be used to endorse or promote products derived from this software without\n   specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\nANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\nANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+    "Name": "psutil",
+    "URL": "https://github.com/giampaolo/psutil",
+    "Version": "5.9.6"
+  },
+  {
+    "Author": "Giampaolo Rodola",
+    "License": "BSD License",
+    "LicenseFile": "/usr/local/lib/python3.11/site-packages/psutil-5.9.6.dist-info/LICENSE",
+    "LicenseText": "BSD 3-Clause License\n\nCopyright (c) 2009, Jay Loden, Dave Daeschler, Giampaolo Rodola\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without modification,\nare permitted provided that the following conditions are met:\n\n * Redistributions of source code must retain the above copyright notice, this\n   list of conditions and the following disclaimer.\n\n * Redistributions in binary form must reproduce the above copyright notice,\n   this list of conditions and the following disclaimer in the documentation\n   and/or other materials provided with the distribution.\n\n * Neither the name of the psutil authors nor the names of its contributors\n   may be used to endorse or promote products derived from this software without\n   specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\nANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\nANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+    "Name": "psutil",
+    "URL": "https://github.com/giampaolo/psutil",
+    "Version": "5.9.6"
+  },
+  {
+    "Author": "Matthew Brennan Jones",
+    "License": "MIT License",
+    "LicenseFile": "/home/dietm/.local/lib/python3.11/site-packages/py_cpuinfo-9.0.0.dist-info/LICENSE",
+    "LicenseText": "The MIT License (MIT)\n\nCopyright (c) 2014-2022 Matthew Brennan Jones <matthew.brennan.jones@gmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+    "Name": "py-cpuinfo",
+    "URL": "https://github.com/workhorsy/py-cpuinfo",
+    "Version": "9.0.0"
+  },
+  {
+    "Author": "Matthew Brennan Jones",
+    "License": "MIT License",
+    "LicenseFile": "/usr/local/lib/python3.11/site-packages/py_cpuinfo-9.0.0.dist-info/LICENSE",
+    "LicenseText": "The MIT License (MIT)\n\nCopyright (c) 2014-2022 Matthew Brennan Jones <matthew.brennan.jones@gmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS\nFOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR\nCOPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER\nIN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN\nCONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n",
+    "Name": "py-cpuinfo",
+    "URL": "https://github.com/workhorsy/py-cpuinfo",
+    "Version": "9.0.0"
+  },
+  {
+    "Author": "Chris Liechti",
+    "License": "BSD License",
+    "LicenseFile": "UNKNOWN",
+    "LicenseText": "UNKNOWN",
+    "Name": "pyserial",
+    "URL": "https://github.com/pyserial/pyserial",
+    "Version": "3.5"
+  },
+  {
+    "Author": "Chris Liechti",
+    "License": "BSD License",
+    "LicenseFile": "UNKNOWN",
+    "LicenseText": "UNKNOWN",
+    "Name": "pyserial",
+    "URL": "https://github.com/pyserial/pyserial",
+    "Version": "3.5"
+  },
+  {
+    "Author": "pySerial-team",
+    "License": "BSD License",
+    "LicenseFile": "UNKNOWN",
+    "LicenseText": "UNKNOWN",
+    "Name": "pyserial-asyncio",
+    "URL": "https://github.com/pyserial/pyserial-asyncio",
+    "Version": "0.6"
+  },
+  {
+    "Author": "pySerial-team",
+    "License": "BSD License",
+    "LicenseFile": "UNKNOWN",
+    "LicenseText": "UNKNOWN",
+    "Name": "pyserial-asyncio",
+    "URL": "https://github.com/pyserial/pyserial-asyncio",
+    "Version": "0.6"
+  },
+  {
+    "Author": "Aymeric Augustin <aymeric.augustin@m4x.org>",
+    "License": "BSD License",
+    "LicenseFile": "/home/dietm/.local/lib/python3.11/site-packages/websockets-12.0.dist-info/LICENSE",
+    "LicenseText": "Copyright (c) Aymeric Augustin and contributors\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n    * Redistributions of source code must retain the above copyright notice,\n      this list of conditions and the following disclaimer.\n    * Redistributions in binary form must reproduce the above copyright notice,\n      this list of conditions and the following disclaimer in the documentation\n      and/or other materials provided with the distribution.\n    * Neither the name of the copyright holder nor the names of its contributors\n      may be used to endorse or promote products derived from this software\n      without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+    "Name": "websockets",
+    "URL": "https://github.com/python-websockets/websockets",
+    "Version": "12.0"
+  },
+  {
+    "Author": "Aymeric Augustin <aymeric.augustin@m4x.org>",
+    "License": "BSD License",
+    "LicenseFile": "/usr/local/lib/python3.11/site-packages/websockets-12.0.dist-info/LICENSE",
+    "LicenseText": "Copyright (c) Aymeric Augustin and contributors\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n    * Redistributions of source code must retain the above copyright notice,\n      this list of conditions and the following disclaimer.\n    * Redistributions in binary form must reproduce the above copyright notice,\n      this list of conditions and the following disclaimer in the documentation\n      and/or other materials provided with the distribution.\n    * Neither the name of the copyright holder nor the names of its contributors\n      may be used to endorse or promote products derived from this software\n      without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n",
+    "Name": "websockets",
+    "URL": "https://github.com/python-websockets/websockets",
+    "Version": "12.0"
+  }
+]
