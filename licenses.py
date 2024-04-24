@@ -23,7 +23,7 @@ def get_package_licenses() -> str:
         )
         lic_data = read_lic_data("license_info_hai.json")
         table_str += build_lic_table(lic_data, "hai")
-        
+
         lic_data = read_lic_data("license_info_core.json")
         table_str += build_lic_table(lic_data, "core")
     return table_str
@@ -89,7 +89,7 @@ def build_lic_table(lic_data: list[dict[str, str]], spec: str) -> str:
     for lic_entry in lic_data:
         lic_entry["License"] = get_std_license_name(lic_entry["License"])
         table_str += tr_line
-        table_str += td_line.replace("><", f">{lic_entry["Name"]}<")
+        table_str += td_line.replace("><", f">{lic_entry['Name']}<")
         table_str += td_line.replace("><", f">{lic_entry['Version']}<")
         table_str += td_line.replace("><", f">{get_license_link(lic_entry)}<")
         table_str += td_line.replace("><", f">{lic_entry['Author']}<")
@@ -100,10 +100,11 @@ def build_lic_table(lic_data: list[dict[str, str]], spec: str) -> str:
     table_str += tend_lines
     return html_text_to_link(table_str, True)
 
+
 def get_std_license_name(lic_name: str) -> str:
     """Return unique license name."""
 
-    lic_name = lic_name.replace("  "," ").strip()
+    lic_name = lic_name.replace("  ", " ").strip()
     std_license_names = {
         "apache software license": "Apache 2.0",
         "apache software 2.0": "Apache 2.0",
@@ -114,8 +115,8 @@ def get_std_license_name(lic_name: str) -> str:
         "apache 2": "Apache 2.0",
         "apache": "Apache 2.0",
         "apache license": "Apache 2.0",
-        "gnu affero general public license":"AGPL",
-        "gnu affero general public":"AGPL",
+        "gnu affero general public license": "AGPL",
+        "gnu affero general public": "AGPL",
         "gnu general public license": "GPL",
         "gnu library or lesser general public license": "GPL",
         "gnu general public v3": "GPL",
@@ -142,7 +143,7 @@ def get_std_license_name(lic_name: str) -> str:
         "mpl-2.0": "MPL",
         "mozilla public license": "MPL",
     }
-    
+
     if lic_name.lower() not in std_license_names.keys():
         return lic_name.replace(" License", "")
     return std_license_names[lic_name.lower()]
@@ -206,19 +207,34 @@ def get_license_link(lic_entry: dict[str, str]) -> str:
     lic_link = set_default_license_link(lic_entry["License"])
     return lic_link
 
-def get_license_id_from_text(lic_entry: dict[str,str]) -> str:
+
+def get_license_id_from_text(lic_entry: dict[str, str]) -> str:
     """Try to pick license id from license text."""
 
-    exception_list = ["unknown", "other/proprietary", "license.txt", "license", "type", "zlib/libpng", "?"]
-    if lic_entry["License"].lower() in exception_list and len(lic_entry["LicenseText"]) > 30:
+    exception_list = [
+        "unknown",
+        "other/proprietary",
+        "license.txt",
+        "license",
+        "type",
+        "zlib/libpng",
+        "?",
+    ]
+    if (
+        lic_entry["License"].lower() in exception_list
+        and len(lic_entry["LicenseText"]) > 30
+    ):
         # try to pick license name from text
         idx = lic_entry["LicenseText"].lower().find("license")
-        lic_id = get_std_license_name(lic_entry["LicenseText"][:idx].strip() + " License")
+        lic_id = get_std_license_name(
+            lic_entry["LicenseText"][:idx].strip() + " License"
+        )
         if lic_id in ["Apache 2.0", "BSD", "GPL", "LGPL", "MIT"]:
             lic_entry["License"] = lic_id
         else:
             lic_entry["License"] = "Other/Proprietary"
     return lic_entry["License"]
+
 
 def set_default_license_link(line: str) -> str:
     """Check for know license and set html link to local text file."""
