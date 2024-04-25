@@ -499,6 +499,13 @@ class HbtnModule:
                         props["logic"] = 10
                         props["flags"] = 16
                         props["vis_cmds"] = 65280
+                    case 30:
+                        props["inputs"] = 2
+                        props["outputs"] = 2
+                        props["outputs_dimm"] = 0
+                        props["logic"] = 10
+                        props["flags"] = 16
+                        props["covers"] = 1
             case 11:
                 match type_code[1]:
                     case 1:
