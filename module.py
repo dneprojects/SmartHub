@@ -461,7 +461,7 @@ class HbtnModule:
         props["users"] = 0
         props["fingers"] = 0
         match type_code[0]:
-            case 1:
+            case 1:  # controller module
                 props["buttons"] = 8
                 props["inputs"] = 10
                 props["inputs_230V"] = 4
@@ -479,45 +479,47 @@ class HbtnModule:
                 props["vis_cmds"] = 65280
             case 10:
                 match type_code[1]:
-                    case 1 | 50 | 51:
+                    case 1 | 50 | 51:  # relais module
                         props["outputs"] = 8
                         props["outputs_relais"] = 8
                         props["covers"] = 4
                         props["logic"] = 10
                         props["flags"] = 16
                         props["vis_cmds"] = 16
-                    case 2:
+                    case 2:  # tronic module
                         props["outputs"] = 8
                         props["outputs_230V"] = 8
                         props["covers"] = 4
                         props["logic"] = 10
                         props["flags"] = 16
                         props["vis_cmds"] = 65280
-                    case 20 | 21 | 22:
+                    case 20 | 21 | 22:  # dimm module
                         props["outputs"] = 4
                         props["outputs_dimm"] = 4
                         props["logic"] = 10
                         props["flags"] = 16
                         props["vis_cmds"] = 65280
-                    case 30:
+                    case 30:  # io module
                         props["inputs"] = 2
+                        props["inputs_24V"] = 2
                         props["outputs"] = 2
-                        props["outputs_dimm"] = 0
+                        props["outputs_relais"] = 2
+                        props["covers"] = 1
                         props["logic"] = 10
                         props["flags"] = 16
-                        props["covers"] = 1
+                        props["vis_cmds"] = 65280
             case 11:
                 match type_code[1]:
-                    case 1:
+                    case 1:  # in 230 module
                         props["inputs"] = 8
                         props["inputs_230V"] = 8
-                    case 30 | 31:
+                    case 30 | 31:  # in 24 module
                         props["inputs"] = 8
                         props["inputs_24V"] = 8
-            case 30:
+            case 30:  # ekey module
                 props["users"] = 256
                 props["fingers"] = props["users"] * 10
-            case 50:
+            case 50:  # compact controller module
                 props["buttons"] = 2
                 props["inputs"] = 4
                 props["inputs_230V"] = 0
