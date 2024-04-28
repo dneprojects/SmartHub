@@ -84,7 +84,7 @@ class EventServer:
             ip_len = ord(id_str[0])
             if self.api_srv.is_addon and ip_len > 16:
                 # No ip, take str as token, generated manually
-                return id_str
+                return id_str.replace("\n", "")
             self.api_srv._client_ip = id_str[1 : ip_len + 1]
             self._client_ip = self.api_srv._client_ip
             id_str = id_str[ip_len + 1 :]
@@ -524,10 +524,10 @@ class EventServer:
                 self.websck = await websockets.connect(
                     self._uri,
                     extra_headers={"Authorization": f"Bearer {self.auth_token}"},
-                    open_timeout=2,
+                    open_timeout=3,
                 )
             else:
-                self.websck = await websockets.connect(self._uri, open_timeout=2)
+                self.websck = await websockets.connect(self._uri, open_timeout=3)
             resp = await self.websck.recv()
         except Exception as err_msg:
             await self.close_websocket()
