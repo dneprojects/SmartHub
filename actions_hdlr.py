@@ -167,8 +167,26 @@ class ActionsHdlr(HdlrBase):
                 ).replace("<cmd>", chr(self._p5))
                 self.logger.debug(f"Router {rt}, collective command {self._p5}")
 
+            case spec.DIR_CMD:
+                rt = self._p4
+                mod = self._p5
+                self.check_router_module_no(rt, mod)
+                self.check_arg(
+                    self._args[0], range(1, 26), "Error: direct command no out of range 1..25"
+                )
+                if self.args_err:
+                    return
+                self._rt_command = (
+                    RT_CMDS.CALL_DIR_CMD.replace("<rtr>", chr(rt))
+                    .replace("<mod>", chr(mod))
+                    .replace("<cmd>", chr(self._args[0]))
+                )
+                self.logger.debug(
+                    f"Router {rt}, module {mod}: direct command {self._args[0]}"
+                )
             case spec.FLAG_SET | spec.FLAG_RESET:
-                self.check_router_no(self._p4)
+                rt = self._p4
+                self.check_router_no(rt)
                 self.check_arg(
                     self._p5, range(0, 251), "Error: module no out of range 0..250"
                 )

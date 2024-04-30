@@ -102,8 +102,8 @@ class AdminHdlr(HdlrBase):
                 await self.handle_router_cmd_resp(rt, rt_command)
                 self.response = self.rt_msg._resp_buffer
                 return
-            case spec.RT_FWD_DEL:
-                if self._args[1] == 255:
+            case spec.RT_FWD_DEL | spec.RT_FWD_DELALL:
+                if self._args[1] == 255 or self._spec == spec.RT_FWD_DELALL:
                     self.check_router_no(rt)
                     if self.args_err:
                         return
@@ -150,6 +150,82 @@ class AdminHdlr(HdlrBase):
                 await self.handle_router_cmd_resp(rt, RT_CMDS.GET_MD_LASTERR)
                 self.response = self.rt_msg._resp_msg
                 return
+            case spec.RT_COMM_STAT:
+                self.check_router_module_no(rt, mod)
+                if self.args_err:
+                    return
+                rt_command = RT_CMDS.GET_MD_COMMSTAT.replace("<mod>", chr(mod))
+                await self.handle_router_cmd_resp(rt, rt_command)
+                self.response = self.rt_msg._resp_msg
+                return
+            case spec.RT_RST_COMMERR:
+                self.check_router_module_no(rt, mod)
+                if self.args_err:
+                    return
+                rt_command = RT_CMDS.RST_MD_COMMSTAT.replace("<mod>", chr(mod))
+                await self.handle_router_cmd_resp(rt, rt_command)
+                self.response = self.rt_msg._resp_msg
+                return
+            case spec.RT_CHAN_SET | spec.RT_CHAN_RST:
+                self.check_router_no(rt)
+                if self.args_err:
+                    return
+                chan_mask = self._p5
+                if chan_mask == 0:
+                    rt_command = RT_CMDS.GET_RT_CHAN_STAT
+                elif self._spec == spec.RT_CHAN_SET:
+                    rt_command = RT_CMDS.SET_RT_CHAN.replace("<msk>", chr(chan_mask))
+                elif self._spec == spec.RT_CHAN_SET:
+                    rt_command = RT_CMDS.RES_RT_CHAN.replace("<msk>", chr(chan_mask))
+                await self.handle_router_cmd_resp(rt, RT_CMDS.GET_MD_LASTERR)
+                self.response = self.rt_msg._resp_msg
+                return
+
+            case spec.RT_SET_MODADDR:
+                self.check_router_no(rt)
+                self.check_arg(
+                    self._p5,
+                    range(3),
+                    "Error: mode argument out of range 0..2",
+                )
+                self.check_arg(
+                    self._args[1],
+                    range(1, 5),
+                    "Error: channel no out of range 1..4",
+                )
+                self.check_arg(
+                    self._args[2],
+                    range(1, 251),
+                    "Error: module no out of range 1..250",
+                )
+                self.response = await self.api_srv.routers[
+                    rt - 1
+                ].hdlr.set_module_address(self._p5, self._args[1], self._args[2])
+                if self.args_err:
+                    return
+                return
+            case spec.RT_RST_MODADDR:
+                rt = self._p4
+                mod = self._p5
+                self.check_router_no(rt)
+                self.check_arg(
+                    mod,
+                    [*range(1, 251), 255],
+                    "Error: module no out of range 1..250",
+                )
+                if self.args_err:
+                    return
+                if mod == 255:
+                    mod_list = self.api_srv.routers[rt - 1].mod_addrs
+                else:
+                    mod_list = [mod]
+                for mod in mod_list:
+                    await self.handle_router_cmd_resp(
+                        rt, RT_CMDS.DEL_MD_ADDR.replace("<mod>", chr(mod))
+                    )
+                self.response = "OK"
+                return
+
             case spec.MD_RESTART:
                 self.check_router_no(rt)
                 self.check_arg(

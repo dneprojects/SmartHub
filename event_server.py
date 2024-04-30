@@ -500,7 +500,8 @@ class EventServer:
             # token for 192.168.178.160: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI5NGY2ZjMyZjdhYjE0NzAzYmI4MTc5YjZhOTdhYzdjNSIsImlhdCI6MTcxMzYyMjgxNywiZXhwIjoyMDI4OTgyODE3fQ.2iJQuKgpavJOelH_WHEDe06X2XmAmyHB3FlzkDPl4e0"
             # token for SmartCenter 5:   token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmN2UxMGFhNzcyZTE0ZWY0OGFmOTkzNDVlOTIwNTNlNiIsImlhdCI6MTcxMzUxNDM4MSwiZXhwIjoyMDI4ODc0MzgxfQ.9kpjxhElmWAqTY2zwSsTyLSZiJQZkaV5FX8Pyj9j8HQ"
 
-        if self.auth_token is None or not self.token_ok:
+        if self.api_srv.is_addon and (self.auth_token is None or not self.token_ok):
+            # addon uses environment variable
             self.auth_token = self.get_ident()
             self.logger.info(
                 f"Auth not valid, getting default token: {self.auth_token}"
@@ -524,10 +525,10 @@ class EventServer:
                 self.websck = await websockets.connect(
                     self._uri,
                     extra_headers={"Authorization": f"Bearer {self.auth_token}"},
-                    open_timeout=3,
+                    open_timeout=4,
                 )
             else:
-                self.websck = await websockets.connect(self._uri, open_timeout=3)
+                self.websck = await websockets.connect(self._uri, open_timeout=4)
             resp = await self.websck.recv()
         except Exception as err_msg:
             await self.close_websocket()

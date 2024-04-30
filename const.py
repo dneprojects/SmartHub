@@ -122,9 +122,7 @@ class API_ACTIONS:
     TEMP_SET = 256 * 2 + 1
     VIS_CMD = 256 * 3 + 1
     COLL_CMD = 256 * 4 + 1
-
-    # New commands
-    ALARM_CMD = 256 * 5 + 1
+    DIR_CMD = 256 * 5 + 1
 
     SET_OPR_MODE = 256 * 10 + 1
     SET_SRV_MODE = 256 * 10 + 2
@@ -260,7 +258,7 @@ class API_ADMIN:
     RT_CHAN_RST = 256 * 1 + 7
     RT_FWD_STARTED = 256 * 1 + 8
     RT_SET_MODADDR = 256 * 1 + 9
-    RT_RST_ADDRS = 256 * 1 + 10
+    RT_RST_MODADDR = 256 * 1 + 10
     RT_COMM_STAT = 256 * 1 + 11
     RT_RST_COMMERR = 256 * 1 + 12
     RT_FWD_SET = 256 * 1 + 13
@@ -323,7 +321,6 @@ class RT_CMDS:
 
     GET_RT_NAME = "\x2a<rtr>\x06\x67\x4c\xff"
     GET_RT_STATUS = "\x2a<rtr>\x06\x64L\xff"
-    GET_RT_MODULES = "\x2a<rtr>\x06\x63\x01\xff"
     GET_RT_SW_VERSION = "\x2a<rtr>\x05\xc8\xff"
     GET_RT_SERNO = "\x2a<rtr>\x06\x69\x4c\xff"
     GET_RT_CHANS = "\x2a<rtr>\x07\x63\x50\x4c\xff"
@@ -334,7 +331,6 @@ class RT_CMDS:
     GET_RT_DAYNIGHT = "\x2a<rtr>\x06\x8c\x4c\xff"
     GET_RT_MODENAM = "\x2a<rtr>\x07\x68\x4c<umd>\xff"
     SEND_RT_NAME = "\x2a<rtr>\xff\x67\x53"
-    SEND_RT_CHANS = "\x2a<rtr>\xff\x63\x50\x53"
     CLEAR_RT_SENDBUF = "\x2a<rtr\x07\x66\x02\xc8\xff"
     SEND_RT_TIMEOUT = "\x2a<rtr>\x08\x66\x01\x54<tout>\xff"
     SEND_RT_GRPNO = "\x2a<rtr>\xff\x66\x01\x89\x02"
@@ -348,14 +344,22 @@ class RT_CMDS:
     RT_FORW_DEL_ALL = "\x2a<rtr>\x06\x58\x65\xff"
     RT_FORW_DEL_INT = "\x2a<rtr>\x06\x58\x65\xff"
 
-    GET_RT_CHAN_STAT = "\x2a<rtr>\x08\xee\x01\x43<msk>\xff"
+    GET_RT_CHAN_STAT = "\x2a<rtr>\x07\xee\x01\x43\xff"
     SET_RT_CHAN = "\x2a<rtr>\x08\xee\x02\x43<msk>\xff"
     RES_RT_CHAN = "\x2a<rtr>\x08\xee\x03\x43<msk>\xff"
 
-    GET_MD_COMMSTAT = "\x2a<rtr>\x07\x65<mod>L\xff"
+    GET_MD_COMMSTAT = "\x2a<rtr>\x06\x65<mod>\xff"
+    RST_MD_COMMSTAT = "\x2a<rtr>\x07\x65<mod>L\xff"
     RST_MD_ERRORS = "\x2a<rtr>\x06\x65\xfd\xff"
     GET_MD_LASTERR = "\x2a<rtr>\x06\x65\xfe\xff"
     GET_MD_ERRORS = "\x2a<rtr>\x06\x64\xff\xff"
+
+    GET_RT_MODULES = "\x2a<rtr>\x06\x63\x01\xff"
+    SEND_RT_CHANS = "\x2a<rtr>\xff\x63\x50\x53"
+    DEL_MD_ADDR = "\x2a<rtr>\x07\x63\xb4<mod>\xff"
+    SET_MD_ADDR = "\x2a<rtr>\x08\x63\x4d<ch><mdnew>\xff"  # define in router
+    NEXT_MD_ADDR = "\x2a<rtr>\x08\x63\x6e<ch><mdnew>\xff"
+    CHG_MD_ADDR = "\x2a<rtr>\x0c\x44<mod>\x08\x01<rtr><mdnew>\x42\x53\xff"
 
     GET_AIR_QUAL = "\x2a<rtr>\x0a\x44<mod>\x06\xd2\x03\x14\xff"
     CAL_AIR_QUAL = "\x2a<rtr>\x0f\x44<mod>\x0b\xd2\x03\x14\x01<prc_good><good_long><prc_bad><bad_long>\xff"
@@ -382,6 +386,7 @@ class RT_CMDS:
     SET_COVER_POS = "\x2a<rtr>\x0c\x44<mod>\x08\x12\x45<sob><out><val>\xff"
     SET_TEMP = "\x2a<rtr>\x0b\x44<mod>\x07\xdc<sel><tmpl><tmph>\xff"
     CALL_VIS_CMD = "\x2a<rtr>\x0d\x44<mod>\x09\x1f\xc7\x00\x1f<cmdh><cmdl>\xff"  # hi/lo
+    CALL_DIR_CMD = "\x2a<rtr>\x0d\x44<mod>\x09\x20\xc7\x00\x20<cmd>\x00\xff"
     CALL_COLL_CMD = "\x2a<rtr>\x06\x32<cmd>\xff"
 
     SET_LOGIC_UNIT = "\x2a<rtr>\x0d\x44<mod>\x09\x06\x01\x53<lno><md><act>\xff"
