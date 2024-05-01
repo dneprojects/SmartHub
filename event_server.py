@@ -503,9 +503,9 @@ class EventServer:
 
         if self.api_srv.is_addon and (self.auth_token is None or not self.token_ok):
             # addon uses environment variable
-            self.auth_token = self.get_ident()
+            self.auth_token = os.getenv("SUPERVISOR_TOKEN")
             self.logger.info(
-                f"Auth not valid, getting default token: {self.auth_token}"
+                f"Auth not valid, retry getting SUPERVISOR_TOKEN token: {self.auth_token}"
             )
 
         if self.auth_token is None:
