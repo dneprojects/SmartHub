@@ -175,34 +175,45 @@ class AdminHdlr(HdlrBase):
                     rt_command = RT_CMDS.GET_RT_CHAN_STAT
                 elif self._spec == spec.RT_CHAN_SET:
                     rt_command = RT_CMDS.SET_RT_CHAN.replace("<msk>", chr(chan_mask))
-                elif self._spec == spec.RT_CHAN_SET:
+                elif self._spec == spec.RT_CHAN_RST:
                     rt_command = RT_CMDS.RES_RT_CHAN.replace("<msk>", chr(chan_mask))
-                await self.handle_router_cmd_resp(rt, RT_CMDS.GET_MD_LASTERR)
+                await self.handle_router_cmd_resp(rt, rt_command)
                 self.response = self.rt_msg._resp_msg
+                if len(self.response) == 0:
+                    self.response = "OK"
                 return
 
             case spec.RT_SET_MODADDR:
+                if rt == 0:
+                    rt = self._args[0]
                 self.check_router_no(rt)
                 self.check_arg(
                     self._p5,
                     range(3),
                     "Error: mode argument out of range 0..2",
                 )
-                self.check_arg(
-                    self._args[1],
-                    range(1, 5),
-                    "Error: channel no out of range 1..4",
-                )
+                if self._p5 == 2:
+                    self.check_arg(
+                        self._args[1],
+                        range(1, 251),
+                        "Error: module no out of range 1..250",
+                    )
+                else:
+                    self.check_arg(
+                        self._args[1],
+                        range(1, 5),
+                        "Error: channel no out of range 1..4",
+                    )
                 self.check_arg(
                     self._args[2],
                     range(1, 251),
                     "Error: module no out of range 1..250",
                 )
+                if self.args_err:
+                    return
                 self.response = await self.api_srv.routers[
                     rt - 1
                 ].hdlr.set_module_address(self._p5, self._args[1], self._args[2])
-                if self.args_err:
-                    return
                 return
             case spec.RT_RST_MODADDR:
                 rt = self._p4
@@ -223,7 +234,7 @@ class AdminHdlr(HdlrBase):
                     await self.handle_router_cmd_resp(
                         rt, RT_CMDS.DEL_MD_ADDR.replace("<mod>", chr(mod))
                     )
-                self.response = "OK"
+                self.response = self.rt_msg._resp_msg
                 return
 
             case spec.MD_RESTART:

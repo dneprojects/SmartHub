@@ -488,6 +488,7 @@ class EventServer:
             self.logger.info("Open internal add-on websocket to home assistant.")
             self._uri = "ws://supervisor/core/websocket"
             self.logger.debug(f"URI: {self._uri}")
+            self.auth_token = os.getenv("SUPERVISOR_TOKEN")
         else:
             # Stand-alone SmartHub, use external websocket connection to host ip
             self.logger.info("Open websocket to home assistant.")

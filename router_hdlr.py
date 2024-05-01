@@ -745,13 +745,12 @@ class RtHdlr(HdlrBase):
 
     async def set_module_address(self, mode: int, ch_or_mod: int, new_mod: int):
         """Set module address in router adress table."""
-
         if mode == 0:
             rt_cmd = RT_CMDS.NEXT_MD_ADDR.replace("<ch>", chr(ch_or_mod))
         elif mode == 1:
             rt_cmd = RT_CMDS.SET_MD_ADDR.replace("<ch>", chr(ch_or_mod))
         elif mode == 2:
-            rt_cmd = RT_CMDS.CHG_MD_ADDR.replace("<mod", chr(ch_or_mod))
+            rt_cmd = RT_CMDS.CHG_MD_ADDR.replace("<mod>", chr(ch_or_mod))
         rt_cmd = rt_cmd.replace("<mdnew>", chr(new_mod))
         await self.handle_router_cmd_resp(self.rt_id, rt_cmd)
-        return "OK"
+        return self.rt_msg._resp_msg

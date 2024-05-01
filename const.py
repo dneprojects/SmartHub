@@ -348,7 +348,7 @@ class RT_CMDS:
     SET_RT_CHAN = "\x2a<rtr>\x08\xee\x02\x43<msk>\xff"
     RES_RT_CHAN = "\x2a<rtr>\x08\xee\x03\x43<msk>\xff"
 
-    GET_MD_COMMSTAT = "\x2a<rtr>\x06\x65<mod>\xff"
+    GET_MD_COMMSTAT = "\x2a<rtr>\x07\x65<mod>x\xff"
     RST_MD_COMMSTAT = "\x2a<rtr>\x07\x65<mod>L\xff"
     RST_MD_ERRORS = "\x2a<rtr>\x06\x65\xfd\xff"
     GET_MD_LASTERR = "\x2a<rtr>\x06\x65\xfe\xff"
