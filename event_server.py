@@ -530,6 +530,7 @@ class EventServer:
                 )
             else:
                 self.websck = await websockets.connect(self._uri, open_timeout=4)
+            await asyncio.sleep(1)
             resp = await self.websck.recv()
         except Exception as err_msg:
             await self.close_websocket()
