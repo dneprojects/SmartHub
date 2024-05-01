@@ -526,10 +526,10 @@ class EventServer:
                 self.websck = await websockets.connect(
                     self._uri,
                     extra_headers={"Authorization": f"Bearer {self.auth_token}"},
-                    open_timeout=4,
+                    open_timeout=3,
                 )
             else:
-                self.websck = await websockets.connect(self._uri, open_timeout=4)
+                self.websck = await websockets.connect(self._uri, open_timeout=3)
             resp = await self.websck.recv()
         except Exception as err_msg:
             await self.close_websocket()
