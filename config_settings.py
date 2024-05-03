@@ -112,7 +112,7 @@ def show_router_overview(main_app) -> web.Response:
         return web.Response(text=page, content_type="text/html")
     props = "<h3>Eigenschaften</h3>\n"
     props += "<table>\n"
-    props += f'<tr><td style="width:80px;">Hardware:</td><td>{rtr.serial.decode('iso8859-1')[1:]}</td></tr>\n'
+    props += f'<tr><td style="width:80px;">Hardware:</td><td>{rtr.serial.decode("iso8859-1")[1:]}</td></tr>\n'
     props += (
         f"<tr><td>Firmware:</td><td>{rtr.version.decode('iso8859-1')[1:]}</td></tr>\n"
     )
@@ -146,11 +146,7 @@ def show_router_overview(main_app) -> web.Response:
         mode_str += ", Alarm"
     if mode_str[0] == ",":
         mode_str = mode_str[2:]
-    props += (
-        "<tr><td>Mode:</td><td>"
-        + mode_str
-        + "</td></tr>\n"
-    )
+    props += "<tr><td>Mode:</td><td>" + mode_str + "</td></tr>\n"
     if api_srv._opr_mode:
         props += "<tr><td>Betriebsart:</td><td>Operate</td></tr>\n"
     else:
@@ -160,9 +156,7 @@ def show_router_overview(main_app) -> web.Response:
     else:
         props += "<tr><td>Spiegel:</td><td>inaktiv</td></tr>\n"
     if api_srv.event_mode_enabled and api_srv._opr_mode:
-        props += (
-            "<tr><td>Events:</td><td>aktiv</td></tr>\n"
-        )
+        props += "<tr><td>Events:</td><td>aktiv</td></tr>\n"
     else:
         props += "<tr><td>Events:</td><td>inaktiv</td></tr>\n"
 
