@@ -8,8 +8,9 @@ from messages import calc_crc
 class HbtnModule:
     """Habitron module object, holds complete status."""
 
-    def __init__(self, mod_id: int, rt_id: int, hdlr, api_srv) -> None:
+    def __init__(self, mod_id: int, chan: int, rt_id: int, hdlr, api_srv) -> None:
         self._id: int = mod_id
+        self.channel: int = chan
         self.rt_id = rt_id
         self.logger = logging.getLogger(__name__)
         self._name = ""

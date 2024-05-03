@@ -265,8 +265,11 @@ class API_ADMIN:
     RT_FWD_DEL = 256 * 1 + 14
     RT_FWD_DELALL = 256 * 1 + 15
     RT_SYS_RESTART = 256 * 1 + 16
+    RT_BOOT_STAT = 256 * 1 + 17
 
     MD_RESTART = 256 * 3 + 1
+    MD_CHAN_SET = 256 * 3 + 6
+    MD_CHAN_RST = 256 * 3 + 7
 
     RT_WRAPPER_SEND = 256 * 4 + 0
     RT_WRAPPER_RECV = 256 * 4 + 1
@@ -347,6 +350,7 @@ class RT_CMDS:
     GET_RT_CHAN_STAT = "\x2a<rtr>\x07\xee\x01\x43\xff"
     SET_RT_CHAN = "\x2a<rtr>\x08\xee\x02\x43<msk>\xff"
     RES_RT_CHAN = "\x2a<rtr>\x08\xee\x03\x43<msk>\xff"
+    GET_RT_BOOTSTAT = "\x2a<rtr>\x06\x6a\x4c\xff"
 
     GET_MD_COMMSTAT = "\x2a<rtr>\x07\x65<mod>x\xff"
     RST_MD_COMMSTAT = "\x2a<rtr>\x07\x65<mod>L\xff"

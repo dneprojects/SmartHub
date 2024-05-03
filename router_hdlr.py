@@ -49,8 +49,22 @@ class RtHdlr(HdlrBase):
                 )
         if ret_msg[-2] == RT_STAT_CODES.SYS_PROBLEMS:
             self.logger.warning(
-                f"Router {self.rt_id} running, boot finished with module problems"
+                f"Router {self.rt_id} running, boot finished with module problems:"
             )
+            boot_status = await self.rtr.get_boot_stat()
+            for err in range(boot_status[0]):
+                mod = boot_status[2 * err + 1]
+                err_mask = boot_status[2 * err + 2]
+                mod_errs = ""
+                if err_mask & 0x04:
+                    mod_errs += " Unknown module type "
+                if err_mask & 0x02:
+                    mod_errs += " Mirror problems "
+                if err_mask & 0x01:
+                    mod_errs += " Forward problems"
+                mod_errs = mod_errs.replace("  ", ", ")
+                self.logger.warning(f"   Boot error with module {mod}: {mod_errs}")
+
         else:
             self.logger.info(f"Router {self.rt_id} running")
 
@@ -112,7 +126,14 @@ class RtHdlr(HdlrBase):
             # switch to Srv mode made without response, may be still in buffer
             await self.handle_router_resp(self.rt_id)
         self.rtr.channels = self.rt_msg._resp_msg
-        self.rtr.mode0 = self.rtr.channels[1]
+        ptr = 1
+        for ch_i in range(4):
+            self.rtr.channel_list[ch_i + 1] = []
+            for mod_i in range(self.rtr.channels[ptr]):
+                self.rtr.channel_list[ch_i + 1].append(
+                    int(self.rtr.channels[ptr + 1 + mod_i])
+                )
+            ptr += self.rtr.channels[ptr] + 2
         return self.rtr.channels
 
     async def get_rt_timeout(self) -> bytes:

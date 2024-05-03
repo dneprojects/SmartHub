@@ -34,6 +34,7 @@ class WEBSOCK_MSG:
 
     auth_msg = {"type": "auth", "access_token": ""}
     ping_msg = {"id": 1, "type": "ping"}
+    config_msg = {"id": 1, "type": "get_config"}
     call_service_msg = {
         "id": 1,
         "type": "call_service",
@@ -449,15 +450,31 @@ class EventServer:
                 resp = await self.websck.recv()
                 self.logger.debug(f"Notify returned {resp}")
 
+    async def get_ha_config(self):
+        """Query home assistant config."""
+        if self.websck_is_closed:
+            success = await self.open_websocket()
+        else:
+            success = True
+        if not success:
+            self.logger.warning("Failed to get ha config via websocket, open failed")
+            return
+        ws_cmd = WEBSOCK_MSG.config_msg
+        self.notify_id += 1
+        ws_cmd["id"] = self.notify_id
+        await self.websck.send(json.dumps(ws_cmd))  # Send command
+        resp = await self.websck.recv()
+        return resp
+
     async def ping_pong_reconnect(self) -> bool:
         """Check for living websocket connection, reconnect if needed."""
         success = await self.open_websocket()
         if success:
             try:
-                event_cmd = WEBSOCK_MSG.ping_msg
+                ws_cmd = WEBSOCK_MSG.ping_msg
                 self.notify_id += 1
-                event_cmd["id"] = self.notify_id
-                await self.websck.send(json.dumps(event_cmd))  # Send command
+                ws_cmd["id"] = self.notify_id
+                await self.websck.send(json.dumps(ws_cmd))  # Send command
                 resp = await self.websck.recv()
                 if json.loads(resp)["type"] == "pong":
                     self.logger.debug("Received pong from event server")
@@ -564,6 +581,7 @@ class EventServer:
         else:
             self.logger.info(f"Websocket connected to {self._uri}, response: {resp}")
             self.token_ok = True
+            await self.get_ha_config()
         self.websck_is_closed = False
         return True
 

@@ -110,12 +110,11 @@ def show_router_overview(main_app) -> web.Response:
         )
         page = adjust_settings_button(page, "", f"{0}")
         return web.Response(text=page, content_type="text/html")
-    props = "<h3>Eigenschaften</h3>"
+    props = "<h3>Eigenschaften</h3>\n"
+    props += "<table>\n"
+    props += f'<tr><td style="width:80px;">Hardware:</td><td>{rtr.serial.decode('iso8859-1')[1:]}</td></tr>\n'
     props += (
-        f"Hardware:&nbsp;&nbsp;&nbsp;&nbsp;{rtr.serial.decode('iso8859-1')[1:]}<br>"
-    )
-    props += (
-        f"Firmware:&nbsp;&nbsp;&nbsp;&nbsp;{rtr.version.decode('iso8859-1')[1:]}<br>"
+        f"<tr><td>Firmware:</td><td>{rtr.version.decode('iso8859-1')[1:]}</td></tr>\n"
     )
     mode0 = rtr.mode0
     config_mode = mode0 == SYS_MODES.Config
@@ -148,25 +147,26 @@ def show_router_overview(main_app) -> web.Response:
     if mode_str[0] == ",":
         mode_str = mode_str[2:]
     props += (
-        "Mode:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+        "<tr><td>Mode:</td><td>"
         + mode_str
-        + "<br>"
+        + "</td></tr>\n"
     )
     if api_srv._opr_mode:
-        props += "Betriebsart:&nbsp;&nbsp;Operate<br>"
+        props += "<tr><td>Betriebsart:</td><td>Operate</td></tr>\n"
     else:
-        props += "Betriebsart:&nbsp;&nbsp;Client/Server<br>"
+        props += "<tr><td>Betriebsart:</td><td>Client/Server</td></tr>\n"
     if api_srv.mirror_mode_enabled and api_srv._opr_mode:
-        props += "Spiegel:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aktiv<br>"
+        props += "<tr><td>Spiegel:</td><td>aktiv</td></tr>\n"
     else:
-        props += "Spiegel:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inaktiv<br>"
+        props += "<tr><td>Spiegel:</td><td>inaktiv</td></tr>\n"
     if api_srv.event_mode_enabled and api_srv._opr_mode:
         props += (
-            "Events:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;aktiv<br>"
+            "<tr><td>Events:</td><td>aktiv</td></tr>\n"
         )
     else:
-        props += "Events:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inaktiv<br>"
+        props += "<tr><td>Events:</td><td>inaktiv</td></tr>\n"
 
+    props += "</table>\n"
     def_filename = "my_router.hrt"
     page = fill_page_template(
         f"Router '{rtr._name}'", type_desc, props, side_menu, "router.jpg", def_filename
@@ -354,12 +354,15 @@ def fill_settings_template(main_app, title, subtitle, step, settings, key: str) 
 
 def get_module_properties(mod) -> str:
     """Return module properties, like firmware."""
-    props = "<h3>Eigenschaften</h3>"
-    props += f"Adresse:&nbsp;&nbsp;&nbsp;{mod._id}<br>"
+    props = "<h3>Eigenschaften</h3>\n"
+    props += "<table>\n"
+    props += f'<tr><td style="width:80px;">Adresse:</td><td>{mod._id}</td></tr>\n'
+    props += f"<tr><td>Kanal:</td><td>{mod.channel}</td></tr>\n"
     ser = mod.get_serial()
     if len(ser) > 0:
-        props += f"Hardware:&nbsp;&nbsp;{mod.get_serial()}<br>"
-    props += f"Firmware:&nbsp;&nbsp;{mod.get_sw_version()}<br>"
+        props += f"<tr><td>Hardware:</td><td>{mod.get_serial()}</td></tr>\n"
+    props += f"<tr><td>Firmware:</td><td>{mod.get_sw_version()}</td></tr>\n"
+    props += "</table>\n"
     return props
 
 

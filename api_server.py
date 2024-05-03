@@ -50,10 +50,10 @@ class ApiServer:
         self.token = os.getenv("SUPERVISOR_TOKEN")
         if self.token is None:
             self.is_addon: bool = False
-            self.logger.info("Running Smart Hub")
+            self.logger.info("Smart Hub running")
         else:
             self.is_addon: bool = True
-            self.logger.info("Running Smart Center")
+            self.logger.info("Smart Center running")
 
     async def get_initial_status(self):
         """Starts router object and reads complete system status"""

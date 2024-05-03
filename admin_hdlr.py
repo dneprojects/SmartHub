@@ -150,13 +150,20 @@ class AdminHdlr(HdlrBase):
                 await self.handle_router_cmd_resp(rt, RT_CMDS.GET_MD_LASTERR)
                 self.response = self.rt_msg._resp_msg
                 return
+            case spec.RT_BOOT_STAT:
+                self.check_router_no(rt)
+                if self.args_err:
+                    return
+                rtr = self.api_srv.routers[rt - 1]
+                self.response = await rtr.get_boot_stat()
+                return
             case spec.RT_COMM_STAT:
                 self.check_router_module_no(rt, mod)
                 if self.args_err:
                     return
                 rt_command = RT_CMDS.GET_MD_COMMSTAT.replace("<mod>", chr(mod))
                 await self.handle_router_cmd_resp(rt, rt_command)
-                self.response = self.rt_msg._resp_msg
+                self.response = self.rt_msg._resp_buffer[5:-1]
                 return
             case spec.RT_RST_COMMERR:
                 self.check_router_module_no(rt, mod)
@@ -176,6 +183,22 @@ class AdminHdlr(HdlrBase):
                 elif self._spec == spec.RT_CHAN_SET:
                     rt_command = RT_CMDS.SET_RT_CHAN.replace("<msk>", chr(chan_mask))
                 elif self._spec == spec.RT_CHAN_RST:
+                    rt_command = RT_CMDS.RES_RT_CHAN.replace("<msk>", chr(chan_mask))
+                await self.handle_router_cmd_resp(rt, rt_command)
+                self.response = self.rt_msg._resp_msg
+                if len(self.response) == 0:
+                    self.response = "OK"
+                return
+            case spec.MD_CHAN_SET | spec.MD_CHAN_RST:
+                self.check_router_module_no(rt, mod)
+                if self.args_err:
+                    return
+                rtr = self.api_srv.routers[rt - 1]
+                rt_chan = rtr.get_channel(mod) - 1
+                chan_mask = (1 << (2 * rt_chan)) + (1 << ((2 * rt_chan) + 1))
+                if self._spec == spec.MD_CHAN_SET:
+                    rt_command = RT_CMDS.SET_RT_CHAN.replace("<msk>", chr(chan_mask))
+                elif self._spec == spec.MD_CHAN_RST:
                     rt_command = RT_CMDS.RES_RT_CHAN.replace("<msk>", chr(chan_mask))
                 await self.handle_router_cmd_resp(rt, rt_command)
                 self.response = self.rt_msg._resp_msg

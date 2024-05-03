@@ -46,7 +46,7 @@ class QueryServer:
                 self.q_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, True)
                 self.q_sock.bind((ANY_IP, QUERY_PORT))
                 self.q_sock.settimeout(0.00002)
-                self.logger.info("Query server started")
+                self.logger.info("Query server running")
 
                 self._q_running = True
                 while self._q_running:

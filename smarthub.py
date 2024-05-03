@@ -253,7 +253,7 @@ class SmartHub:
         self.server = await asyncio.start_server(
             api_srv.handle_api_command, self._host_ip, SMHUB_PORT
         )
-        self.logger.info("API server started")
+        self.logger.info("API server running")
         async with self.server:
             try:
                 await self.server.serve_forever()
@@ -279,7 +279,7 @@ def setup_logging() -> Logger:
 async def open_serial_interface(device, logger) -> tuple[StreamReader, StreamWriter]:
     """Open serial connection of given device."""
 
-    logger.info(f"Open serial connection: {device}")
+    logger.info(f"   Open serial connection: {device}")
     ser_rd, ser_wr = await serial_asyncio.open_serial_connection(
         url=device,
         baudrate=RT_BAUDRATE,
@@ -293,7 +293,7 @@ async def open_serial_interface(device, logger) -> tuple[StreamReader, StreamWri
     buf_content = len(ser_rd.__getattribute__("_buffer"))
     if buf_content:
         await ser_rd.readexactly(buf_content)
-        logger.info(f"Emptied serial read buffer of {device}")
+        logger.info(f"   Emptied serial read buffer of {device}")
     return (ser_rd, ser_wr)
 
 
@@ -316,7 +316,7 @@ async def init_serial(logger):
     try:
         rt_serial = await open_serial_interface(def_device, logger)
     except Exception as err_msg:
-        logger.info(f"Error opening {def_device}: {err_msg}")
+        logger.info(f"   Error opening {def_device}: {err_msg}")
 
     try:
         new_query = True
@@ -332,36 +332,36 @@ async def init_serial(logger):
                 resp_buf = reading.result()
                 if len(resp_buf) < 4:
                     # sometimes just 0xff comes, needs another read
-                    logger.debug(f"Unexpected short test response: {resp_buf}")
+                    logger.debug(f"   Unexpected short test response: {resp_buf}")
                     new_query = False
                 elif new_query and (resp_buf[4] == 0x87):
-                    logger.info("Router available")
+                    logger.info("   Router available")
                     router_booting = False
                 elif (not new_query) and (resp_buf[3] == 0x87):
-                    logger.info("Router available")
+                    logger.info("   Router available")
                     router_booting = False
                 elif new_query and (resp_buf[4] == 0xFD):  # 253
-                    logger.info("Waiting for router booting...")
+                    logger.info("   Waiting for router booting...")
                     await asyncio.sleep(5)
                     new_query = True
                 elif (not new_query) and (resp_buf[3] == 0xFD):  # 253
-                    logger.info("Waiting for router booting...")
+                    logger.info("   Waiting for router booting...")
                     await asyncio.sleep(5)
                     new_query = True
                 elif resp_buf[1:-1] == b"#\x01\x06\xc9\xff":
-                    logger.info("Router in ISP mode. Restarting system...")
+                    logger.info("   Router in ISP mode. Restarting system...")
                     rt_cmd = prepare_buf_crc(
                         RT_CMDS.SYSTEM_RESTART.replace("<rtr>", chr(RT_DEF_ADDR))
                     )
                     rt_serial[1].write(rt_cmd.encode("iso8859-1"))
                 else:
-                    logger.info("Retry to connect router")
-                    logger.debug(f"Unexpected test response: {resp_buf}")
+                    logger.info("   Retry to connect router")
+                    logger.debug(f"   Unexpected test response: {resp_buf}")
                     new_query = True
             else:
-                raise Exception("No test response received")
+                raise Exception("   No test response received")
     except Exception as err_msg:
-        logger.error(f"Error during test stop mirror command: {err_msg}")
+        logger.error(f"   Error during test stop mirror command: {err_msg}")
         rt_serial = None
     return rt_serial
 
@@ -386,23 +386,23 @@ async def main(ev_loop):
         while (rt_serial is None) and (retry_serial >= 0):
             if retry_serial < retry_max:
                 logger.warning(
-                    f"Initialization of serial connection failed, retry {retry_max-retry_serial}"
+                    f"   Initialization of serial connection failed, retry {retry_max-retry_serial}"
                 )
             rt_serial = await init_serial(logger)
             retry_serial -= 1
         if rt_serial is None:
             init_flag = False
-            logger.error("Initialization of serial connection failed")
+            logger.error("   Initialization of serial connection failed")
         # Instantiate query object
-        logger.debug("Initializing query server")
+        logger.debug("   Initializing query server")
         sm_hub.q_srv = QueryServer(ev_loop, sm_hub.lan_mac)
         await sm_hub.q_srv.initialize()
         # Instantiate api_server object
         sm_hub.api_srv = ApiServer(ev_loop, sm_hub, rt_serial)
         # Instantiate config server object
-        logger.debug("Initializing config server")
+        logger.debug("   Initializing config server")
         sm_hub.conf_srv = ConfigServer(sm_hub.api_srv)
-        logger.debug("Initializing API server")
+        logger.debug("   Initializing API server")
         await sm_hub.conf_srv.initialize()  # ignore_ type
         if init_flag:
             await sm_hub.api_srv.get_initial_status()
@@ -424,9 +424,9 @@ async def main(ev_loop):
             skip_init = sm_hub.tg.create_task(
                 sm_hub.run_api_server(sm_hub.api_srv), name="api_srv"
             )
-            logger.debug("Starting query server")
+            logger.debug("   Starting query server")
             sm_hub.tg.create_task(sm_hub.q_srv.run_query_srv(), name="q_srv")
-            logger.debug("Starting config server")
+            logger.debug("   Starting config server")
             await sm_hub.conf_srv.prepare()
             sm_hub.tg.create_task(sm_hub.conf_srv.site.start(), name="conf_srv")
             logger.info("Config server running")

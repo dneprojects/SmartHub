@@ -36,6 +36,7 @@ class HbtnRouter:
         self.fw_upload: bytes = b""
         self.name: bytes = b""
         self.channels: bytes = b""
+        self.channel_list: dict[int, list[int]] = {}
         self.timeout: bytes = b""
         self.groups: bytes = b""
         self.mode_dependencies: bytes = b""
@@ -60,7 +61,7 @@ class HbtnRouter:
         self.status = await self.hdlr.get_rt_full_status()
         self.chan_status = await self.hdlr.get_rt_status()
         self.build_smr()
-        self.logger.info("Router status initialized")
+        self.logger.info("Router initialized")
         modules = await self.hdlr.get_rt_modules()
         return modules
 
@@ -72,6 +73,7 @@ class HbtnRouter:
         modules = await self.get_full_status()
         self.load_descriptions()
 
+        self.logger.info("Setting up modules...")
         for m_idx in range(modules[0]):
             self.mod_addrs.append(modules[m_idx + 1])
         self.mod_addrs.sort()
@@ -81,19 +83,20 @@ class HbtnRouter:
                 self.modules.append(
                     HbtnModule(
                         mod_addr,
+                        self.get_channel(mod_addr),
                         self._id,
                         ModHdlr(mod_addr, self.api_srv),
                         self.api_srv,
                     )
                 )
-                self.logger.debug(f"Module {mod_addr} instantiated")
+                self.logger.debug(f"   Module {mod_addr} instantiated")
                 await self.modules[-1].initialize()
-                self.logger.info(f"Module {mod_addr} initialized")
+                self.logger.info(f"   Module {mod_addr} initialized")
             except Exception as err_msg:
-                self.logger.error(f"Failed to setup module {mod_addr}: {err_msg}")
+                self.logger.error(f"   Failed to setup module {mod_addr}: {err_msg}")
                 self.modules.remove(self.modules[-1])
                 mods_to_remove.append(mod_addr)
-                self.logger.warning(f"Module {mod_addr} removed")
+                self.logger.warning(f"   Module {mod_addr} removed")
         for mod_addr in mods_to_remove:
             self.mod_addrs.remove(mod_addr)
 
@@ -134,6 +137,13 @@ class HbtnRouter:
         for mod in self.modules:
             mod_list.append(Mdle(mod._id, mod._typ, mod._name, mod.get_sw_version()))
         return mod_list
+
+    def get_channel(self, mod_addr: int) -> int:
+        """Return router channel of module."""
+        for ch_i in range(4):
+            if mod_addr in self.channel_list[ch_i + 1]:
+                return ch_i + 1
+        return 0
 
     def build_smr(self) -> None:
         """Build SMR file content from status."""
@@ -177,6 +187,12 @@ class HbtnRouter:
                 self.logger.error("Not in Srv mode when switching to config mode!")
                 await self.api_srv.set_server_mode(self._id)
         return
+
+    async def get_boot_stat(self) -> bytes:
+        """Ask for boot errors."""
+        rt_command = RT_CMDS.GET_RT_BOOTSTAT
+        await self.hdlr.handle_router_cmd_resp(self._id, rt_command)
+        return self.hdlr.rt_msg._resp_msg
 
     async def flush_buffer(self) -> None:
         """Empty router buffer."""
