@@ -1,0 +1,948 @@
+abseil-cpp-base-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-base
+  <https://abseil.io/>
+
+abseil-cpp-city-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-city
+  <https://abseil.io/>
+
+abseil-cpp-cord-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-cord
+  <https://abseil.io/>
+
+abseil-cpp-cord-internal-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-cord-internal
+  <https://abseil.io/>
+
+abseil-cpp-cordz-functions-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-cordz-functions
+  <https://abseil.io/>
+
+abseil-cpp-cordz-handle-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-cordz-handle
+  <https://abseil.io/>
+
+abseil-cpp-cordz-info-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-cordz-info
+  <https://abseil.io/>
+
+abseil-cpp-crc-cord-state-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-crc-cord-state
+  <https://abseil.io/>
+
+abseil-cpp-crc-internal-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-crc-internal
+  <https://abseil.io/>
+
+abseil-cpp-crc32c-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-crc32c
+  <https://abseil.io/>
+
+abseil-cpp-debugging-internal-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-debugging-internal
+  <https://abseil.io/>
+
+abseil-cpp-die-if-null-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-die-if-null
+  <https://abseil.io/>
+
+abseil-cpp-examine-stack-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-examine-stack
+  <https://abseil.io/>
+
+abseil-cpp-exponential-biased-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-exponential-biased
+  <https://abseil.io/>
+
+abseil-cpp-hash-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-hash
+  <https://abseil.io/>
+
+abseil-cpp-int128-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-int128
+  <https://abseil.io/>
+
+abseil-cpp-kernel-timeout-internal-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-kernel-timeout-internal
+  <https://abseil.io/>
+
+abseil-cpp-log-globals-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-log-globals
+  <https://abseil.io/>
+
+abseil-cpp-log-internal-check-op-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-log-internal-check-op
+  <https://abseil.io/>
+
+abseil-cpp-log-internal-conditions-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-log-internal-conditions
+  <https://abseil.io/>
+
+abseil-cpp-log-internal-format-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-log-internal-format
+  <https://abseil.io/>
+
+abseil-cpp-log-internal-globals-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-log-internal-globals
+  <https://abseil.io/>
+
+abseil-cpp-log-internal-log-sink-set-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-log-internal-log-sink-set
+  <https://abseil.io/>
+
+abseil-cpp-log-internal-message-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-log-internal-message
+  <https://abseil.io/>
+
+abseil-cpp-log-internal-nullguard-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-log-internal-nullguard
+  <https://abseil.io/>
+
+abseil-cpp-log-internal-proto-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-log-internal-proto
+  <https://abseil.io/>
+
+abseil-cpp-log-sink-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-log-sink
+  <https://abseil.io/>
+
+abseil-cpp-low-level-hash-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-low-level-hash
+  <https://abseil.io/>
+
+abseil-cpp-malloc-internal-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-malloc-internal
+  <https://abseil.io/>
+
+abseil-cpp-raw-hash-set-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-raw-hash-set
+  <https://abseil.io/>
+
+abseil-cpp-raw-logging-internal-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-raw-logging-internal
+  <https://abseil.io/>
+
+abseil-cpp-spinlock-wait-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-spinlock-wait
+  <https://abseil.io/>
+
+abseil-cpp-stacktrace-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-stacktrace
+  <https://abseil.io/>
+
+abseil-cpp-status-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-status
+  <https://abseil.io/>
+
+abseil-cpp-statusor-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-statusor
+  <https://abseil.io/>
+
+abseil-cpp-str-format-internal-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-str-format-internal
+  <https://abseil.io/>
+
+abseil-cpp-strerror-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-strerror
+  <https://abseil.io/>
+
+abseil-cpp-strings-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-strings
+  <https://abseil.io/>
+
+abseil-cpp-strings-internal-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-strings-internal
+  <https://abseil.io/>
+
+abseil-cpp-symbolize-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-symbolize
+  <https://abseil.io/>
+
+abseil-cpp-synchronization-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-synchronization
+  <https://abseil.io/>
+
+abseil-cpp-throw-delegate-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-throw-delegate
+  <https://abseil.io/>
+
+abseil-cpp-time-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-time
+  <https://abseil.io/>
+
+abseil-cpp-time-zone-20230802.1-r0 aarch64 {abseil-cpp} (Apache-2.0) [installed]
+  Abseil Common C++ library: abseil-cpp-time-zone
+  <https://abseil.io/>
+
+ack-3.7.0-r1 aarch64 {ack} (Artistic-2.0) [installed]
+  A Perl-powered replacement for grep
+  <https://beyondgrep.com/>
+
+alpine-baselayout-3.4.3-r2 aarch64 {alpine-baselayout} (GPL-2.0-only) [installed]
+  Alpine base dir structure and init scripts
+  <https://git.alpinelinux.org/cgit/aports/tree/main/alpine-baselayout>
+
+alpine-baselayout-data-3.4.3-r2 aarch64 {alpine-baselayout} (GPL-2.0-only) [installed]
+  Alpine base dir structure and init scripts
+  <https://git.alpinelinux.org/cgit/aports/tree/main/alpine-baselayout>
+
+alpine-keys-2.4-r1 aarch64 {alpine-keys} (MIT) [installed]
+  Public keys for Alpine Linux packages
+  <https://alpinelinux.org>
+
+alsa-lib-1.2.10-r0 aarch64 {alsa-lib} (LGPL-2.1-or-later) [installed]
+  Advanced Linux Sound Architecture (ALSA) library
+  <https://alsa-project.org/>
+
+alsa-plugins-pulse-1.2.7.1-r2 aarch64 {alsa-plugins} (GPL-2.0-or-later LGPL-2.1-or-later) [installed]
+  Pulseaudio support plugins for alsa-only applications
+  <https://alsa-project.org/>
+
+alsa-ucm-conf-1.2.10-r0 aarch64 {alsa-ucm-conf} (BSD-3-Clause) [installed]
+  ALSA Use Case Manager configuration
+  <https://alsa-project.org>
+
+alsa-utils-1.2.10-r0 aarch64 {alsa-utils} (GPL-2.0-or-later) [installed]
+  Advanced Linux Sound Architecture (ALSA) utilities
+  <https://alsa-project.org/>
+
+apk-tools-2.14.0-r5 aarch64 {apk-tools} (GPL-2.0-only) [installed]
+  Alpine Package Keeper - package manager for alpine
+  <https://gitlab.alpinelinux.org/alpine/apk-tools>
+
+apk-tools-zsh-completion-2.14.0-r5 aarch64 {apk-tools} (GPL-2.0-only) [installed]
+  Zsh completions for apk-tools
+  <https://gitlab.alpinelinux.org/alpine/apk-tools>
+
+awake-1.0-r9 aarch64 {awake} (GPL-3.0) [installed]
+  python command and library to 'wake on lan' a remote host
+  <https://github.com/cyraxjoe/awake>
+
+bash-5.2.21-r0 aarch64 {bash} (GPL-3.0-or-later) [installed]
+  The GNU Bourne Again shell
+  <https://www.gnu.org/software/bash/bash.html>
+
+bash-completion-2.11-r6 aarch64 {bash-completion} (GPL-2.0-or-later) [installed]
+  Command-line tab-completion for bash
+  <https://github.com/scop/bash-completion>
+
+bind-libs-9.18.24-r1 aarch64 {bind} (MPL-2.0) [installed]
+  The ISC DNS server (libraries)
+  <https://www.isc.org/>
+
+bind-tools-9.18.24-r1 aarch64 {bind} (MPL-2.0) [installed]
+  The ISC DNS tools
+  <https://www.isc.org/>
+
+bluez-5.70-r0 aarch64 {bluez} (GPL-2.0-or-later AND BSD-2-Clause AND MIT) [installed]
+  Tools for the Bluetooth protocol stack
+  <http://www.bluez.org/>
+
+bluez-zsh-completion-5.70-r0 aarch64 {bluez} (GPL-2.0-or-later AND BSD-2-Clause AND MIT) [installed]
+  Zsh completions for bluez
+  <http://www.bluez.org/>
+
+brotli-libs-1.1.0-r1 aarch64 {brotli} (MIT) [installed]
+  Generic lossless compressor (libraries)
+  <https://github.com/google/brotli>
+
+busybox-1.36.1-r15 aarch64 {busybox} (GPL-2.0-only) [installed]
+  Size optimized toolbox of many common UNIX utilities
+  <https://busybox.net/>
+
+busybox-binsh-1.36.1-r15 aarch64 {busybox} (GPL-2.0-only) [installed]
+  busybox ash /bin/sh
+  <https://busybox.net/>
+
+c-ares-1.24.0-r1 aarch64 {c-ares} (MIT) [installed]
+  Asynchronous DNS/names resolver library
+  <https://c-ares.org/>
+
+ca-certificates-20230506-r0 aarch64 {ca-certificates} (MPL-2.0 AND MIT) [installed]
+  Common CA certificates PEM files from Mozilla
+  <https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/>
+
+ca-certificates-bundle-20230506-r0 aarch64 {ca-certificates} (MPL-2.0 AND MIT) [installed]
+  Pre generated bundle of Mozilla certificates
+  <https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/>
+
+cjson-1.7.17-r0 aarch64 {cjson} (MIT) [installed]
+  Lighweight JSON parser in C
+  <https://github.com/DaveGamble/cJSON>
+
+colordiff-1.0.21-r0 aarch64 {colordiff} (GPL-2.0-or-later) [installed]
+  Color terminal highlighter for diff files
+  <https://www.colordiff.org>
+
+curl-8.5.0-r0 aarch64 {curl} (curl) [installed]
+  URL retrival utility and library
+  <https://curl.se/>
+
+curl-zsh-completion-8.5.0-r0 aarch64 {curl} (curl) [installed]
+  Zsh completions for curl
+  <https://curl.se/>
+
+dbus-1.14.10-r0 aarch64 {dbus} (AFL-2.1 OR GPL-2.0-or-later) [installed]
+  Freedesktop.org message bus system
+  <https://www.freedesktop.org/Software/dbus>
+
+dbus-daemon-launch-helper-1.14.10-r0 aarch64 {dbus} (AFL-2.1 OR GPL-2.0-or-later) [installed]
+  DBus SUID launch helper for autospawning
+  <https://www.freedesktop.org/Software/dbus>
+
+dbus-libs-1.14.10-r0 aarch64 {dbus} (AFL-2.1 OR GPL-2.0-or-later) [installed]
+  D-BUS access libraries
+  <https://www.freedesktop.org/Software/dbus>
+
+dialog-1.3.20231002-r0 aarch64 {dialog} (LGPL-2.1-only) [installed]
+  Script interpreter providing curses widgets
+  <https://invisible-island.net/dialog/dialog.html>
+
+diffutils-3.10-r0 aarch64 {diffutils} (GPL-3.0-or-later) [installed]
+  Show differences among files
+  <https://www.gnu.org/software/diffutils/>
+
+docker-bash-completion-25.0.3-r1 aarch64 {docker} (Apache-2.0) [installed]
+  Bash completions for docker
+  <https://www.docker.io/>
+
+docker-zsh-completion-25.0.3-r1 aarch64 {docker} (Apache-2.0) [installed]
+  Zsh completions for docker
+  <https://www.docker.io/>
+
+eudev-libs-3.2.14-r0 aarch64 {eudev} (GPL-2.0-or-later) [installed]
+  Dynamic library to access udev device information
+  <https://github.com/eudev-project/eudev>
+
+fftw-single-libs-3.3.10-r5 aarch64 {fftw} (GPL-2.0-or-later) [installed]
+  Discrete Fourier transform (DFT) library
+  <http://www.fftw.org/>
+
+fstrm-0.6.1-r4 aarch64 {fstrm} (MIT) [installed]
+  Frame Streams implementation in C
+  <https://github.com/farsightsec/fstrm>
+
+gcompat-1.1.0-r4 aarch64 {gcompat} (NCSA) [installed]
+  GNU C Library compatibility layer for musl
+  <https://git.adelielinux.org/adelie/gcompat>
+
+gdbm-1.23-r1 aarch64 {gdbm} (GPL-3.0-or-later) [installed]
+  GNU dbm is a set of database routines that use extensible hashing
+  <https://www.gnu.org/software/gdbm/>
+
+git-2.43.0-r0 aarch64 {git} (GPL-2.0-only) [installed]
+  Distributed version control system
+  <https://www.git-scm.com/>
+
+git-bash-completion-2.43.0-r0 aarch64 {git} (GPL-2.0-only) [installed]
+  Bash completions for git
+  <https://www.git-scm.com/>
+
+git-perl-2.43.0-r0 aarch64 {git} (GPL-2.0-only) [installed]
+  Additional Git commands that requires perl
+  <https://www.git-scm.com/>
+
+git-zsh-completion-5.9-r2 aarch64 {zsh} (custom) [installed]
+  Zsh completions for git
+  <https://www.zsh.org/>
+
+glib-2.78.4-r0 aarch64 {glib} (LGPL-2.1-or-later) [installed]
+  Common C routines used by Gtk+ and other libs
+  <https://developer.gnome.org/glib/>
+
+glib-bash-completion-2.78.4-r0 aarch64 {glib} (LGPL-2.1-or-later) [installed]
+  Bash completions for glib
+  <https://developer.gnome.org/glib/>
+
+htop-3.2.2-r1 aarch64 {htop} (GPL-2.0-or-later) [installed]
+  Interactive process viewer
+  <https://htop.dev/>
+
+jq-1.7.1-r0 aarch64 {jq} (MIT) [installed]
+  A lightweight and flexible command-line JSON processor
+  <https://jqlang.github.io/jq/>
+
+json-c-0.17-r0 aarch64 {json-c} (MIT) [installed]
+  A JSON implementation in C
+  <https://github.com/json-c/json-c/wiki>
+
+keyutils-libs-1.6.3-r3 aarch64 {keyutils} (GPL-2.0-or-later AND LGPL-2.0-or-later) [installed]
+  Key utilities library
+  <https://people.redhat.com/~dhowells/keyutils/>
+
+krb5-conf-1.0-r2 aarch64 {krb5-conf} (MIT) [installed]
+  Shared krb5.conf for both MIT krb5 and heimdal
+  <https://web.mit.edu/kerberos/www/>
+
+krb5-libs-1.21.2-r0 aarch64 {krb5} (MIT) [installed]
+  The shared libraries used by Kerberos 5
+  <https://web.mit.edu/kerberos/www/>
+
+less-643-r1 aarch64 {less} (GPL-3.0-or-later OR BSD-2-Clause) [installed]
+  File pager
+  <https://www.greenwoodsoftware.com/less/>
+
+libacl-2.3.1-r4 aarch64 {acl} (LGPL-2.1-or-later AND GPL-2.0-or-later) [installed]
+  Dynamic library for access control list support
+  <https://savannah.nongnu.org/projects/acl>
+
+libasyncns-0.8-r2 aarch64 {libasyncns} (LGPL-2.0-or-later) [installed]
+  Asynchronous Name Service Library
+  <http://0pointer.de/lennart/projects/libasyncns/>
+
+libblkid-2.39.3-r0 aarch64 {util-linux} (LGPL-2.1-or-later) [installed]
+  Block device identification library from util-linux
+  <https://git.kernel.org/cgit/utils/util-linux/util-linux.git>
+
+libbsd-0.11.7-r3 aarch64 {libbsd} (BSD-3-Clause) [installed]
+  commonly-used BSD functions not implemented by all libcs
+  <https://libbsd.freedesktop.org/>
+
+libbz2-1.0.8-r6 aarch64 {bzip2} (bzip2-1.0.6) [installed]
+  Shared library for bz2
+  <https://sourceware.org/bzip2/>
+
+libc-utils-0.7.2-r5 aarch64 {libc-dev} (BSD-2-Clause AND BSD-3-Clause) [installed]
+  Meta package to pull in correct libc
+  <https://alpinelinux.org>
+
+libcap2-2.69-r1 aarch64 {libcap} (BSD-3-Clause OR GPL-2.0-only) [installed]
+  POSIX 1003.1e capabilities (libraries)
+  <https://sites.google.com/site/fullycapable/>
+
+libcom_err-1.47.0-r5 aarch64 {e2fsprogs} (GPL-2.0-or-later AND LGPL-2.0-or-later AND BSD-3-Clause AND MIT) [installed]
+  Common error description library
+  <https://e2fsprogs.sourceforge.net/>
+
+libcrypto3-3.1.4-r5 aarch64 {openssl} (Apache-2.0) [installed]
+  Crypto library from openssl
+  <https://www.openssl.org/>
+
+libcurl-8.5.0-r0 aarch64 {curl} (curl) [installed]
+  The multiprotocol file transfer library
+  <https://curl.se/>
+
+libedit-20230828.3.1-r3 aarch64 {libedit} (BSD-3-Clause) [installed]
+  BSD line editing library
+  <https://www.thrysoee.dk/editline>
+
+libevent-2.1.12-r7 aarch64 {libevent} (BSD-3-Clause) [installed]
+  An event notification library
+  <https://libevent.org/>
+
+libexpat-2.6.0-r0 aarch64 {expat} (MIT) [installed]
+  XML Parser library written in C (libraries)
+  <https://libexpat.github.io/>
+
+libffi-3.4.4-r3 aarch64 {libffi} (MIT) [installed]
+  portable, high level programming interface to various calling conventions.
+  <https://sourceware.org/libffi/>
+
+libflac-1.4.3-r1 aarch64 {flac} (BSD-3-Clause AND GPL-2.0-or-later) [installed]
+  Free Lossless Audio Codec (libFLAC)
+  <https://xiph.org/flac/>
+
+libformw-6.4_p20231125-r0 aarch64 {ncurses} (X11) [installed]
+  Console display library (libformw)
+  <https://invisible-island.net/ncurses/>
+
+libgcc-13.2.1_git20231014-r0 aarch64 {gcc} (GPL-2.0-or-later AND LGPL-2.1-or-later) [installed]
+  GNU C compiler runtime libraries
+  <https://gcc.gnu.org>
+
+libgomp-13.2.1_git20231014-r0 aarch64 {gcc} (GPL-2.0-or-later AND LGPL-2.1-or-later) [installed]
+  GCC shared-memory parallel programming API library
+  <https://gcc.gnu.org>
+
+libidn2-2.3.4-r4 aarch64 {libidn2} (GPL-2.0-or-later OR LGPL-3.0-or-later) [installed]
+  Encode/Decode library for internationalized domain names
+  <https://www.gnu.org/software/libidn#libidn2>
+
+libintl-0.22.3-r0 aarch64 {gettext} (LGPL-2.1-or-later) [installed]
+  GNU gettext runtime library
+  <https://www.gnu.org/software/gettext/gettext.html>
+
+libltdl-2.4.7-r3 aarch64 {libtool} (LGPL-2.0-or-later AND GPL-2.0-or-later) [installed]
+  Runtime libraries for GNU Libtool Dynamic Module Loader
+  <https://www.gnu.org/software/libtool>
+
+libmd-1.1.0-r0 aarch64 {libmd} (BSD-3-Clause AND BSD-2-Clause AND ISC AND Beerware AND Public Domain) [installed]
+  Message Digest functions from BSD systems
+  <https://www.hadrons.org/software/libmd/>
+
+libmenuw-6.4_p20231125-r0 aarch64 {ncurses} (X11) [installed]
+  Console display library (libmenuw)
+  <https://invisible-island.net/ncurses/>
+
+libmount-2.39.3-r0 aarch64 {util-linux} (LGPL-2.1-or-later) [installed]
+  Block device identification library from util-linux
+  <https://git.kernel.org/cgit/utils/util-linux/util-linux.git>
+
+libncursesw-6.4_p20231125-r0 aarch64 {ncurses} (X11) [installed]
+  Console display library (libncursesw)
+  <https://invisible-island.net/ncurses/>
+
+libndp-1.8-r2 aarch64 {libndp} (LGPL-2.1-or-later) [installed]
+  Library for IPv6 Neighbor Discovery Protocol
+  <http://libndp.org>
+
+libnm-1.44.2-r1 aarch64 {networkmanager} (GPL-2.0-or-later) [installed]
+  GObject-based client library for NetworkManager
+  <https://wiki.gnome.org/Projects/NetworkManager>
+
+libogg-1.3.5-r5 aarch64 {libogg} (BSD-3-Clause) [installed]
+  Ogg bitstream and framing library
+  <https://xiph.org/ogg/>
+
+libpanelw-6.4_p20231125-r0 aarch64 {ncurses} (X11) [installed]
+  Console display library (libpanelw)
+  <https://invisible-island.net/ncurses/>
+
+libpcap-1.10.4-r1 aarch64 {libpcap} (BSD-3-Clause) [installed]
+  A system-independent interface for user-level packet capture
+  <https://www.tcpdump.org/>
+
+libprotobuf-24.4-r0 aarch64 {protobuf} (BSD-3-Clause) [installed]
+  Runtime library for C++ users of protocol buffers
+  <https://github.com/protocolbuffers/protobuf>
+
+libpsl-0.21.2-r1 aarch64 {libpsl} (MIT) [installed]
+  C library for the Publix Suffix List
+  <https://rockdaboot.github.io/libpsl>
+
+libpulse-16.1-r11 aarch64 {pulseaudio} (LGPL-2.1-or-later) [installed]
+  Pulseaudio libraries
+  <https://www.freedesktop.org/wiki/Software/PulseAudio/>
+
+libsndfile-1.2.2-r0 aarch64 {libsndfile} (LGPL-2.1-or-later) [installed]
+  C library for reading and writing files containing sampled sound
+  <https://libsndfile.github.io/libsndfile/>
+
+libssh2-1.11.0-r1 aarch64 {libssh2} (BSD-3-Clause) [installed]
+  library for accessing ssh1/ssh2 protocol servers
+  <https://libssh2.org/>
+
+libssl3-3.1.4-r5 aarch64 {openssl} (Apache-2.0) [installed]
+  SSL shared libraries
+  <https://www.openssl.org/>
+
+libstdc++-13.2.1_git20231014-r0 aarch64 {gcc} (GPL-2.0-or-later AND LGPL-2.1-or-later) [installed]
+  GNU C++ standard runtime library
+  <https://gcc.gnu.org>
+
+libucontext-1.2-r2 aarch64 {libucontext} (ISC) [installed]
+  ucontext function implementations
+  <https://github.com/kaniini/libucontext>
+
+libunistring-1.1-r2 aarch64 {libunistring} (GPL-2.0-or-later OR LGPL-3.0-or-later) [installed]
+  Library for manipulating Unicode strings and C strings
+  <https://www.gnu.org/software/libunistring/>
+
+libuv-1.47.0-r0 aarch64 {libuv} (MIT) [installed]
+  Cross-platform asychronous I/O
+  <https://libuv.org/>
+
+libverto-0.3.2-r2 aarch64 {libverto} (MIT) [installed]
+  Main loop abstraction library
+  <https://github.com/latchset/libverto>
+
+libvorbis-1.3.7-r2 aarch64 {libvorbis} (BSD-3-Clause) [installed]
+  Vorbis codec library
+  <https://xiph.org/vorbis>
+
+libx11-1.8.7-r0 aarch64 {libx11} (X11) [installed]
+  X11 client-side library
+  <https://xorg.freedesktop.org/>
+
+libxau-1.0.11-r3 aarch64 {libxau} (MIT) [installed]
+  X11 authorisation library
+  <https://xorg.freedesktop.org/>
+
+libxcb-1.16-r0 aarch64 {libxcb} (MIT) [installed]
+  X11 client-side library
+  <https://xcb.freedesktop.org>
+
+libxdmcp-1.1.4-r3 aarch64 {libxdmcp} (MIT) [installed]
+  X11 Display Manager Control Protocol library
+  <https://xorg.freedesktop.org/>
+
+libxml2-2.11.7-r0 aarch64 {libxml2} (MIT) [installed]
+  XML parsing library, version 2
+  <https://gitlab.gnome.org/GNOME/libxml2>
+
+libxml2-utils-2.11.7-r0 aarch64 {libxml2} (MIT) [installed]
+  XML utilities
+  <https://gitlab.gnome.org/GNOME/libxml2>
+
+libxxhash-0.8.2-r2 aarch64 {xxhash} (BSD-2-Clause) [installed]
+  Extremely fast non-cryptographic hash algorithm (libraries)
+  <https://cyan4973.github.io/xxHash/>
+
+lz4-libs-1.9.4-r5 aarch64 {lz4} (BSD-2-Clause AND GPL-2.0-only) [installed]
+  LZ4 is lossless compression algorithm with fast decoder @ multiple GB/s per core. (libraries)
+  <https://github.com/lz4/lz4>
+
+mariadb-client-10.11.6-r0 aarch64 {mariadb} (GPL-2.0-or-later) [installed]
+  Client for the MariaDB database
+  <https://www.mariadb.org/>
+
+mariadb-common-10.11.6-r0 aarch64 {mariadb} (GPL-2.0-or-later) [installed]
+  MariaDB common files for both server and client
+  <https://www.mariadb.org/>
+
+mii-tool-2.10-r3 aarch64 {net-tools} (GPL-2.0-or-later) [installed]
+  media-independent interface (MII) tool
+  <https://sourceforge.net/projects/net-tools/>
+
+mosh-1.4.0-r6 aarch64 {mosh} (GPL-3.0-or-later) [installed]
+  Mobile shell surviving disconnects with local echo and line editing
+  <https://mosh.org>
+
+mosh-bash-completion-1.4.0-r6 aarch64 {mosh} (GPL-3.0-or-later) [installed]
+  Bash completions for mosh
+  <https://mosh.org>
+
+mosh-client-1.4.0-r6 aarch64 {mosh} (GPL-3.0-or-later) [installed]
+  Mosh client
+  <https://mosh.org>
+
+mosh-server-1.4.0-r6 aarch64 {mosh} (GPL-3.0-or-later) [installed]
+  Mosh server
+  <https://mosh.org>
+
+mosquitto-clients-2.0.18-r0 aarch64 {mosquitto} (EPL-1.0 OR EPL-2.0) [installed]
+  Mosquitto command line MQTT clients
+  <https://mosquitto.org/>
+
+mosquitto-libs-2.0.18-r0 aarch64 {mosquitto} (EPL-1.0 OR EPL-2.0) [installed]
+  open source MQTT broker (libraries)
+  <https://mosquitto.org/>
+
+mpdecimal-2.5.1-r2 aarch64 {mpdecimal} (BSD-2-Clause) [installed]
+  complete implementation of the General Decimal Arithmetic Specification
+  <https://www.bytereef.org/mpdecimal/index.html>
+
+musl-1.2.4_git20230717-r4 aarch64 {musl} (MIT) [installed]
+  the musl c library (libc) implementation
+  <https://musl.libc.org/>
+
+musl-obstack-1.2.3-r2 aarch64 {musl-obstack} (GPL-2.0-or-later) [installed]
+  Standalone library to implement GNU libc's obstack
+  <https://github.com/void-linux/musl-obstack>
+
+musl-utils-1.2.4_git20230717-r4 aarch64 {musl} (MIT AND BSD-2-Clause AND GPL-2.0-or-later) [installed]
+  the musl c library (libc) implementation
+  <https://musl.libc.org/>
+
+nano-7.2-r1 aarch64 {nano} (GPL-3.0-or-later) [installed]
+  Enhanced clone of the Pico text editor
+  <https://www.nano-editor.org>
+
+nano-syntax-7.2-r1 aarch64 {nano} (GPL-3.0-or-later) [installed]
+  Syntax highlighting definitions for nano
+  <https://www.nano-editor.org>
+
+ncurses-6.4_p20231125-r0 aarch64 {ncurses} (X11) [installed]
+  Console display library
+  <https://invisible-island.net/ncurses/>
+
+ncurses-terminfo-base-6.4_p20231125-r0 aarch64 {ncurses} (X11) [installed]
+  Descriptions of common terminals
+  <https://invisible-island.net/ncurses/>
+
+net-tools-2.10-r3 aarch64 {net-tools} (GPL-2.0-or-later) [installed]
+  Linux networking base tools
+  <https://sourceforge.net/projects/net-tools/>
+
+networkmanager-1.44.2-r1 aarch64 {networkmanager} (GPL-2.0-or-later) [installed]
+  Network Management daemon
+  <https://wiki.gnome.org/Projects/NetworkManager>
+
+networkmanager-bash-completion-1.44.2-r1 aarch64 {networkmanager} (GPL-2.0-or-later) [installed]
+  Bash completions for networkmanager
+  <https://wiki.gnome.org/Projects/NetworkManager>
+
+networkmanager-cli-1.44.2-r1 aarch64 {networkmanager} (GPL-2.0-or-later) [installed]
+  Network Management daemon (command line interface)
+  <https://wiki.gnome.org/Projects/NetworkManager>
+
+networkmanager-common-1.44.2-r1 aarch64 {networkmanager} (GPL-2.0-or-later) [installed]
+  Common files for networkmanager and networkmanager-elogind
+  <https://wiki.gnome.org/Projects/NetworkManager>
+
+nghttp2-libs-1.58.0-r0 aarch64 {nghttp2} (MIT) [installed]
+  HTTP/2 C client, server and proxy (libraries)
+  <https://nghttp2.org>
+
+nmap-7.94-r0 aarch64 {nmap} (custom) [installed]
+  network exploration tool and security/port scanner
+  <https://nmap.org>
+
+nspr-4.35-r4 aarch64 {nspr} (MPL-2.0) [installed]
+  Netscape Portable Runtime
+  <https://www.mozilla.org/projects/nspr/>
+
+nss-3.98-r0 aarch64 {nss} (MPL-2.0) [installed]
+  Mozilla Network Security Services
+  <https://developer.mozilla.org/docs/Mozilla/Projects/NSS>
+
+oniguruma-6.9.9-r0 aarch64 {oniguruma} (BSD-2-Clause) [installed]
+  a regular expressions library
+  <https://github.com/kkos/oniguruma>
+
+openssh-9.6_p1-r0 aarch64 {openssh} (SSH-OpenSSH) [installed]
+  Port of OpenBSD's free SSH release
+  <https://www.openssh.com/portable.html>
+
+openssh-client-common-9.6_p1-r0 aarch64 {openssh} (SSH-OpenSSH) [installed]
+  OpenBSD's SSH client common files
+  <https://www.openssh.com/portable.html>
+
+openssh-client-default-9.6_p1-r0 aarch64 {openssh} (SSH-OpenSSH) [installed]
+  OpenBSD's SSH client
+  <https://www.openssh.com/portable.html>
+
+openssh-keygen-9.6_p1-r0 aarch64 {openssh} (SSH-OpenSSH) [installed]
+  ssh helper program for generating keys
+  <https://www.openssh.com/portable.html>
+
+openssh-server-9.6_p1-r0 aarch64 {openssh} (SSH-OpenSSH) [installed]
+  OpenSSH server
+  <https://www.openssh.com/portable.html>
+
+openssh-server-common-9.6_p1-r0 aarch64 {openssh} (SSH-OpenSSH) [installed]
+  OpenSSH server configuration files
+  <https://www.openssh.com/portable.html>
+
+openssh-sftp-server-9.6_p1-r0 aarch64 {openssh} (SSH-OpenSSH) [installed]
+  ssh sftp server module
+  <https://www.openssh.com/portable.html>
+
+openssl-3.1.4-r5 aarch64 {openssl} (Apache-2.0) [installed]
+  Toolkit for Transport Layer Security (TLS)
+  <https://www.openssl.org/>
+
+opus-1.4-r0 aarch64 {opus} (BSD-3-Clause) [installed]
+  Codec designed for interactive speech and audio transmission over the Internet
+  <https://www.opus-codec.org/>
+
+orc-0.4.34-r0 aarch64 {orc} (BSD-2-Clause) [installed]
+  Oil Run-time Compiler
+  <https://gstreamer.freedesktop.org/modules/orc.html>
+
+pcre-8.45-r3 aarch64 {pcre} (BSD-3-Clause) [installed]
+  Perl-compatible regular expression library
+  <https://www.pcre.org/>
+
+pcre2-10.42-r2 aarch64 {pcre2} (BSD-3-Clause) [installed]
+  Perl-compatible regular expression library
+  <https://pcre.org/>
+
+perl-5.38.2-r0 aarch64 {perl} (Artistic-1.0-Perl OR GPL-1.0-or-later) [installed]
+  Larry Wall's Practical Extraction and Report Language
+  <https://www.perl.org/>
+
+perl-error-0.17029-r2 aarch64 {perl-error} (GPL-1.0-or-later OR Artistic-1.0-Perl) [installed]
+  Perl module error/exception handling in an OO-ish way
+  <https://metacpan.org/release/Error>
+
+perl-file-next-1.18-r3 aarch64 {perl-file-next} (GPL-1.0-or-later OR Artistic-1.0-Perl) [installed]
+  Perl module for taint-safe file-finding
+  <https://metacpan.org/release/File-Next>
+
+perl-git-2.43.0-r0 aarch64 {git} (GPL-2.0-only) [installed]
+  Perl interface to Git
+  <https://www.git-scm.com/>
+
+perl-io-tty-1.18-r0 aarch64 {perl-io-tty} (GPL-1.0-or-later OR Artistic-1.0-Perl) [installed]
+  Pseudo ttys and constants
+  <https://metacpan.org/release/IO-Tty/>
+
+popt-1.19-r3 aarch64 {popt} (MIT) [installed]
+  commandline option parser
+  <https://github.com/rpm-software-management/popt>
+
+protobuf-c-1.4.1-r7 aarch64 {protobuf-c} (BSD-2-Clause) [installed]
+  Protocol Buffers implementation in C
+  <https://github.com/protobuf-c/protobuf-c>
+
+pulseaudio-utils-16.1-r11 aarch64 {pulseaudio} (LGPL-2.1-or-later) [installed]
+  Pulseaudio utilities
+  <https://www.freedesktop.org/wiki/Software/PulseAudio/>
+
+pwgen-2.08-r3 aarch64 {pwgen} (GPL-2.0-only) [installed]
+  A Password Generator
+  <https://github.com/tytso/pwgen>
+
+py3-awake-1.0-r9 aarch64 {awake} (GPL-3.0) [installed]
+  Python library for awake
+  <https://github.com/cyraxjoe/awake>
+
+py3-awake-pyc-1.0-r9 aarch64 {awake} (GPL-3.0) [installed]
+  Precompiled Python bytecode for py3-awake
+  <https://github.com/cyraxjoe/awake>
+
+py3-packaging-23.2-r0 aarch64 {py3-packaging} (Apache-2.0 AND BSD-2-Clause) [installed]
+  Core utilities for Python3 packages
+  <https://pypi.org/project/packaging>
+
+py3-packaging-pyc-23.2-r0 aarch64 {py3-packaging} (Apache-2.0 AND BSD-2-Clause) [installed]
+  Precompiled Python bytecode for py3-packaging
+  <https://pypi.org/project/packaging>
+
+py3-parsing-3.1.1-r0 aarch64 {py3-parsing} (MIT) [installed]
+  Object-oriented approach to text processing
+  <https://github.com/pyparsing/pyparsing>
+
+py3-parsing-pyc-3.1.1-r0 aarch64 {py3-parsing} (MIT) [installed]
+  Precompiled Python bytecode for py3-parsing
+  <https://github.com/pyparsing/pyparsing>
+
+py3-pip-23.3.1-r0 aarch64 {py3-pip} (MIT) [installed]
+  Tool for installing and managing Python packages
+  <https://pip.pypa.io>
+
+py3-pip-bash-completion-23.3.1-r0 aarch64 {py3-pip} (MIT) [installed]
+  Bash completions for py3-pip
+  <https://pip.pypa.io>
+
+py3-pip-pyc-23.3.1-r0 aarch64 {py3-pip} (MIT) [installed]
+  Precompiled Python bytecode for py3-pip
+  <https://pip.pypa.io>
+
+py3-pip-zsh-completion-23.3.1-r0 aarch64 {py3-pip} (MIT) [installed]
+  Zsh completions for py3-pip
+  <https://pip.pypa.io>
+
+py3-setuptools-68.2.2-r0 aarch64 {py3-setuptools} (MIT) [installed]
+  Collection of enhancements to the Python3 distutils
+  <https://pypi.org/project/setuptools>
+
+py3-setuptools-pyc-68.2.2-r0 aarch64 {py3-setuptools} (MIT) [installed]
+  Precompiled Python bytecode for py3-setuptools
+  <https://pypi.org/project/setuptools>
+
+pyc-3.11.8-r0 aarch64 {python3} (PSF-2.0) [installed]
+  Meta package for pulling in all -pyc packages
+  <https://www.python.org/>
+
+python3-3.11.8-r0 aarch64 {python3} (PSF-2.0) [installed]
+  High-level scripting language
+  <https://www.python.org/>
+
+python3-pyc-3.11.8-r0 aarch64 {python3} (PSF-2.0) [installed]
+  High-level scripting language (install .pyc cache files)
+  <https://www.python.org/>
+
+python3-pycache-pyc0-3.11.8-r0 aarch64 {python3} (PSF-2.0) [installed]
+  High-level scripting language (.pyc pycache files)
+  <https://www.python.org/>
+
+readline-8.2.1-r2 aarch64 {readline} (GPL-2.0-or-later) [installed]
+  GNU readline library
+  <https://tiswww.cwru.edu/php/chet/readline/rltop.html>
+
+rsync-3.2.7-r4 aarch64 {rsync} (GPL-3.0-or-later) [installed]
+  A file transfer program to keep remote files in sync
+  <https://rsync.samba.org/>
+
+rsync-zsh-completion-5.9-r2 aarch64 {zsh} (custom) [installed]
+  Zsh completions for rsync
+  <https://www.zsh.org/>
+
+scanelf-1.3.7-r2 aarch64 {pax-utils} (GPL-2.0-only) [installed]
+  Scan ELF binaries for stuff
+  <https://wiki.gentoo.org/wiki/Hardened/PaX_Utilities>
+
+soxr-0.1.3-r7 aarch64 {soxr} (LGPL-2.1-or-later) [installed]
+  High quality, one-dimensional sample-rate conversion library
+  <https://sourceforge.net/projects/soxr/>
+
+speexdsp-1.2.1-r2 aarch64 {speexdsp} (BSD-3-Clause) [installed]
+  A voice compression format (DSP)
+  <https://www.speex.org/>
+
+sqlite-3.44.2-r0 aarch64 {sqlite} (blessing) [installed]
+  C library that implements an SQL database engine
+  <https://www.sqlite.org/>
+
+sqlite-libs-3.44.2-r0 aarch64 {sqlite} (blessing) [installed]
+  C library that implements an SQL database engine (libraries)
+  <https://www.sqlite.org/>
+
+ssl_client-1.36.1-r15 aarch64 {busybox} (GPL-2.0-only) [installed]
+  EXternal ssl_client for busybox wget
+  <https://busybox.net/>
+
+sudo-1.9.15_p2-r0 aarch64 {sudo} (custom ISC) [installed]
+  Give certain users the ability to run some commands as root
+  <https://www.sudo.ws/sudo/>
+
+tdb-libs-1.4.9-r0 aarch64 {tdb} (LGPL-3.0-or-later) [installed]
+  The tdb library (libraries)
+  <https://tdb.samba.org/>
+
+tmux-3.3a_git20230428-r0 aarch64 {tmux} (ISC) [installed]
+  Tool to control multiple terminals from a single terminal
+  <https://tmux.github.io>
+
+tmux-zsh-completion-5.9-r2 aarch64 {zsh} (custom) [installed]
+  Zsh completions for tmux
+  <https://www.zsh.org/>
+
+tzdata-2024a-r0 aarch64 {tzdata} (Public-Domain) [installed]
+  Timezone data
+  <https://www.iana.org/time-zones>
+
+unzip-6.0-r14 aarch64 {unzip} (custom) [installed]
+  Extract PKZIP-compatible .zip files
+  <http://www.info-zip.org/UnZip.html>
+
+vim-9.0.2127-r0 aarch64 {vim} (Vim) [installed]
+  Improved vi-style text editor
+  <https://www.vim.org/>
+
+vim-common-9.0.2127-r0 aarch64 {vim} (Vim) [installed]
+  Improved vi-style text editor
+  <https://www.vim.org/>
+
+wget-1.21.4-r0 aarch64 {wget} (GPL-3.0-or-later WITH OpenSSL-Exception) [installed]
+  Network utility to retrieve files from the Web
+  <https://www.gnu.org/software/wget/wget.html>
+
+xxd-9.0.2127-r0 aarch64 {vim} (Vim) [installed]
+  tool to make (or reverse) a hex dump
+  <https://www.vim.org/>
+
+xz-libs-5.4.5-r0 aarch64 {xz} (GPL-2.0-or-later AND Public-Domain AND LGPL-2.1-or-later) [installed]
+  Library and CLI tools for XZ and LZMA compressed files (libraries)
+  <https://tukaani.org/xz>
+
+zip-3.0-r12 aarch64 {zip} (Info-ZIP) [installed]
+  Creates PKZIP-compatible .zip files
+  <http://www.info-zip.org/pub/infozip/Zip.html>
+
+zlib-1.3.1-r0 aarch64 {zlib} (Zlib) [installed]
+  A compression/decompression Library
+  <https://zlib.net/>
+
+zsh-5.9-r2 aarch64 {zsh} (custom) [installed]
+  Very advanced and programmable command interpreter (shell)
+  <https://www.zsh.org/>
+
+zsh-autosuggestions-0.7.0-r0 aarch64 {zsh-autosuggestions} (MIT) [installed]
+  Fish-like autosuggestions for Zsh
+  <https://github.com/zsh-users/zsh-autosuggestions>
+
+zsh-pcre-5.9-r2 aarch64 {zsh} (custom) [installed]
+  PCRE module for ZSH
+  <https://www.zsh.org/>
+
+zsh-syntax-highlighting-0.7.1_git20220514-r0 aarch64 {zsh-syntax-highlighting} (BSD-3-Clause) [installed]
+  Fish shell like syntax highlighting for Zsh
+  <https://github.com/zsh-users/zsh-syntax-highlighting>
+
+zstd-libs-1.5.5-r8 aarch64 {zstd} (BSD-3-Clause OR GPL-2.0-or-later) [installed]
+  Zstandard - Fast real-time compression algorithm (libraries)
+  <https://www.zstd.net/>
+

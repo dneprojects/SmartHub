@@ -107,9 +107,22 @@
            
       </div>
       <script>
-        new Tablesort(document.getElementById('lic-hub-table'));
-        new Tablesort(document.getElementById('lic-core-table'));
-        new Tablesort(document.getElementById('lic-hai-table'));
+        const hub_table = document.getElementById('lic-hub-table')
+        const core_table = document.getElementById('lic-core-table')
+        const hai_table = document.getElementById('lic-hai-table')
+        const os_table = document.getElementById('lic-os-table')
+        if (hub_table != null) {
+          new Tablesort(hub_table);
+        }
+        if (core_table != null) {
+          new Tablesort(core_table);
+        }
+        if (hai_table != null) {
+          new Tablesort(hai_table);
+        }
+        if (os_table != null) {
+          new Tablesort(os_table);
+        }
       </script>
       </body>
       

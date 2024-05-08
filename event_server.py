@@ -464,7 +464,7 @@ class EventServer:
         ws_cmd["id"] = self.notify_id
         await self.websck.send(json.dumps(ws_cmd))  # Send command
         resp = await self.websck.recv()
-        return resp
+        return json.loads(resp)
 
     async def ping_pong_reconnect(self) -> bool:
         """Check for living websocket connection, reconnect if needed."""
@@ -515,7 +515,7 @@ class EventServer:
             self._uri = "ws://<ip>:8123/api/websocket".replace("<ip>", self._client_ip)
             self.logger.debug(f"URI: {self._uri}")
             # supervisor_token  "2f428d27e04db95b4c844b451af4858fba585aac82f70ee6259cf8ec1834a00abf6a448f49ee18d3fc162f628ce6f479fe4647c6f8624f88"
-            # token for local docker:    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIxZDZkZWY4MjZmYzI0Yzg0OGUwMTAxYTUyMWE1ZTI0ZSIsImlhdCI6MTcxMDk1MTQ2MSwiZXhwIjoyMDI2MzExNDYxfQ.CG3kAoZSPHexOkztWk15Z3lg9v3avxbXJVb_PNXXU1I"
+            # token for local docker:    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJiMmUxODhmM2JmZjA0NDU0ODIyZjFkOWZhNGZiMzg0NSIsImlhdCI6MTcxNDc1Mzk2OSwiZXhwIjoyMDMwMTEzOTY5fQ.f77O0xVMwCydoY2r8gDt_Y3mSh7ag3a1D9mugPpdR-o"
             # token for 192.168.178.160: token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI5NGY2ZjMyZjdhYjE0NzAzYmI4MTc5YjZhOTdhYzdjNSIsImlhdCI6MTcxMzYyMjgxNywiZXhwIjoyMDI4OTgyODE3fQ.2iJQuKgpavJOelH_WHEDe06X2XmAmyHB3FlzkDPl4e0"
             # token for SmartCenter 5:   token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmN2UxMGFhNzcyZTE0ZWY0OGFmOTkzNDVlOTIwNTNlNiIsImlhdCI6MTcxMzUxNDM4MSwiZXhwIjoyMDI4ODc0MzgxfQ.9kpjxhElmWAqTY2zwSsTyLSZiJQZkaV5FX8Pyj9j8HQ"
 
@@ -581,7 +581,6 @@ class EventServer:
         else:
             self.logger.info(f"Websocket connected to {self._uri}, response: {resp}")
             self.token_ok = True
-            await self.get_ha_config()
         self.websck_is_closed = False
         return True
 

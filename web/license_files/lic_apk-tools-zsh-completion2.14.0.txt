@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html class="html-devise-layout ui-neutral" lang="en">
+<head prefix="og: http://ogp.me/ns#">
+<meta charset="utf-8">
+<meta content="IE=edge" http-equiv="X-UA-Compatible">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<title>Sign in · GitLab</title>
+<script>
+//<![CDATA[
+window.gon={};gon.api_version="v4";gon.default_avatar_url="https://gitlab.alpinelinux.org/assets/no_avatar-849f9c04a3a0d0cea2424ae97b27447dc64a7dbfae83c036c45b403392f0e8ba.png";gon.max_file_size=43;gon.asset_host=null;gon.webpack_public_path="/assets/webpack/";gon.relative_url_root="";gon.user_color_scheme="white";gon.markdown_surround_selection=null;gon.markdown_automatic_lists=null;gon.math_rendering_limits_enabled=true;gon.recaptcha_api_server_url="https://www.recaptcha.net/recaptcha/api.js";gon.recaptcha_sitekey="6LfAoq4UAAAAABvwrrUrtvBD2EAoj8BH-2yvDYKf";gon.gitlab_url="https://gitlab.alpinelinux.org";gon.organization_http_header_name="HTTP_GITLAB_ORGANIZATION_ID";gon.revision="Unknown";gon.feature_category="system_access";gon.gitlab_logo="/assets/gitlab_logo-2957169c8ef64c58616a1ac3f4fc626e8a35ce4eb3ed31bb0d873712f2a041a0.png";gon.secure=true;gon.sprite_icons="/assets/icons-4063a836235237e06f94879673f65492fe427d05e26482ddbde40ad6d227a3f8.svg";gon.sprite_file_icons="/assets/file_icons/file_icons-7cd3d6c3b29a6d972895f36472978a4b5adb4b37f9b5d0716a380e82389f7e0e.svg";gon.emoji_sprites_css_path="/assets/emoji_sprites-d746ae2450a3e9c626d338d77a101b84ff33a47c0c281b676d75c4a6ed2948a4.css";gon.gridstack_css_path="/assets/lazy_bundles/gridstack-5fcfd4ffbea1db04eaf7f16521bcab19ae3af042c8b4afe8d16781eda5a70799.css";gon.test_env=false;gon.disable_animations=null;gon.suggested_label_colors={"#cc338b":"Magenta-pink","#dc143c":"Crimson","#c21e56":"Rose red","#cd5b45":"Dark coral","#ed9121":"Carrot orange","#eee600":"Titanium yellow","#009966":"Green-cyan","#8fbc8f":"Dark sea green","#6699cc":"Blue-gray","#e6e6fa":"Lavender","#9400d3":"Dark violet","#330066":"Deep violet","#36454f":"Charcoal grey","#808080":"Gray"};gon.first_day_of_week=1;gon.time_display_relative=true;gon.time_display_format=0;gon.ee=false;gon.jh=false;gon.dot_com=false;gon.uf_error_prefix="UF";gon.pat_prefix="glpat-";gon.keyboard_shortcuts_enabled=true;gon.diagramsnet_url="https://embed.diagrams.net";gon.features={"securityAutoFix":false,"sourceEditorToolbar":false,"vscodeWebIde":true,"uiForOrganizations":false,"removeMonitorMetrics":true,"groupUserSaml":false};
+//]]>
+</script>
+
+
+
+
+
+<link rel="stylesheet" href="/assets/application-d406cd866e79675515e2467e3b3c1c79bc380bee4d9c30de803b870a26af53cd.css" media="all" />
+<link rel="stylesheet" href="/assets/page_bundles/login-d3d6bc53e95a451be9ab770d7a515d686002ad44c6493bfac5caab63ebe9db94.css" media="all" /><link rel="stylesheet" href="/assets/page_bundles/commit_description-b1dab9b10010cbb9c3738689b18ce46a4f58b98a8d483226fdff8a776a45caf0.css" media="all" />
+<link rel="stylesheet" href="/assets/application_utilities-92001ae3073c6aa1cc412e6bdfe1028a260e3540a81cb767eeab6fe75ff704c4.css" media="all" />
+<link rel="stylesheet" href="/assets/tailwind-0d7d3fad259f6ebbbb2e349d85153d793191ff8752e59c490d0dd4035fb33d12.css" media="all" />
+
+
+<link rel="stylesheet" href="/assets/fonts-fae5d3f79948bd85f18b6513a025f863b19636e85b09a1492907eb4b1bb0557b.css" media="all" />
+<link rel="stylesheet" href="/assets/highlight/themes/white-ea2e64b41e475880325eb5dea8d116c1bb15d3548331fbcffaaf0276b0329aa9.css" media="all" />
+
+
+<link rel="preload" href="/assets/application_utilities-92001ae3073c6aa1cc412e6bdfe1028a260e3540a81cb767eeab6fe75ff704c4.css" as="style" type="text/css">
+<link rel="preload" href="/assets/application-d406cd866e79675515e2467e3b3c1c79bc380bee4d9c30de803b870a26af53cd.css" as="style" type="text/css">
+<link rel="preload" href="/assets/highlight/themes/white-ea2e64b41e475880325eb5dea8d116c1bb15d3548331fbcffaaf0276b0329aa9.css" as="style" type="text/css">
+
+
+
+
+
+
+
+<script src="/assets/webpack/runtime.e3c143c2.bundle.js" defer="defer"></script>
+<script src="/assets/webpack/main.25ab73c4.chunk.js" defer="defer"></script>
+<script src="/assets/webpack/graphql.e1f11a07.chunk.js" defer="defer"></script>
+<script src="/assets/webpack/commons-pages.search.show-super_sidebar.75dc86a2.chunk.js" defer="defer"></script>
+<script src="/assets/webpack/super_sidebar.64354f2d.chunk.js" defer="defer"></script>
+<script src="/assets/webpack/commons-pages.dashboard.milestones.show-pages.groups.milestones.edit-pages.groups.milestones.new-pag-ec845db9.8d4a4d36.chunk.js" defer="defer"></script>
+<script src="/assets/webpack/commons-pages.registrations.new-pages.sessions.new-pages.user_settings.profiles.show.63e10468.chunk.js" defer="defer"></script>
+<script src="/assets/webpack/commons-pages.admin.sessions-pages.sessions-pages.sessions.new.04cdbebd.chunk.js" defer="defer"></script>
+<script src="/assets/webpack/pages.sessions.new.cc7a845d.chunk.js" defer="defer"></script>
+<meta content="object" property="og:type">
+<meta content="GitLab" property="og:site_name">
+<meta content="Sign in · GitLab" property="og:title">
+<meta content="GitLab Community Edition" property="og:description">
+<meta content="https://gitlab.alpinelinux.org/assets/twitter_card-570ddb06edf56a2312253c5872489847a0f385112ddbcd71ccfa1570febab5d2.jpg" property="og:image">
+<meta content="64" property="og:image:width">
+<meta content="64" property="og:image:height">
+<meta content="https://gitlab.alpinelinux.org/users/sign_in" property="og:url">
+<meta content="summary" property="twitter:card">
+<meta content="Sign in · GitLab" property="twitter:title">
+<meta content="GitLab Community Edition" property="twitter:description">
+<meta content="https://gitlab.alpinelinux.org/assets/twitter_card-570ddb06edf56a2312253c5872489847a0f385112ddbcd71ccfa1570febab5d2.jpg" property="twitter:image">
+
+<meta name="csrf-param" content="authenticity_token" />
+<meta name="csrf-token" content="XD94763rfhYGE5-ul4IyayqZiguHRsOB9yqDLm6O-Fn8aLKNvsA4tZvHiOd1p63bUVrpAIiBWCXPBJVXEarp9g" />
+<meta name="csp-nonce" />
+<meta name="action-cable-url" content="/-/cable" />
+<link href="/-/manifest.json" rel="manifest">
+<link rel="icon" type="image/png" href="/uploads/-/system/appearance/favicon/1/alpinelinux-logo-icon-grey.png" id="favicon" data-original-href="/uploads/-/system/appearance/favicon/1/alpinelinux-logo-icon-grey.png" />
+<link rel="apple-touch-icon" type="image/x-icon" href="/assets/apple-touch-icon-b049d4bc0dd9626f31db825d61880737befc7835982586d015bded10b4435460.png" />
+<link href="/search/opensearch.xml" rel="search" title="Search GitLab" type="application/opensearchdescription+xml">
+
+
+
+
+<meta content="GitLab Community Edition" name="description">
+<meta content="#ececef" name="theme-color">
+</head>
+
+<body class="gl-h-full login-page gl-browser-generic gl-platform-other" data-page="sessions:new" data-testid="login-page">
+
+<script>
+//<![CDATA[
+gl = window.gl || {};
+gl.client = {"isGeneric":true,"isOther":true};
+
+
+//]]>
+</script>
+
+
+
+
+<div class="gl-h-full gl-display-flex gl-flex-wrap">
+<div class="container gl-align-self-center">
+<div class="content">
+<div class="flash-container flash-container-page sticky" data-testid="flash-container">
+<div id="js-global-alerts"></div>
+</div>
+
+<div class="gl-my-5">
+<div class="col-sm-12 gl-text-center">
+<img alt="GitLab Community Edition" class="gl-visibility-hidden gl-h-10 js-portrait-logo-detection lazy" data-src="/assets/logo-911de323fa0def29aaf817fca33916653fc92f3ff31647ac41d2c39bbe243edb.svg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" />
+<h1 class="mb-3 gl-font-size-h2">
+GitLab Community Edition
+</h1>
+</div>
+<div class="gl-w-full gl-sm-w-half gl-ml-auto gl-mr-auto bar">
+
+<div class="js-non-oauth-login">
+<form class="gl-show-field-errors js-arkose-labs-form" aria-live="assertive" data-testid="sign-in-form" action="/users/sign_in" accept-charset="UTF-8" method="post"><input type="hidden" name="authenticity_token" value="MyKra7cp9ACMi8b613qC6PSZwvuazj1pcaFEGgeHxi6TdWEJpAKyoxFf0bM1Xx1Yj1qh8JUJps1Jj1JjeKPXgQ" autocomplete="off" /><div class="form-group">
+<label for="user_login">Username or primary email</label>
+<input class="form-control gl-form-input js-username-field" autocomplete="username" autofocus="autofocus" autocapitalize="off" autocorrect="off" required="required" title="This field is required." data-testid="username-field" type="text" name="user[login]" id="user_login" />
+</div>
+<div class="form-group">
+<label for="user_password">Password</label>
+<input class="form-control gl-form-input js-password" data-id="user_password" data-name="user[password]" data-testid="password-field" type="password" name="user[password]" id="user_password" />
+<div class="form-text gl-text-right">
+<a href="/users/password/new">Forgot your password?</a>
+</div>
+</div>
+<div class="form-group">
+</div>
+<div class="gl-mb-3">
+<div class="gl-form-checkbox custom-control custom-checkbox">
+<input name="user[remember_me]" type="hidden" value="0" autocomplete="off" /><input autocomplete="off" class="custom-control-input" type="checkbox" value="1" name="user[remember_me]" id="user_remember_me" />
+<label class="custom-control-label" for="user_remember_me"><span>Remember me</span></label>
+</div>
+
+</div>
+<button class="gl-button btn btn-block btn-md btn-confirm js-sign-in-button" data-testid="sign-in-button" type="submit"><span class="gl-button-text">
+Sign in
+
+</span>
+
+</button></form>
+</div>
+<div class="gl-mt-3">
+By signing in you accept the <a href='/-/users/terms' target='_blank' rel='noreferrer noopener'>Terms of Use and acknowledge the Privacy Statement and Cookie Policy</a>.
+</div>
+<div class="gl-mt-3 gl-text-center">
+Don&#39;t have an account yet?
+<a data-testid="register-link" href="/users/sign_up">Register now</a>
+</div>
+<div class="gl-display-flex gl-align-items-center gl-gap-5" data-testid="divider">
+<hr class="gl-flex-grow-1 gl-border-gray-100">
+or sign in with
+<hr class="gl-flex-grow-1 gl-border-gray-100">
+</div>
+
+<div class="gl-mt-5 gl-text-center gl-display-flex gl-flex-direction-column gl-gap-3 js-oauth-login">
+<form class="button_to" method="post" action="/users/auth/github"><button class="gl-button btn btn-block btn-md btn-default " data-testid="github-login-button" type="submit"><span class="gl-button-text">
+<img alt="GitHub" title="Sign in with GitHub" class="gl-button-icon lazy" data-src="/assets/auth_buttons/github_64-84041cd0ea392220da96f0fb9b9473c08485c4924b98c776be1bd33b0daab8c0.png" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" />
+<span class="gl-button-text">
+GitHub
+</span>
+
+</span>
+
+</button><input type="hidden" name="authenticity_token" value="L8xoBNGfu5Q7mJYP7BKyo6RJEQv1MkVF8-5LryHPtTuPm6JmwrT9N6ZMgUYONy0T34pyAPr13uHLwF3WXuuklA" autocomplete="off" /></form>
+<form class="button_to" method="post" action="/users/auth/gitlab"><button class="gl-button btn btn-block btn-md btn-default " data-testid="gitlab-oauth-login-button" type="submit"><span class="gl-button-text">
+<img alt="GitLab.com" title="Sign in with GitLab.com" class="gl-button-icon lazy" data-src="/assets/auth_buttons/gitlab_64-2808a5fce900f4cb87b4dce9f9907bf68ac00a39086aa3a125e3250652f9967f.png" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" />
+<span class="gl-button-text">
+GitLab.com
+</span>
+
+</span>
+
+</button><input type="hidden" name="authenticity_token" value="C2H_WU6gVK164rNx3TLGymkhxW907kX90K29BmspS9erNjU7XYsSDuc2pDg_F1l6EuKmZHsp3lnog6t_FA1aeA" autocomplete="off" /></form>
+<div class="gl-form-checkbox custom-control custom-checkbox">
+<input type="checkbox" name="js-remember-me-omniauth" id="js-remember-me-omniauth" class="custom-control-input" />
+<label class="custom-control-label" for="js-remember-me-omniauth"><span>Remember me
+</span></label>
+</div>
+</div>
+
+
+</div>
+</div>
+</div>
+</div>
+<div class="footer-container gl-w-full gl-align-self-end">
+<hr class="gl-m-0">
+<div class="container gl-py-5 gl-display-flex gl-justify-content-space-between gl-align-items-flex-start">
+<div class="gl-display-none gl-md-display-flex gl-gap-5 gl-flex-wrap">
+<a href="/explore">Explore</a>
+<a href="/help">Help</a>
+<a href="https://about.gitlab.com">About GitLab</a>
+<a target="_blank" class="text-nowrap" rel="noopener noreferrer" href="https://forum.gitlab.com">Community forum</a>
+</div>
+<div class="js-language-switcher" data-locales="[{&quot;value&quot;:&quot;en&quot;,&quot;percentage&quot;:100,&quot;text&quot;:&quot;English&quot;},{&quot;value&quot;:&quot;zh_TW&quot;,&quot;percentage&quot;:99,&quot;text&quot;:&quot;繁體中文 (台灣)&quot;},{&quot;value&quot;:&quot;zh_CN&quot;,&quot;percentage&quot;:98,&quot;text&quot;:&quot;简体中文&quot;},{&quot;value&quot;:&quot;fr&quot;,&quot;percentage&quot;:95,&quot;text&quot;:&quot;français&quot;},{&quot;value&quot;:&quot;ja&quot;,&quot;percentage&quot;:93,&quot;text&quot;:&quot;日本語&quot;},{&quot;value&quot;:&quot;de&quot;,&quot;percentage&quot;:92,&quot;text&quot;:&quot;Deutsch&quot;}]"></div>
+
+</div>
+</div>
+
+
+</div>
+</body>
+</html>

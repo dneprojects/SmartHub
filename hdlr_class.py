@@ -28,6 +28,8 @@ class HdlrBase:
             return self._args[0], self._args[1]
         elif (self._cmd_grp == 30) and (self._spec >= API_ACTIONS.OUTP_OFF):
             return self._p4, self._p5
+        elif (self._cmd_grp == 30) and (self._spec == API_ACTIONS.DIR_CMD):
+            return self._p4, self._p5
         elif self._cmd_grp == 50:
             return self._p4, self._p5
         elif self._cmd_grp == 40:

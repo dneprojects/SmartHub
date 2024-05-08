@@ -1,0 +1,31 @@
+Nmap Public Source License
+
+Nmap is distributed under the terms of the Nmap Public Source License (annotated 
+HTML version / plain text version). This license is based on the GNU GPLv2, but 
+with important additional terms, conditions, clarifications and exceptions. It also 
+contains a warranty disclaimer and contributor agreement. We believe it is 
+compliant with the Open Source Definition, but we haven't gone through their 
+certification process (which requires an attorney).
+
+The primary goals of this license are:
+
+Keep Nmap free for the millions of individuals and organizations who depend on it.
+Prohibit redistribution and use of Nmap within proprietary hardware and software 
+products. This is because we fund the Nmap Project by selling a special Nmap OEM 
+license for companies that wish to embed Nmap technology within their products. 
+Nmap OEM also includes commercial support, indemnification, and custom Windows 
+builds.
+Keep the Nmap source code available for public review. This helps people understand 
+how Nmap works and evaluate Nmap for security and code quality. Users are even 
+encouraged to submit patches that improve Nmap further.
+The license itself is rather terse, so we have created the Annotated HTML Nmap 
+Public Source License. This version includes further reasoning behind and 
+explanations of the license terms. These annotations are not a legal document or 
+legal advice. If you need to know exactly what the license requires, you need to 
+read and understand the license itself; if you need legal advice, talk to a lawyer.
+
+Note that some releases of Nmap may fall under a previous version of this license, 
+or a different license entirely. The exact terms for a given version of Nmap can be 
+found in the included LICENSE or COPYING file. To ease the transition to the NPSL, 
+the first three Nmap releases made under that license (Nmap 7.90, 7.91, and 7.92) 
+may also be used under the previous Nmap license terms by anyone who prefers those.
