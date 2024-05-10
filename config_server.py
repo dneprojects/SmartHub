@@ -8,15 +8,20 @@ from config_settings import (
 )
 import json
 from config_automations import ConfigAutomationsServer
+from config_setup import ConfigSetupServer
+from config_testing import ConfigTestingServer
 from config_commons import (
     adjust_settings_button,
     fill_page_template,
     get_html,
     get_module_image,
     init_side_menu,
+    show_homepage,
+    show_exitpage,
     show_modules,
     show_update_router,
     show_update_modules,
+    show_hub_overview,
     client_not_authorized,
     show_not_authorized,
 )
@@ -29,14 +34,8 @@ import logging
 import pathlib
 from const import (
     MODULE_CODES,
-    SMHUB_INFO,
-    WEB_FILES_DIR,
     HOMEPAGE,
     LICENSE_PAGE,
-    LICENSE_PATH,
-    LICENSE_TABLE,
-    CONF_HOMEPAGE,
-    HUB_HOMEPAGE,
     OWN_INGRESS_IP,
     CONF_PORT,
     INGRESS_PORT,
@@ -69,6 +68,7 @@ class ConfigServer:
             self._ip = api_srv.sm_hub._host_ip
             self._port = CONF_PORT
         self.conf_running = False
+        self.is_install = True  # Installer mode
 
     async def initialize(self):
         """Initialize config server."""
@@ -105,6 +105,11 @@ class ConfigServer:
         self.app.add_subapp("/settings", self.settings_srv.app)
         self.automations_srv = ConfigAutomationsServer(self.app, self.api_srv)
         self.app.add_subapp("/automations", self.automations_srv.app)
+        if self.is_install:
+            self.setup_srv = ConfigSetupServer(self.app, self.api_srv)
+            self.app.add_subapp("/setup", self.setup_srv.app)
+            self.testing_srv = ConfigTestingServer(self.app, self.api_srv)
+            self.app.add_subapp("/testing", self.testing_srv.app)
         self.app.add_routes(routes)
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
@@ -114,14 +119,12 @@ class ConfigServer:
         """Second initialization after api_srv is initialized."""
         self.app["api_srv"] = self.api_srv
         self.app["is_offline"] = self.api_srv.is_offline
+        self.app["is_install"] = self.is_install
         init_side_menu(self.app)
 
     @routes.get("/")
     async def get_root(request: web.Request) -> web.Response:  # type: ignore
-        page = get_html(HOMEPAGE)
-        if request.app["is_offline"]:
-            page = page.replace(">Hub<", ">Home<")
-        return web.Response(text=page, content_type="text/html", charset="utf-8")
+        return show_homepage(request.app)
 
     @routes.get("/licenses")
     async def get_licenses(request: web.Request) -> web.Response:  # type: ignore
@@ -129,16 +132,10 @@ class ConfigServer:
 
     @routes.get("/exit")
     async def get_exit(request: web.Request) -> web.Response:  # type: ignore
-        page = get_html(HOMEPAGE)
-        if request.app["is_offline"]:
-            page = page.replace(">Hub<", ">Home<")
-            page = page.replace(
-                "Passen Sie hier die Grundeinstellungen des Systems an.", "Beendet."
-            )
         api_srv = request.app["api_srv"]
         # async with api_srv.sm_hub.tg:
         api_srv.sm_hub.tg.create_task(terminate_delayed(api_srv))
-        return web.Response(text=page, content_type="text/html", charset="utf-8")
+        return show_exitpage(request.app)
 
     @routes.get("/router")
     async def get_router(request: web.Request) -> web.Response:  # type: ignore
@@ -419,39 +416,6 @@ async def _(request):
     return web.Response(text=page, content_type="text/html", charset="utf-8")
 
 
-def show_hub_overview(app) -> web.Response:
-    """Show hub overview page."""
-    api_srv = app["api_srv"]
-    smhub = api_srv.sm_hub
-    smhub_info = smhub.get_info()
-    hub_name = smhub._host
-    if api_srv.is_offline:
-        pic_file, subtitle = get_module_image(b"\xc9\x00")
-        html_str = get_html(CONF_HOMEPAGE).replace(
-            "Version: x.y.z", f"Version: {SMHUB_INFO.SW_VERSION}"
-        )
-    elif api_srv.is_addon:
-        pic_file, subtitle = get_module_image(b"\xca\x00")
-        html_str = get_html(HUB_HOMEPAGE).replace(
-            "HubTitle", f"Smart Center '{hub_name}'"
-        )
-        smhub_info = smhub_info.replace("type: Smart Hub", "type:  Smart Hub Add-on")
-    else:
-        pic_file, subtitle = get_module_image(b"\xc9\x00")
-        html_str = get_html(HUB_HOMEPAGE).replace("HubTitle", f"Smart Hub '{hub_name}'")
-    html_str = html_str.replace("Overview", subtitle)
-    html_str = html_str.replace("smart-Ip.jpg", pic_file)
-    html_str = html_str.replace(
-        "ContentText",
-        "<h3>Eigenschaften</h3>\n<p>"
-        + smhub_info.replace("  ", "&nbsp;&nbsp;&nbsp;&nbsp;")
-        .replace(": ", ":&nbsp;&nbsp;")
-        .replace("\n", "</p>\n<p>")
-        + "</p>",
-    )
-    return web.Response(text=html_str, content_type="text/html", charset="utf-8")
-
-
 def format_smc(buf: bytes) -> str:
     """Parse line structure and add ';' and linefeeds."""
     no_lines = int.from_bytes(buf[:2], "little")
@@ -543,7 +507,13 @@ async def send_to_module(app, content: str, mod_addr: int):
     rtr = app["api_srv"].routers[0]
     if app["api_srv"].is_offline:
         rtr.modules.append(
-            HbtnModule(mod_addr, rtr._id, ModHdlr(mod_addr, rtr.api_srv), rtr.api_srv)
+            HbtnModule(
+                mod_addr,
+                rtr.get_channel(mod_addr),
+                rtr._id,
+                ModHdlr(mod_addr, rtr.api_srv),
+                rtr.api_srv,
+            )
         )
         module = rtr.modules[-1]
         module.smg_upload, module.list = seperate_upload(content)

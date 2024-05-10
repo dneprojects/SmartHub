@@ -226,7 +226,7 @@ async def show_next_prev(main_app, args):
             try:
                 await module.set_settings(settings)
                 main_app["side_menu"] = adjust_side_menu(
-                    router.modules, main_app["is_offline"]
+                    router.modules, main_app["is_offline"], main_app["is_install"]
                 )
                 if settings.group != int(settings.group_member):
                     # group membership changed, update in router
@@ -246,6 +246,7 @@ async def show_next_prev(main_app, args):
                 main_app["side_menu"] = adjust_side_menu(
                     main_app["api_srv"].routers[0].modules,
                     main_app["is_offline"],
+                    main_app["is_install"],
                 )
             except Exception as err_msg:
                 main_app.logger.error(f"Error while saving router settings: {err_msg}")

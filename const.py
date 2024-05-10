@@ -762,6 +762,22 @@ MODULE_CODES: Final[dict[str, str]] = {
     "\x50\x66": "Smart Detect 180-2",
 }
 
+MODULE_TYPES: Final[dict[str, str]] = {
+    "\x01\x02": "Smart Controller XL-2",
+    # "\x01\x0a": "Smart Controller X",
+    "\x32\x01": "Smart Controller Mini",
+    "\x0a\x02": "Smart Out 8/T",
+    "\x0a\x16": "Smart Dimm-2",
+    "\x0a\x1e": "Smart IO2",  # Unterputzmodul
+    "\x0a\x33": "Smart Out 8/R-2",
+    "\x0b\x1f": "Smart In 8/24V-1",
+    "\x0b\x01": "Smart In 8/230V",
+    "\x14\x01": "Smart Nature",
+    "\x1e\x01": "Fanekey",
+    "\x50\x66": "Smart Detect 180-2",
+    "\x50\x65": "Smart Detect 360",
+}
+
 
 class IfDescriptor:
     """Habitron interface descriptor."""

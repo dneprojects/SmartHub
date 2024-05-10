@@ -6,6 +6,10 @@ from const import (
     CONFIG_TEMPLATE_FILE,
     ALLOWED_INGRESS_IPS,
     NOT_AUTH_PAGE,
+    CONF_HOMEPAGE,
+    HUB_HOMEPAGE,
+    HOMEPAGE,
+    SMHUB_INFO,
 )
 
 
@@ -18,6 +22,66 @@ def html_response(html_file) -> web.Response:
     with open(WEB_FILES_DIR + html_file, mode="r", encoding="utf-8") as pg_id:
         text = pg_id.read()
     return web.Response(text=text, content_type="text/html", charset="utf-8")
+
+
+def show_homepage(app) -> web.Response:
+    """Show configurator home page."""
+    api_srv = app["api_srv"]
+    page = get_html(HOMEPAGE)
+    side_menu = activate_side_menu(app["side_menu"], "", api_srv.is_offline)
+    page = page.replace("<!-- SideMenu -->", side_menu)
+    if app["is_offline"]:
+        page = page.replace(">Hub<", ">Home<")
+    return web.Response(text=page, content_type="text/html", charset="utf-8")
+
+
+def show_exitpage(app) -> web.Response:
+    """Show configurator exit page."""
+    api_srv = app["api_srv"]
+    page = get_html(HOMEPAGE)
+    side_menu = activate_side_menu(app["side_menu"], "", api_srv.is_offline)
+    page = page.replace(
+        "Passen Sie hier die Grundeinstellungen des Systems an.", "Beendet."
+    )
+    page = page.replace("<!-- SideMenu -->", side_menu)
+    if app["is_offline"]:
+        page = page.replace(">Hub<", ">Home<")
+    return web.Response(text=page, content_type="text/html", charset="utf-8")
+
+
+def show_hub_overview(app) -> web.Response:
+    """Show hub overview page."""
+    api_srv = app["api_srv"]
+    smhub = api_srv.sm_hub
+    smhub_info = smhub.get_info()
+    hub_name = smhub._host
+    side_menu = activate_side_menu(app["side_menu"], ">Hub<", api_srv.is_offline)
+    if api_srv.is_offline:
+        pic_file, subtitle = get_module_image(b"\xc9\x00")
+        html_str = get_html(CONF_HOMEPAGE).replace(
+            "Version: x.y.z", f"Version: {SMHUB_INFO.SW_VERSION}"
+        )
+    elif api_srv.is_addon:
+        pic_file, subtitle = get_module_image(b"\xca\x00")
+        html_str = get_html(HUB_HOMEPAGE).replace(
+            "HubTitle", f"Smart Center '{hub_name}'"
+        )
+        smhub_info = smhub_info.replace("type: Smart Hub", "type:  Smart Hub Add-on")
+    else:
+        pic_file, subtitle = get_module_image(b"\xc9\x00")
+        html_str = get_html(HUB_HOMEPAGE).replace("HubTitle", f"Smart Hub '{hub_name}'")
+    html_str = html_str.replace("Overview", subtitle)
+    html_str = html_str.replace("smart-Ip.jpg", pic_file)
+    html_str = html_str.replace(
+        "ContentText",
+        "<h3>Eigenschaften</h3>\n<p>"
+        + smhub_info.replace("  ", "&nbsp;&nbsp;&nbsp;&nbsp;")
+        .replace(": ", ":&nbsp;&nbsp;")
+        .replace("\n", "</p>\n<p>")
+        + "</p>",
+    )
+    html_str = html_str.replace("<!-- SideMenu -->", side_menu)
+    return web.Response(text=html_str, content_type="text/html", charset="utf-8")
 
 
 def show_modules(app) -> web.Response:
@@ -146,15 +210,29 @@ def fill_page_template(
 
 def init_side_menu(app):
     """Setup side menu."""
-    side_menu = adjust_side_menu(app["api_srv"].routers[0].modules, app["is_offline"])
+    side_menu = adjust_side_menu(
+        app["api_srv"].routers[0].modules, app["is_offline"], app["is_install"]
+    )
     app["side_menu"] = side_menu
 
 
-def adjust_side_menu(modules, is_offline: bool) -> str:
+def adjust_side_menu(modules, is_offline: bool, is_install: bool) -> str:
     """Load side_menu and adjust module entries."""
     mod_lines = []
     with open(WEB_FILES_DIR + SIDE_MENU_FILE, mode="r", encoding="utf-8") as smf_id:
-        side_menu = smf_id.read().splitlines(keepends=True)
+        if is_install:
+            side_menu = (
+                smf_id.read()
+                .replace("submenu modules last", "submenu modules")
+                .splitlines(keepends=True)
+            )
+            side_menu.append('<ul class="level_1">')
+            side_menu.append(
+                '<li class="submenu modules last"><a href="setup/" title="Setup" class="submenu modules last">Setup</a></li>'
+            )
+            side_menu.append("</ul>")
+        else:
+            side_menu = smf_id.read().splitlines(keepends=True)
     for sub_line in side_menu:
         if sub_line.find("modules sub") > 0:
             sub_idx = side_menu.index(sub_line)
@@ -179,14 +257,16 @@ def adjust_side_menu(modules, is_offline: bool) -> str:
 def activate_side_menu(menu: str, entry: str, is_offline: bool) -> str:
     """Mark menu entry as active."""
     side_menu = menu.splitlines(keepends=True)
+    sub_idx = None
     for sub_line in side_menu:
         if sub_line.find(entry) > 0:
             sub_idx = side_menu.index(sub_line)
             break
-    side_menu[sub_idx] = re.sub(
-        r"title=\"[a-z,A-z,0-9,\-,\"]+ ", "", side_menu[sub_idx]
-    )
-    side_menu[sub_idx] = side_menu[sub_idx].replace('class="', 'class="active ')
+    if sub_idx is not None:
+        side_menu[sub_idx] = re.sub(
+            r"title=\"[a-z,A-z,0-9,\-,\"]+ ", "", side_menu[sub_idx]
+        )
+        side_menu[sub_idx] = side_menu[sub_idx].replace('class="', 'class="active ')
     side_menu_str = "".join(side_menu)
     if is_offline:
         side_menu_str = side_menu_str.replace(

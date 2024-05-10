@@ -21,8 +21,8 @@ from const import (
 routes = web.RouteTableDef()
 
 
-class ConfigAutomationsServer:
-    """Web server for automation configuration tasks."""
+class ConfigTestingServer:
+    """Web server for testing tasks."""
 
     def __init__(self, parent, api_srv):
         self.api_srv = api_srv
