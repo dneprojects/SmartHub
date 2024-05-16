@@ -228,8 +228,18 @@ def adjust_side_menu(modules, is_offline: bool, is_install: bool) -> str:
             )
             side_menu.append('<ul class="level_1">')
             side_menu.append(
-                '<li class="submenu modules last"><a href="setup/" title="Setup" class="submenu modules last">Setup</a></li>'
+                '<li class="submenu modules last"><a href="setup/" title="Einrichten" class="submenu modules last">Einrichten</a>'
             )
+            side_menu.append(
+                '\n  <ul class="level_2">\n'
+                + '    <li class="setup sub"><a href="setup/add" title="Modul anlegen" class="setup sub">Modul anlegen</a></li>\n'
+            )
+            if not is_offline:
+                side_menu.append(
+                    '    <li class="setup sub"><a href="setup/test" title="Modul testen" class="setup sub">Modul testen</a></li>\n'
+                    + "  </ul>\n"
+                    + "</li>"
+                )
             side_menu.append("</ul>")
         else:
             side_menu = smf_id.read().splitlines(keepends=True)
@@ -263,9 +273,9 @@ def activate_side_menu(menu: str, entry: str, is_offline: bool) -> str:
             sub_idx = side_menu.index(sub_line)
             break
     if sub_idx is not None:
-        side_menu[sub_idx] = re.sub(
-            r"title=\"[a-z,A-z,0-9,\-,\"]+ ", "", side_menu[sub_idx]
-        )
+        # side_menu[sub_idx] = re.sub(
+        #     r"title=\"[a-z,A-z,0-9,\-,\"]+ ", "", side_menu[sub_idx]
+        # )
         side_menu[sub_idx] = side_menu[sub_idx].replace('class="', 'class="active ')
     side_menu_str = "".join(side_menu)
     if is_offline:

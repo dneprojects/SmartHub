@@ -28,6 +28,9 @@ img {
 
 #mitte, #mitte_automtn {
     float: left;
+    min-height: 300px;
+    max-height: 600px;
+    overflow-y: scroll;
 }
 
 #right {

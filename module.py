@@ -56,6 +56,8 @@ class HbtnModule:
             .decode("iso8859-1")
             .strip()
         )
+        if len(serial) == 0:
+            return ""
         if serial[0] == "\x00":
             return ""
         return serial

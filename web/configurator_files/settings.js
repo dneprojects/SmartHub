@@ -8,20 +8,23 @@ for (let i = 0; i < settngs_buttons.length; i++) {
         break;
     }
 }
-var new_btn = document.getElementsByClassName("new_cntr_button")[0];
-if (new_btn == null) {
+var new_cntr_btn = document.getElementsByClassName("new_cntr_button")[0];
+if (new_cntr_btn == null) {
     new_btn = document.getElementsByClassName("new_button")[0];
 }
+else {
+    new_btn = new_cntr_btn;
+}
 const max_btn = document.getElementById("max_cnt")
-const new_number = document.getElementsByName("new_entry")[0]
+const new_addr = document.getElementsByName("new_entry")[0]
 const setngs_tbl = document.getElementById("set_tbl");
-if (new_number != null) {
-    new_number.addEventListener("change", function(){
-    parseNewNumber()
+if (new_addr != null) {
+    new_addr.addEventListener("change", function(){
+    parseNewAddr()
     })
 }
-if (new_btn != null) {
-    new_btn.addEventListener("click", function(){
+if (new_cntr_btn != null) {
+    new_cntr_btn.addEventListener("click", function(){
     getCounterOptions()
     })
 }
@@ -39,11 +42,11 @@ controlDelButton();
 function controlNewButton()  {
     if (new_btn != null) {
         new_btn.disabled = true;  // for modules only
-        if ((new_number.value != "") & (setngs_tbl.rows.length - 2 < parseInt(new_number.max))) {
+        if ((new_addr.value != "") & (setngs_tbl.rows.length - 2 < parseInt(new_addr.max))) {
                 new_btn.disabled = false;
         }
-        if (setngs_tbl.rows.length - 2 >= parseInt(new_number.max)) {
-            new_number.disabled = true;
+        if (setngs_tbl.rows.length - 2 >= parseInt(new_addr.max)) {
+            new_addr.disabled = true;
         }
     }
     
@@ -85,23 +88,23 @@ function openTeachPopup() {
     teach_popup.classList.add("show");
 };
 function getCounterOptions() {
-    if (new_number.value != "")
+    if (new_addr.value != "")
         count_popup.classList.add("show");
 };
 function getMaxCount() {
     max_btn.value += document.getElementById("max_count_input").value
 }
 
-function parseNewNumber() {
+function parseNewAddr() {
     controlNewButton()
     existing_numbers = [];
-    min_number = new_number.min;
-    max_number = parseInt(new_number.max);
+    min_number = new_addr.min;
+    max_number = parseInt(new_addr.max);
     for (var i = 0; i < setngs_tbl.rows.length - 2; i++) {
         lbl = setngs_tbl.rows[i].cells[0].innerText.split(/\s*[\s,]\s*/);
         existing_numbers.push(lbl[lbl.length - 1]);
     }
-    let nn = new_number.value
+    let nn = new_addr.value
     while (existing_numbers.includes(nn)) {
         nn = String(parseInt(nn) + 1);
     }
@@ -111,5 +114,5 @@ function parseNewNumber() {
             nn = String(parseInt(nn) - 1);
         }
     }
-    new_number.value = nn
+    new_addr.value = nn
 }

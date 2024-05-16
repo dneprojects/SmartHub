@@ -52,10 +52,10 @@ class AutomationsSet:
 
         self.logger.debug("Getting automations from list")
         list = settings.list
-        no_lines = int.from_bytes(list[:2], "little")
-        list = list[4 : len(list)]  # Strip 4 header bytes
         if len(list) == 0:
             return False
+        no_lines = int.from_bytes(list[:2], "little")
+        list = list[4 : len(list)]  # Strip 4 header bytes
         for _ in range(no_lines):
             try:
                 if list == b"":

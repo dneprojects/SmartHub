@@ -104,7 +104,7 @@ def show_router_overview(main_app) -> web.Response:
         main_app["side_menu"], ">Router<", api_srv.is_offline
     )
     type_desc = "Smart Router - Kommunikationsschnittstelle zwischen den Modulen"
-    if rtr.channels == b"":
+    if rtr.channels == b"":  #  and not main_app["is_install"]:
         page = fill_page_template(
             "Router", type_desc, "--", side_menu, "router.jpg", ""
         )
@@ -194,6 +194,10 @@ def show_module_overview(main_app, mod_addr) -> web.Response:
     page = adjust_settings_button(page, "mod", f"{mod_addr}")
     if module.has_automations():
         page = adjust_automations_button(page)
+    if main_app["is_install"]:
+        page = page.replace("<!-- SetupContentStart >", "<!-- SetupContentStart -->")
+        if api_srv.is_offline:
+            page = page.replace('>Modul testen<','disabled>Modul testen<')
     return web.Response(text=page, content_type="text/html")
 
 
@@ -477,15 +481,18 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
         cl2_checked = ""
         cl3_checked = ""
         cl4_checked = ""
-        match settings.status[MirrIdx.CLIM_SETTINGS]:
-            case 1:
-                cl1_checked = "checked"
-            case 2:
-                cl2_checked = "checked"
-            case 3:
-                cl3_checked = "checked"
-            case 4:
-                cl4_checked = "checked"
+        if len(settings.status) == 0:
+            cl4_checked = "checked"
+        else:
+            match settings.status[MirrIdx.CLIM_SETTINGS]:
+                case 1:
+                    cl1_checked = "checked"
+                case 2:
+                    cl2_checked = "checked"
+                case 3:
+                    cl3_checked = "checked"
+                case 4:
+                    cl4_checked = "checked"
         tbl += (
             indent(7)
             + f'<td style="vertical-align: top;">{prompt}</td>'
@@ -500,12 +507,16 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
         )
         id_name = "temp_1_2"
         prompt = "Temperatursensor"
-        if settings.status[MirrIdx.TMP_CTL_MD] == 1:
+        if len(settings.status) == 0:
             s1_checked = "checked"
             s2_checked = ""
         else:
-            s1_checked = ""
-            s2_checked = "checked"
+            if settings.status[MirrIdx.TMP_CTL_MD] == 1:
+                s1_checked = "checked"
+                s2_checked = ""
+            else:
+                s1_checked = ""
+                s2_checked = "checked"
         tbl += (
             indent(7)
             + f'<td style="vertical-align: top;">{prompt}</td>'
@@ -517,12 +528,16 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
     if settings.type in ["Smart Controller XL-1", "Smart Controller XL-2"]:
         id_name = "supply_prio"
         prompt = "Versorgungspriorität"
-        if settings.status[MirrIdx.SUPPLY_PRIO] == 66:
-            v230_checked = ""
-            v24_checked = "checked"
-        else:
+        if len(settings.status) == 0:
             v230_checked = "checked"
             v24_checked = ""
+        else:
+            if settings.status[MirrIdx.SUPPLY_PRIO] == 66:
+                v230_checked = ""
+                v24_checked = "checked"
+            else:
+                v230_checked = "checked"
+                v24_checked = ""
         tbl += (
             indent(7)
             + f'<td style="vertical-align: top;">{prompt}</td>'
@@ -655,7 +670,14 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                 ]
                 tbl += indent(7) + f'<td><select name="data[{ci},1]" id="{id_name}">\n'
                 for dep in range(4):
-                    if dep == main_app["settings"].mode_dependencies[tbl_data[ci].nmbr]:
+                    if main_app["settings"].mode_dependencies == b"":
+                        tbl += (
+                            indent(8)
+                            + f'<option value="{dep}">{dep_names[dep]}</option>\n'
+                        )
+                    elif (
+                        dep == main_app["settings"].mode_dependencies[tbl_data[ci].nmbr]
+                    ):
                         tbl += (
                             indent(8)
                             + f'<option value="{dep}" selected>{dep_names[dep]}</option>\n'
@@ -922,7 +944,7 @@ def parse_response_form(main_app, form_data):
                             settings.blade_times[c_idx] = float(form_data[form_key][0])
                             if float(form_data[form_key][0]) > 0:
                                 settings.covers[c_idx].type = int(
-                                    copysign(2, settings.covers[c_idx].type)
+                                    copysign(2, settings.covers[c_idx].type)  # type: ignore
                                 )
                         elif indices[1] == 3:
                             # checked 'normal polarity' => entry in form, so set pol here

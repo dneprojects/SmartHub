@@ -12,7 +12,19 @@
     display: none;
 }
 
-#count_popup .popup-content, #file_popup .popup-content, #updates_popup .popup-content {
+#count_popup .popup-content, #file_popup .popup-content, #updates_popup, .popup-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888888;
+    color: #6b6c6e;
+    font-size: 11px;
+    line-height: 16px;
+    height: fit-content;
+    width: fit-content;
+}
+
+#newmod_popup {
     background-color: white;
     margin: 10% auto;
     padding: 20px;

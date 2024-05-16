@@ -731,6 +731,48 @@ body.produkte.sub #right h1 {
    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
    font: 11px arial, helvetica, clean, sans-serif;
 }
+
+#add-mod-ok {
+   height: 22px;
+   width: 140px;
+   margin-top: 40px;
+   margin-left: 5px;
+   margin-right: 5px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
+
+#close-button {
+   height: 22px;
+   width: 140px;
+   margin-top: 40px;
+   margin-left: 5px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
+
+div#setup-buttons {
+   position: absolute;
+   bottom: 20px;
+}
+#test-button {
+   height: 22px;
+   width: 140px;
+   margin-left: 220px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
+#rem-button {
+   height: 22px;
+   width: 140px;
+   margin-left: 0px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+   position: absolute;
+}
 #upd_button {
    height: 22px;
    width: 140px;
@@ -927,6 +969,7 @@ table.schnellzugriff td.even {
    vertical-align: middle;
    padding-left: 5px;
 }
+
 
 /* ---------------------------------------------------------Design Fullwidth---------------------------- */
 
@@ -1246,37 +1289,6 @@ form#confbuttons {
    clear: both;
 }
 
-/*---------------------------------------------------------Anwendungdbeispiele Boxen-----------------------------------*/
-div.produkte_box {
-   position: relative;
-   width: 326px;
-   min-height: 170px;
-   background: #FFF url(design/produkte_box_bg.jpg) repeat-y left top;
-   padding: 10px;
-   margin-bottom: 21px;
-   display: inline;
-   float: left;
-   vertical-align: top;
-   z-index: 400;
-   line-height: 16px;
-}
-
-div.produkte_box h1 {
-   font-size: 12px;
-   font-weight: bold;
-   top: 38px;
-   padding-bottom: 10px;
-   text-transform: none;
-   color: #666;
-}
-
-div.produkte_box img {
-   width: 155px;
-   height: 111px;
-   margin-right: 20px;
-   padding-top: 0;
-   top: 0;
-}
 
 /*----------------------------------------------------------Diverse-----------------------------------*/
 

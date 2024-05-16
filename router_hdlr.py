@@ -390,12 +390,18 @@ class RtHdlr(HdlrBase):
         mod_cnt.append(self.rtr.smr_upload[1])
         rt_channels = b""
         for ch in range(4):
+            self.rtr.channel_list[ch + 1] = []
             ch_count = self.rtr.smr_upload[smr_ptr]
             rt_channels += (
                 int.to_bytes(ch + 1)
                 + int.to_bytes(ch_count)
                 + self.rtr.smr_upload[smr_ptr + 1 : smr_ptr + 1 + ch_count]
             )
+            for md_i in range(ch_count):
+                self.rtr.mod_addrs.append(self.rtr.smr_upload[smr_ptr + 1 + md_i])
+                self.rtr.channel_list[ch + 1].append(
+                    self.rtr.smr_upload[smr_ptr + 1 + md_i]
+                )
             smr_ptr += 1 + ch_count
         await self.send_rt_channels(rt_channels)
         rt_tout = self.rtr.smr_upload[smr_ptr]
@@ -429,6 +435,7 @@ class RtHdlr(HdlrBase):
         self.rtr.modules = []
         self.rtr.mod_addrs = []
         for ch in range(4):
+            self.rtr.channel_list[ch + 1] = []
             ch_count = self.rtr.smr_upload[smr_ptr]
             rt_channels += (
                 int.to_bytes(ch + 1)
@@ -437,6 +444,9 @@ class RtHdlr(HdlrBase):
             )
             for md_i in range(ch_count):
                 self.rtr.mod_addrs.append(self.rtr.smr_upload[smr_ptr + 1 + md_i])
+                self.rtr.channel_list[ch + 1].append(
+                    self.rtr.smr_upload[smr_ptr + 1 + md_i]
+                )
             smr_ptr += 1 + ch_count
         self.rtr.mod_addrs.sort()
         self.rtr.channels = rt_channels

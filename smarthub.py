@@ -23,7 +23,7 @@ from const import (
     RT_TIMEOUT,
     RT_CMDS,
 )
-from api_server import ApiServer
+from api_server import ApiServer, ApiServerMin
 from config_server import ConfigServer
 from query_server import QueryServer
 
@@ -392,13 +392,22 @@ async def main(ev_loop):
             retry_serial -= 1
         if rt_serial is None:
             init_flag = False
-            logger.error("   Initialization of serial connection failed")
-        # Instantiate query object
-        logger.debug("   Initializing query server")
-        sm_hub.q_srv = QueryServer(ev_loop, sm_hub.lan_mac)
-        await sm_hub.q_srv.initialize()
-        # Instantiate api_server object
-        sm_hub.api_srv = ApiServer(ev_loop, sm_hub, rt_serial)
+            running_online = False
+            logger.error(
+                "   Initialization of serial connection failed, running offline"
+            )
+        else:
+            running_online = True
+        if running_online:
+            # Instantiate query object
+            logger.debug("   Initializing query server")
+            sm_hub.q_srv = QueryServer(ev_loop, sm_hub.lan_mac)
+            await sm_hub.q_srv.initialize()
+            # Instantiate api_server object
+            sm_hub.api_srv = ApiServer(ev_loop, sm_hub, rt_serial)
+        else:
+            # Instantiate api_server object
+            sm_hub.api_srv = ApiServerMin(ev_loop, sm_hub)
         # Instantiate config server object
         logger.debug("   Initializing config server")
         sm_hub.conf_srv = ConfigServer(sm_hub.api_srv)
@@ -424,8 +433,9 @@ async def main(ev_loop):
             skip_init = sm_hub.tg.create_task(
                 sm_hub.run_api_server(sm_hub.api_srv), name="api_srv"
             )
-            logger.debug("   Starting query server")
-            sm_hub.tg.create_task(sm_hub.q_srv.run_query_srv(), name="q_srv")
+            if running_online:
+                logger.debug("   Starting query server")
+                sm_hub.tg.create_task(sm_hub.q_srv.run_query_srv(), name="q_srv")
             logger.debug("   Starting config server")
             await sm_hub.conf_srv.prepare()
             sm_hub.tg.create_task(sm_hub.conf_srv.site.start(), name="conf_srv")

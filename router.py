@@ -4,10 +4,12 @@ from const import (
     RT_STAT_CODES,
     DATA_FILES_DIR,
     DATA_FILES_ADDON_DIR,
+    MODULE_CODES,
     RT_CMDS,
 )
 from router_hdlr import RtHdlr
 from module import HbtnModule
+from module_hdlr import ModHdlr
 from configuration import RouterSettings
 
 
@@ -38,7 +40,7 @@ class HbtnRouter:
         self.channels: bytes = b""
         self.channel_list: dict[int, list[int]] = {}
         self.timeout: bytes = b""
-        self.groups: bytes = b""
+        self.groups: bytes = b"\0" * 64
         self.mode_dependencies: bytes = b""
         self.mode0 = 0
         self.user_modes: bytes = b""
@@ -226,7 +228,10 @@ class HbtnRouter:
     def save_descriptions(self) -> None:
         """Save descriptions to file."""
         file_name = f"Rtr_{self._id}_descriptions.smb"
-        file_path = DATA_FILES_ADDON_DIR
+        if self.api_srv.is_addon:
+            file_path = DATA_FILES_ADDON_DIR
+        else:
+            file_path = DATA_FILES_DIR
         if not isfile(file_path + file_name):
             file_path = DATA_FILES_DIR
             self.logger.debug(f"Add-on config path not found, using {file_path}")
@@ -246,7 +251,10 @@ class HbtnRouter:
         """Load descriptions from file."""
         self.descriptions = ""
         file_name = f"Rtr_{self._id}_descriptions.smb"
-        file_path = DATA_FILES_ADDON_DIR
+        if self.api_srv.is_addon:
+            file_path = DATA_FILES_ADDON_DIR
+        else:
+            file_path = DATA_FILES_DIR
         if not isfile(file_path + file_name):
             file_path = DATA_FILES_DIR
             self.logger.debug(f"Add-on config path not found, using {file_path}")
@@ -323,9 +331,13 @@ class HbtnRouter:
             self._name = settings.name
             self.user_modes = (
                 b"\n"
-                + settings.user1_name.encode("iso8859-1")
+                + (settings.user1_name + " " * (10 - len(settings.user1_name))).encode(
+                    "iso8859-1"
+                )
                 + b"\n"
-                + settings.user2_name.encode("iso8859-1")
+                + (settings.user2_name + " " * (10 - len(settings.user2_name))).encode(
+                    "iso8859-1"
+                )
             )
             self.mode_dependencies = settings.mode_dependencies
         else:
@@ -365,3 +377,59 @@ class HbtnRouter:
         """If descriptions in desc file, store them into router and remove them from file."""
         self.logger.info("Description storage in router not yet implemented")
         pass
+
+    def new_module(self, rtr_chan: int, mod_addr: int, mod_typ: bytes, mod_name: str):
+        """Instantiate new module and add to router lists."""
+
+        new_module = HbtnModule(
+            mod_addr,
+            rtr_chan,
+            self._id,
+            ModHdlr(mod_addr, self.api_srv),
+            self.api_srv,
+        )
+        new_module._name = mod_name
+        new_module._typ = mod_typ
+        new_module._type = MODULE_CODES[mod_typ.decode("iso8859-1")]
+        new_module.io_properties, new_module.io_prop_keys = (
+            new_module.get_io_properties()
+        )
+        self.modules.append(new_module)
+        self.mod_addrs.append(mod_addr)
+        channels_str = ""
+        for ch_i in range(4):
+            # add entry to channel list
+            if (ch_i + 1) not in self.channel_list.keys():
+                self.channel_list[ch_i + 1] = []
+            if ch_i + 1 == rtr_chan:
+                self.channel_list[ch_i + 1].append(mod_addr)
+            # prepare channels byte string
+            channels_str += f"{chr(ch_i + 1)}{chr(len(self.channel_list[ch_i + 1]))}"
+            for m_a in self.channel_list[ch_i + 1]:
+                channels_str += f"{chr(m_a)}"
+        self.channels = channels_str.encode("iso8859-1")
+        # set entry initially to group 0
+        self.groups = (
+            self.groups[:mod_addr] + int.to_bytes(0) + self.groups[mod_addr + 1 :]
+        )
+
+    def rem_module(self, mod_addr):
+        """Remove module from router lists."""
+
+        mod = self.get_module(mod_addr)
+        self.modules.remove(mod)
+        self.mod_addrs.remove(mod_addr)
+        channels_str = ""
+        for ch_i in range(4):
+            # remove entry from channel list
+            if mod_addr in self.channel_list[ch_i + 1]:
+                self.channel_list[ch_i + 1].remove(mod_addr)
+            # prepare channels byte string
+            channels_str += f"{chr(ch_i + 1)}{chr(len(self.channel_list[ch_i + 1]))}"
+            for m_a in self.channel_list[ch_i + 1]:
+                channels_str += f"{chr(m_a)}"
+        self.channels = channels_str.encode("iso8859-1")
+        # set entry back to group 0
+        self.groups = (
+            self.groups[:mod_addr] + int.to_bytes(0) + self.groups[mod_addr + 1 :]
+        )
