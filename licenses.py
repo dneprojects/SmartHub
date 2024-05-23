@@ -181,10 +181,11 @@ def build_lic_table(lic_data: list[dict[str, str]], spec: str) -> str:
     else:
         header_line = ""
 
-    tr_line = "        <tr>\n"
+    tr_line = '        <tr id="lic-tr">\n'
+    tre_line = "        </tr>\n"
     td_line = "            <td></td>\n"
     tablesort_lines = (
-        "    <tr>\n"
+        '    <tr id="lic-tr">\n'
         + "      <td>tablesort</td>\n"
         + "      <td>5.3.0</td>\n"
         + "      <td><a href=lic_tablesort5.3.0.txt>Other/Proprietary</a></td>\n"
@@ -221,7 +222,7 @@ def build_lic_table(lic_data: list[dict[str, str]], spec: str) -> str:
         if spec != "os":
             table_str += td_line.replace("><", f">{lic_entry['Author']}<")
         table_str += td_line.replace("><", f">{lic_entry['URL']}<")
-        table_str += tr_line.replace("<tr>", "</tr>")
+        table_str += tre_line
     if spec == "hub":
         table_str += tablesort_lines
     table_str += tend_lines

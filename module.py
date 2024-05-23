@@ -10,12 +10,13 @@ class HbtnModule:
 
     def __init__(self, mod_id: int, chan: int, rt_id: int, hdlr, api_srv) -> None:
         self._id: int = mod_id
-        self.channel: int = chan
+        self._channel: int = chan
         self.rt_id = rt_id
         self.logger = logging.getLogger(__name__)
         self._name = ""
         self._typ: bytes = b""
         self._type = ""
+        self._serial: str = ""
         self.api_srv = api_srv
         self.hdlr = hdlr
 

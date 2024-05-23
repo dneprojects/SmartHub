@@ -6,6 +6,7 @@ from const import (
     DATA_FILES_ADDON_DIR,
     MODULE_CODES,
     RT_CMDS,
+    MirrIdx,
 )
 from router_hdlr import RtHdlr
 from module import HbtnModule
@@ -39,14 +40,16 @@ class HbtnRouter:
         self.name: bytes = b""
         self.channels: bytes = b""
         self.channel_list: dict[int, list[int]] = {}
-        self.timeout: bytes = b""
-        self.groups: bytes = b"\0" * 64
-        self.mode_dependencies: bytes = b""
+        self.timeout: bytes = b"\x14"
+        self.groups: bytes = b"\0" * 80
+        self.mode_dependencies: bytes = b"\0" * 80
         self.mode0 = 0
         self.user_modes: bytes = b""
-        self.serial: bytes = b""
-        self.day_night: bytes = b""
-        self.version: bytes = b""
+        self.serial: bytes = (chr(16) + "0010010824000010").encode("iso8859-1")
+        self.day_night: bytes = (
+            "\x08\x00\1\1\0\x08\x00\1\1\0\x08\x00\1\1\0\x08\x00\1\1\0\x08\x00\1\1\0\x0a\x00\1\1\0\x09\x0f\1\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0"
+        ).encode("iso8859-1")
+        self.version: bytes = (chr(22) + "VM V3.5310 12/2023    ").encode("iso8859-1")
         self.date: bytes = b""
         self.settings = []
         self.properties, self.prop_keys = self.get_properties()
@@ -190,6 +193,15 @@ class HbtnRouter:
                 await self.api_srv.set_server_mode(self._id)
         return
 
+    async def reset_config_mode(self) -> None:
+        """Switches back from config mode (special function for testing mode)."""
+        if self.mode0 != 75 and self.mode0 != 0:
+            new_mode = self.mode0
+        else:
+            new_mode = 32
+        await self.hdlr.set_mode(0, new_mode)
+        return
+
     async def get_boot_stat(self) -> bytes:
         """Ask for boot errors."""
         rt_command = RT_CMDS.GET_RT_BOOTSTAT
@@ -329,6 +341,7 @@ class HbtnRouter:
         self.settings = settings
         if self.api_srv.is_offline:
             self._name = settings.name
+            self.name = (chr(len(self._name)) + self._name).encode("iso8859-1")
             self.user_modes = (
                 b"\n"
                 + (settings.user1_name + " " * (10 - len(settings.user1_name))).encode(
@@ -340,6 +353,8 @@ class HbtnRouter:
                 )
             )
             self.mode_dependencies = settings.mode_dependencies
+            self.build_smr()
+            settings.smr = self.smr
         else:
             await self.api_srv.block_network_if(self._id, True)
             await self.hdlr.send_rt_name(settings.name)
@@ -378,7 +393,14 @@ class HbtnRouter:
         self.logger.info("Description storage in router not yet implemented")
         pass
 
-    def new_module(self, rtr_chan: int, mod_addr: int, mod_typ: bytes, mod_name: str):
+    def new_module(
+        self,
+        rtr_chan: int,
+        mod_addr: int,
+        mod_typ: bytes,
+        mod_name: str,
+        mod_serial: str,
+    ):
         """Instantiate new module and add to router lists."""
 
         new_module = HbtnModule(
@@ -391,9 +413,17 @@ class HbtnRouter:
         new_module._name = mod_name
         new_module._typ = mod_typ
         new_module._type = MODULE_CODES[mod_typ.decode("iso8859-1")]
+        new_module._serial = mod_serial
         new_module.io_properties, new_module.io_prop_keys = (
             new_module.get_io_properties()
         )
+        new_module.status = (
+            chr(mod_addr)
+            + mod_typ.decode("iso8859-1")
+            + "\x00" * (MirrIdx.MOD_SERIAL - 3)
+            + mod_serial
+            + "\x00" * (MirrIdx.END - MirrIdx.MOD_SERIAL - 16)
+        ).encode("iso8859-1")
         self.modules.append(new_module)
         self.mod_addrs.append(mod_addr)
         channels_str = ""
@@ -417,13 +447,13 @@ class HbtnRouter:
         """Remove module from router lists."""
 
         mod = self.get_module(mod_addr)
+        md_chan = mod._channel  # type: ignore
         self.modules.remove(mod)
         self.mod_addrs.remove(mod_addr)
+        # remove entry from channel list
+        self.channel_list[md_chan].remove(mod_addr)
         channels_str = ""
         for ch_i in range(4):
-            # remove entry from channel list
-            if mod_addr in self.channel_list[ch_i + 1]:
-                self.channel_list[ch_i + 1].remove(mod_addr)
             # prepare channels byte string
             channels_str += f"{chr(ch_i + 1)}{chr(len(self.channel_list[ch_i + 1]))}"
             for m_a in self.channel_list[ch_i + 1]:
@@ -433,3 +463,49 @@ class HbtnRouter:
         self.groups = (
             self.groups[:mod_addr] + int.to_bytes(0) + self.groups[mod_addr + 1 :]
         )
+
+    def get_module_by_serial(self, serial: str):
+        """Return module by its serial number."""
+        for mod in self.modules:
+            if mod._serial == serial:
+                return mod
+        return None
+
+    def apply_id_chan_changes(self, changes_dict):
+        """Adjust all entries for modules address and channel changes."""
+
+        # clear structures
+        channels_str = ""
+        old_groups = self.groups
+        self.groups = b"\x40" + b"\0" * 64
+        for ch_i in range(1, 5):
+            self.channel_list[ch_i] = []
+
+        # get new settings
+        for m_i in range(len(self.modules)):
+            mod = self.modules[m_i]
+            mod_group = old_groups[mod._id - 1]
+            new_id = int(changes_dict["modid_" + mod._serial])
+            new_chan = int(changes_dict["modchan_" + mod._serial])
+            self.mod_addrs[m_i] = new_id
+            self.modules[m_i]._id = new_id
+            self.modules[m_i]._channel = new_chan
+            self.modules[m_i].status = (
+                chr(new_id).encode("iso8859-1") + self.modules[m_i].status[1:]
+            )
+
+            # build new channel list
+            self.channel_list[new_chan].append(new_id)
+            # build new group list
+            self.groups = (
+                self.groups[: new_id - 1]
+                + int.to_bytes(mod_group)  # type: ignore
+                + self.groups[new_id:]
+            )
+        # prepare channels byte string from channel list
+        for ch_i in range(1, 5):
+            channels_str += f"{chr(ch_i)}{chr(len(self.channel_list[ch_i]))}"
+            for m_a in self.channel_list[ch_i]:
+                channels_str += f"{chr(m_a)}"
+        self.channels = channels_str.encode("iso8859-1")
+        self.build_smr()

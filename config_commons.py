@@ -86,10 +86,12 @@ def show_hub_overview(app) -> web.Response:
 
 def show_modules(app) -> web.Response:
     """Prepare modules page."""
-    side_menu = activate_side_menu(app["side_menu"], ">Module<", app["is_offline"])
+    modules = app["api_srv"].routers[0].modules
+    side_menu = adjust_side_menu(modules, app["is_offline"], app["is_install"])
+    app["side_menu"] = side_menu
+    side_menu = activate_side_menu(side_menu, ">Module<", app["is_offline"])
     page = get_html("modules.html").replace("<!-- SideMenu -->", side_menu)
     images = ""
-    modules = app["api_srv"].routers[0].modules
     for module in modules:
         pic_file, title = get_module_image(module._typ)
         images += f'<div class="figd_grid"><a href="module-{module._id}"><div class="fig_grid"><img src="configurator_files/{pic_file}" alt="{module._name}"><p class="mod_subtext">{module._name}</p></div></a></div>\n'
@@ -232,14 +234,13 @@ def adjust_side_menu(modules, is_offline: bool, is_install: bool) -> str:
             )
             side_menu.append(
                 '\n  <ul class="level_2">\n'
-                + '    <li class="setup sub"><a href="setup/add" title="Modul anlegen" class="setup sub">Modul anlegen</a></li>\n'
+                + '    <li class="setup sub"><a href="setup/add" title="Module anlegen" class="setup sub">Module anlegen</a></li>\n'
             )
-            if not is_offline:
-                side_menu.append(
-                    '    <li class="setup sub"><a href="setup/test" title="Modul testen" class="setup sub">Modul testen</a></li>\n'
-                    + "  </ul>\n"
-                    + "</li>"
-                )
+            side_menu.append(
+                '    <li class="setup sub"><a href="setup/adapt" title="Module verwalten" class="setup sub">Module verwalten</a></li>\n'
+                + "  </ul>\n"
+                + "</li>"
+            )
             side_menu.append("</ul>")
         else:
             side_menu = smf_id.read().splitlines(keepends=True)

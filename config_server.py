@@ -109,7 +109,7 @@ class ConfigServer:
             self.setup_srv = ConfigSetupServer(self.app, self.api_srv)
             self.app.add_subapp("/setup", self.setup_srv.app)
             self.testing_srv = ConfigTestingServer(self.app, self.api_srv)
-            self.app.add_subapp("/testing", self.testing_srv.app)
+            self.app.add_subapp("/test", self.testing_srv.app)
         self.app.add_routes(routes)
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
@@ -199,8 +199,7 @@ class ConfigServer:
                 str_data = format_hmd(settings.smg, settings.list)
             else:
                 # router
-                settings = rtr.get_router_settings()
-                file_content = settings.smr
+                file_content = rtr.smr
                 file_name += ".hrt"
                 str_data = ""
                 for byt in file_content:
@@ -225,6 +224,8 @@ class ConfigServer:
         content_str = content.decode()
         if "SysUpload" in data.keys():
             content_parts = content_str.split("---\n")
+            if content_parts[-1] == "":
+                content_parts = content_parts[:-1]
             app.logger.info("Router configuration file uploaded")
             await send_to_router(app, content_parts[0])
             for mod_addr in app["api_srv"].routers[0].mod_addrs:

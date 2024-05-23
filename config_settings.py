@@ -197,7 +197,7 @@ def show_module_overview(main_app, mod_addr) -> web.Response:
     if main_app["is_install"]:
         page = page.replace("<!-- SetupContentStart >", "<!-- SetupContentStart -->")
         if api_srv.is_offline:
-            page = page.replace('>Modul testen<','disabled>Modul testen<')
+            page = page.replace(">Modul testen<", "disabled>Modul testen<")
     return web.Response(text=page, content_type="text/html")
 
 
@@ -236,6 +236,7 @@ async def show_next_prev(main_app, args):
                     # group membership changed, update in router
                     router = main_app["api_srv"].routers[0]
                     await router.set_module_group(mod_addr, int(settings.group_member))
+                    settings.group = int(settings.group_member)
             except Exception as err_msg:
                 main_app.logger.error(f"Error while saving module settings: {err_msg}")
             await main_app["api_srv"].block_network_if(module.rt_id, False)
@@ -356,7 +357,7 @@ def get_module_properties(mod) -> str:
     props = "<h3>Eigenschaften</h3>\n"
     props += "<table>\n"
     props += f'<tr><td style="width:80px;">Adresse:</td><td>{mod._id}</td></tr>\n'
-    props += f"<tr><td>Kanal:</td><td>{mod.channel}</td></tr>\n"
+    props += f"<tr><td>Kanal:</td><td>{mod._channel}</td></tr>\n"
     ser = mod.get_serial()
     if len(ser) > 0:
         props += f"<tr><td>Hardware:</td><td>{mod.get_serial()}</td></tr>\n"
@@ -484,7 +485,7 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
         if len(settings.status) == 0:
             cl4_checked = "checked"
         else:
-            match settings.status[MirrIdx.CLIM_SETTINGS]:
+            match settings.temp_ctl:
                 case 1:
                     cl1_checked = "checked"
                 case 2:
@@ -511,7 +512,7 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
             s1_checked = "checked"
             s2_checked = ""
         else:
-            if settings.status[MirrIdx.TMP_CTL_MD] == 1:
+            if settings.temp_1_2 == 1:
                 s1_checked = "checked"
                 s2_checked = ""
             else:
@@ -676,7 +677,8 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                             + f'<option value="{dep}">{dep_names[dep]}</option>\n'
                         )
                     elif (
-                        dep == main_app["settings"].mode_dependencies[tbl_data[ci].nmbr]
+                        dep
+                        == main_app["settings"].mode_dependencies[tbl_data[ci].nmbr - 1]
                     ):
                         tbl += (
                             indent(8)

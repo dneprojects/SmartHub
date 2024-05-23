@@ -47,6 +47,7 @@ class ApiServer:
         self._init_mode: bool = True
         self._first_api_cmd: bool = True
         self.is_offline: bool = False
+        self.is_testing = False
         self.token = os.getenv("SUPERVISOR_TOKEN")
         if self.token is None:
             self.is_addon: bool = False
@@ -181,7 +182,8 @@ class ApiServer:
 
     async def block_network_if(self, rt_no, set_block):
         """Set or reset API mode pause."""
-
+        if self.is_offline:
+            return
         if self._opr_mode and set_block:
             api_time = 0
             while self._api_cmd_processing:
@@ -302,6 +304,17 @@ class ApiServer:
         await self.evnt_srv.stop()
         self.logger.debug("API mode turned off initially")
 
+    async def set_testing_mode(self, activate: bool) -> None:
+        """Switch module testing mode according to bool arg."""
+        if activate:
+            await self.block_network_if(1, True)
+            await self.set_operate_mode()
+            self.is_testing = True
+        else:
+            self.is_testing = False
+            await self.set_operate_mode()
+            await self.block_network_if(1, False)
+
     def get_client_ip(self) -> bool:
         """Return host id from latest call."""
 
@@ -333,6 +346,7 @@ class ApiServerMin(ApiServer):
         self._init_mode: bool = True
         self._first_api_cmd: bool = True
         self.is_offline = True  # Always offline
+        self.is_testing = False
         self.token = os.getenv("SUPERVISOR_TOKEN")
         if self.token is None:
             self.is_addon: bool = False

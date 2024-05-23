@@ -36,7 +36,7 @@ class ModuleSettings:
         )
         self.save_desc_file_needed: bool = False
         self.upload_desc_info_needed: bool = False
-        self.group = dpcopy(module.get_rtr().groups[self.id])
+        self.group = dpcopy(module.get_rtr().groups[self.id - 1])
         self.get_io_interfaces()
         self.get_counters()
         self.get_names()
@@ -97,7 +97,7 @@ class ModuleSettings:
 
         self.logger.debug("Getting module settings from module status")
         conf = self.status
-        if len(conf) == 0:
+        if len(conf) == 0 or sum(conf[3:120]) == 0:
             self.displ_contr = 30
             self.displ_time = 120
             self.t_short = 100
@@ -145,7 +145,7 @@ class ModuleSettings:
             if (
                 conf[MirrIdx.COVER_SETTINGS] & (0x01 << c_idx) > 0
             ):  # binary flag for shutters
-                self.cover_times[c_idx] = round(int(conf[MirrIdx.COVER_T + c_idx]) / 10)
+                self.cover_times[c_idx] = round(int(conf[MirrIdx.COVER_T + c_idx]))
                 self.blade_times[c_idx] = round(int(conf[MirrIdx.BLAD_T + c_idx]) / 10)
                 # polarity defined per output, 2 per cover
                 polarity = (covr_pol & (0x01 << (2 * c_idx)) == 0) * 2 - 1
@@ -159,10 +159,6 @@ class ModuleSettings:
 
     def set_module_settings(self, status: bytes) -> bytes:
         """Restore settings to module status."""
-        if len(status) == 0:
-            status = (chr(self.id) + chr(self.typ[0]) + chr(self.typ[1])).encode(
-                "iso8859-1"
-            ) + b"\x00" * 223
         status = replace_bytes(
             status,
             (self.name + " " * (32 - len(self.name))).encode("iso8859-1"),
@@ -235,7 +231,7 @@ class ModuleSettings:
                 outp_state = outp_state | (0x01 << int(c_idx))
             status = replace_bytes(
                 status,
-                int.to_bytes(int(self.cover_times[c_idx] * 10)),
+                int.to_bytes(int(self.cover_times[c_idx])),
                 MirrIdx.COVER_T + c_idx,
             )
             status = replace_bytes(

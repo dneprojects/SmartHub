@@ -229,6 +229,28 @@ class ModHdlr(HdlrBase):
             await asyncio.sleep(0.1)
         return "OK"
 
+    async def set_output(self, out_no: int, out_val: int) -> None:
+        """Set module output to new value"""
+        outp_bit = 1 << (out_no - 1)
+        if out_val:
+            cmd = RT_CMDS.SET_OUT_ON
+            cmd_str = "on"
+        else:
+            cmd = RT_CMDS.SET_OUT_OFF
+            cmd_str = "off"
+        cmd = (
+            cmd.replace("<rtr>", chr(self.rt_id))
+            .replace("<mod>", chr(self.mod_id))
+            .replace("<outl>", chr(outp_bit & 0xFF))
+            .replace("<outm>", chr((outp_bit >> 8) & 0xFF))
+            .replace("<outh>", chr((outp_bit >> 16) & 0xFF))
+        )
+        await self.handle_router_cmd_resp(self.rt_id, cmd)
+        self.logger.debug(
+            f"Router {self.rt_id}, module {self.mod_id}: turn output {out_no} "
+            + cmd_str
+        )
+
     async def set_display_constrast(self):
         """Send display contrast setting to module."""
         base_idx = SMGIdx.index(MirrIdx.DISPL_CONTR)
