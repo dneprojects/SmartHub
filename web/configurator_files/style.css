@@ -383,44 +383,6 @@ li {
    list-style-position: outside;
 }
 
-/* ----------------------------------------------------Sitemap--------------------------- */
-.mod_sitemap {
-   position: relative;
-   left: 20px;
-}
-
-.mod_sitemap .level_1 li.nositemap {
-   visibility: hidden;
-}
-
-.mod_sitemap li {
-   position: relative;
-   list-style: disc;
-   list-style-position: inside;
-}
-
-.mod_sitemap ul.level_1 li {
-   padding-left: 10px;
-   padding-bottom: 3px;
-}
-
-.mod_sitemap ul.level_2 li {
-   list-style-image: none;
-   padding-left: 20px;
-   padding-bottom: 0px;
-}
-
-.mod_sitemap ul.level_3 li {
-   padding-left: 30px;
-   padding-bottom: 0px;
-}
-
-.mod_sitemap .level_2,
-.mod_sitemap .level_2 li.submenu {
-   visibility: visible;
-   font-size: 14px;
-}
-
 /*--------------------------------------------------Accordeon allgemein-----------------------------------*/
 .toggler {
    height: 21px;
@@ -624,6 +586,14 @@ th {
 }
 
 tr#atm-tr:nth-child(odd) {
+   background-color: #f4e5e3;
+}
+
+tr#inst-tr:nth-child(odd) {
+   background-color: #f4e5e3;
+}
+
+tr#lic-tr:nth-child(odd) {
    background-color: #f4e5e3;
 }
 /* ---------------------------------------------------------Elemente---------------------------- */
@@ -857,6 +827,17 @@ div#setup-buttons {
    font: 11px arial, helvetica, clean, sans-serif;
 }
 
+#tbl-button {
+   height: 22px;
+   width: 140px;
+   margin-top: 30px;
+   margin-bottom: 30px;
+   margin-left: 0px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
+
 #files_button {
    height: 22px;
    width: 140px;
@@ -865,6 +846,25 @@ div#setup-buttons {
    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
    font: 11px arial, helvetica, clean, sans-serif;
 }
+
+#finish_button {
+   height: 22px;
+   width: 140px;
+   margin-left: 0px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
+
+#transfer_button {
+   height: 22px;
+   width: 140px;
+   margin-left: 0px;
+   margin-right: 40px;
+   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+   font: 11px arial, helvetica, clean, sans-serif;
+}
+
 #exit_button {
    height: 22px;
    width: 140px;
@@ -1102,6 +1102,12 @@ select {
 
 input[type="checkbox"].sel_element {
    margin-left: 5px
+}
+
+input[type="number"].mod_ids, input[type="number"].mod_chans {
+   width:30px;
+   height:15px;
+   border: 0px solid #C0372D;
 }
 
 input.mod_chk {
