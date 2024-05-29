@@ -407,7 +407,6 @@ class EventServer:
 
         if self.api_srv._test_mode:
             self.events_buffer.append(event)
-            return
 
         if self.websck_is_closed:
             success = await self.open_websocket()
@@ -499,9 +498,9 @@ class EventServer:
     async def open_websocket(self, retry=True) -> bool:
         """Opens web socket connection to home assistant."""
 
-        if self.api_srv._test_mode:
-            # Test mode does not use websocket
-            return True
+        # if self.api_srv._test_mode:
+        #     # Test mode does not use websocket
+        #     return True
         self.token_ok = retry
         if not self.websck_is_closed:
             return True

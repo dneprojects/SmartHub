@@ -4,6 +4,15 @@ const sort_tbl = document.getElementById("sort_table");
 const rem_button = document.getElementById("tbl-button");
 const chk_boxes = document.getElementsByClassName("mod_sels");
 const mod_table = document.getElementById("mod-table")
+const resp_popup = document.getElementById("resp-popup");
+
+if (resp_popup) {
+    resp_popup.classList.add("show");
+}
+
+close_resp_popup.addEventListener("click", function () {
+    resp_popup.classList.remove("show");
+});
 
 rem_button.addEventListener("click", function () {
     removeModules()

@@ -75,7 +75,7 @@ class ConfigSetupServer:
     @routes.get("/table_close")
     async def tbl_close(request: web.Request) -> web.Response:  # type: ignore
         main_app = request.app["parent"]
-        return show_setup_page(main_app)
+        return show_setup_page(main_app, "Änderungen verworfen")
 
     @routes.get("/adapt")
     async def mod_adapt(request: web.Request) -> web.Response:  # type: ignore
@@ -91,10 +91,13 @@ class ConfigSetupServer:
         if client_not_authorized(request):
             return show_not_authorized(main_app)
         rtr.apply_id_chan_changes(request.query)
-        return show_setup_page(main_app)
+        return show_setup_page(
+            main_app,
+            "Änderungen übernommen,<br>müssen aber noch übertragen oder<br>als Systemkonfiguration gesichert werden",
+        )
 
 
-def show_setup_page(app) -> web.Response:
+def show_setup_page(app, popup_msg="") -> web.Response:
     """Prepare modules page."""
     side_menu = activate_side_menu(app["side_menu"], ">Einrichten<", app["is_offline"])
     page = get_html("setup.html").replace("<!-- SideMenu -->", side_menu)
@@ -130,6 +133,11 @@ def show_setup_page(app) -> web.Response:
     )
     page = page.replace(">Abbruch<", ' style="visibility: hidden;">Abbruch<')
     page = page.replace(">Übernehmen<", ' style="visibility: hidden;">Übernehmen<')
+    if len(popup_msg):
+        page = page.replace(
+            '<h3 id="resp_popup_txt">response_message</h3>',
+            f'<h3 id="resp_popup_txt">{popup_msg}</h3>',
+        ).replace('id="resp-popup-disabled"', 'id="resp-popup"')
     return web.Response(text=page, content_type="text/html", charset="utf-8")
 
 
