@@ -96,7 +96,7 @@ class ConfigSettingsServer:
         return await show_next_prev(request.app["parent"], args[1])
 
 
-def show_router_overview(main_app) -> web.Response:
+def show_router_overview(main_app, popup_msg="") -> web.Response:
     """Prepare overview page of module."""
     api_srv = main_app["api_srv"]
     rtr = api_srv.routers[0]
@@ -106,7 +106,7 @@ def show_router_overview(main_app) -> web.Response:
     type_desc = "Smart Router - Kommunikationsschnittstelle zwischen den Modulen"
     if rtr.channels == b"":  #  and not main_app["is_install"]:
         page = fill_page_template(
-            "Router", type_desc, "--", side_menu, "router.jpg", ""
+            "Router", type_desc, "", "--", side_menu, "router.jpg", ""
         )
         page = adjust_settings_button(page, "", f"{0}")
         return web.Response(text=page, content_type="text/html")
@@ -163,13 +163,24 @@ def show_router_overview(main_app) -> web.Response:
     props += "</table>\n"
     def_filename = "my_router.hrt"
     page = fill_page_template(
-        f"Router '{rtr._name}'", type_desc, props, side_menu, "router.jpg", def_filename
+        f"Router '{rtr._name}'",
+        type_desc,
+        "",
+        props,
+        side_menu,
+        "router.jpg",
+        def_filename,
     )
     page = adjust_settings_button(page, "rtr", f"{0}")
+    if len(popup_msg):
+        page = page.replace(
+            '<h3 id="resp_popup_txt">response_message</h3>',
+            f'<h3 id="resp_popup_txt">{popup_msg}</h3>',
+        ).replace('id="resp-popup-disabled"', 'id="resp-popup"')
     return web.Response(text=page, content_type="text/html")
 
 
-def show_module_overview(main_app, mod_addr) -> web.Response:
+def show_module_overview(main_app, mod_addr, popup_msg="") -> web.Response:
     """Prepare overview page of module."""
     api_srv = main_app["api_srv"]
     module = api_srv.routers[0].get_module(mod_addr)
@@ -186,6 +197,7 @@ def show_module_overview(main_app, mod_addr) -> web.Response:
     page = fill_page_template(
         f"Modul '{module._name}'",
         type_desc,
+        "",
         mod_description,
         side_menu,
         mod_image,
@@ -194,10 +206,11 @@ def show_module_overview(main_app, mod_addr) -> web.Response:
     page = adjust_settings_button(page, "mod", f"{mod_addr}")
     if module.has_automations():
         page = adjust_automations_button(page)
-    if main_app["is_install"]:
-        page = page.replace("<!-- SetupContentStart >", "<!-- SetupContentStart -->")
-        if api_srv.is_offline:
-            page = page.replace(">Modul testen<", "disabled>Modul testen<")
+    if len(popup_msg):
+        page = page.replace(
+            '<h3 id="resp_popup_txt">response_message</h3>',
+            f'<h3 id="resp_popup_txt">{popup_msg}</h3>',
+        ).replace('id="resp-popup-disabled"', 'id="resp-popup"')
     return web.Response(text=page, content_type="text/html")
 
 
@@ -218,9 +231,9 @@ async def show_next_prev(main_app, args):
         step = int(args1[2])
     if button == "cancel":
         if mod_addr > 0:
-            return show_module_overview(main_app, mod_addr)
+            return show_module_overview(main_app, mod_addr, "Änderungen verworfen")
         else:
-            return show_router_overview(main_app)
+            return show_router_overview(main_app, "Änderungen verworfen")
 
     if button == "save":
         if mod_addr > 0:
@@ -234,13 +247,15 @@ async def show_next_prev(main_app, args):
                 )
                 if settings.group != int(settings.group_member):
                     # group membership changed, update in router
-                    router = main_app["api_srv"].routers[0]
                     await router.set_module_group(mod_addr, int(settings.group_member))
                     settings.group = int(settings.group_member)
+                success_msg = "Änderungen übernommen"
             except Exception as err_msg:
-                main_app.logger.error(f"Error while saving module settings: {err_msg}")
+                success_msg = f"Error while saving module settings: {err_msg}"
+                main_app.logger.error(success_msg)
+
             await main_app["api_srv"].block_network_if(module.rt_id, False)
-            return show_module_overview(main_app, mod_addr)
+            return show_module_overview(main_app, mod_addr, success_msg)
         else:
             # Save settings in router
             router = main_app["api_srv"].routers[0]
@@ -253,10 +268,12 @@ async def show_next_prev(main_app, args):
                     main_app["is_offline"],
                     main_app["is_install"],
                 )
+                success_msg = "Änderungen übernommen"
             except Exception as err_msg:
-                main_app.logger.error(f"Error while saving router settings: {err_msg}")
+                success_msg = f"Error while saving router settings: {err_msg}"
+                main_app.logger.error(success_msg)
             await main_app["api_srv"].block_network_if(router._id, False)
-            return show_router_overview(main_app)
+            return show_router_overview(main_app, success_msg)
     props = settings.properties
     main_app["props"] = props
     io_keys = settings.prop_keys
@@ -358,6 +375,7 @@ def get_module_properties(mod) -> str:
     props += "<table>\n"
     props += f'<tr><td style="width:80px;">Adresse:</td><td>{mod._id}</td></tr>\n'
     props += f"<tr><td>Kanal:</td><td>{mod._channel}</td></tr>\n"
+    props += f"<tr><td>Gruppe:</td><td>{mod.get_group_name()}</td></tr>\n"
     ser = mod.get_serial()
     if len(ser) > 0:
         props += f"<tr><td>Hardware:</td><td>{mod.get_serial()}</td></tr>\n"
@@ -649,11 +667,11 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                 else:
                     ipol_chkd = ""
                 tbl += (
-                    f'<td></td><td><input name="data[{ci},1]" type="text" id="{id_name}_tc" maxlength="4" '
+                    f'<td></td><td><input name="data[{ci},1]" type="number" id="{id_name}_tc" min="0" step="1" max="255" '
                     + f'placeholder="Verfahrzeit in s" value = {cov_t[ci]} style="width: 40px;"></td>'
                 )
                 tbl += (
-                    f'<td></td><td><input name="data[{ci},2]" type="text" id="{id_name}_tb" maxlength="4" '
+                    f'<td></td><td><input name="data[{ci},2]" type="number" id="{id_name}_tb" min="0" step="0.5" max="25.5" '
                     + f'placeholder="Jalousiezeit in s (0 falls Rollladen)" value = {bld_t[ci]} style="width: 40px;"></td>'
                 )
                 tbl += (

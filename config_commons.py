@@ -187,7 +187,13 @@ def show_update_modules(mod_list, new_fw: str, mod_type: str) -> web.Response:
 
 
 def fill_page_template(
-    title, subtitle, content, menu, image, download_file: str
+    title: str,
+    subtitle: str,
+    help_text: str,
+    content: str,
+    menu: str,
+    image: str,
+    download_file: str,
 ) -> str:
     """Prepare config web page with content, image, and menu."""
     with open(
@@ -198,6 +204,10 @@ def fill_page_template(
         ext = ""
     else:
         ext = download_file.split(".")[1]
+    if len(help_text):
+        page = page.replace(
+            "<p>ContentText</p>", f"<p>{help_text}</p>\n<p>ContentText</p>"
+        )
     page = (
         page.replace("ContentTitle", title)
         .replace("ContentSubtitle", subtitle)
@@ -238,6 +248,9 @@ def adjust_side_menu(modules, is_offline: bool, is_install: bool) -> str:
             )
             side_menu.append(
                 '    <li class="setup sub"><a href="setup/adapt" title="Module verwalten" class="setup sub">Module verwalten</a></li>\n'
+            )
+            side_menu.append(
+                '    <li class="setup sub"><a href="test/modules" title="Module testen" class="setup sub">Module testen</a></li>\n'
                 + "  </ul>\n"
                 + "</li>"
             )

@@ -84,7 +84,7 @@
             <div class="mod_article block" id="bild-rechts">
               <div class="ce_image block">
                 <div class="image_container">
-                  <img src="configurator_files/smart-Ip.jpg" width="216" height="217" alt="Habitron GmbH">
+                  <img src="configurator_files/router.jpg" width="216" height="217" alt="Habitron GmbH">
                 </div>
 
               </div>
@@ -113,14 +113,15 @@
       </div>
       <div id="footer">
         <div class="inside">
-          <div id="confbutton" style="position: relative;">
-              <button name="ModSettings" id="updates_button" type="submit" value="Upd">Updates</button>
-            <form action="updates" style="width:200px">
-              <!--<button name="EditAutomtns" id="automtns_button" type="submit" value="ModAddress"
-                      style="float: center; position: absolute; top: 0; left: 280px;">Automatisierungen</button>-->
+          <div id="confbuttons">
+            <form id="buttons_line" action="setup/table_close">
+              <button name="ModSettings" class="config_button" id="transfer_button" type="submit" value="transfer">Übertragen</button>
+              <button name="ModSettings" class="config_button" id="config_button" type="submit"
+                value="cancel">Abbruch</button>
+              <button name="ModSettings" class="config_button" id="config_button_sv" type="submit" form="table-form"
+                value="save-ModAddress">Übernehmen</button>
+              <button name="ConfigFiles" class="config_button" id="files_button" type="button" style="float: right; position: absolute; top: 0; left: 560px;">Systemkonfiguration</button>
             </form>
-            <button name="ConfigFiles" id="files_button"
-              style="float: right; position: absolute; top: 0; left: 560px;">Systemkonfiguration</button>
           </div>
         </div>
       </div>

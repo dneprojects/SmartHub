@@ -51,7 +51,7 @@ class HbtnRouter:
         ).encode("iso8859-1")
         self.version: bytes = (chr(22) + "VM V3.5310 12/2023    ").encode("iso8859-1")
         self.date: bytes = b""
-        self.settings = []
+        self.settings: RouterSettings
         self.properties, self.prop_keys = self.get_properties()
 
     def mirror_running(self) -> bool:
@@ -77,6 +77,7 @@ class HbtnRouter:
         await self.hdlr.waitfor_rt_booted()
         modules = await self.get_full_status()
         self.load_descriptions()
+        self.get_router_settings()
 
         self.logger.info("Setting up modules...")
         for m_idx in range(modules[0]):
@@ -150,6 +151,13 @@ class HbtnRouter:
                 return ch_i + 1
         return 0
 
+    def get_group_name(self, grp_no: int) -> str:
+        """Return name of group."""
+        for grp in self.settings.groups:
+            if grp.nmbr == grp_no:
+                return grp.name
+        return f"{grp_no}"
+
     def build_smr(self) -> None:
         """Build SMR file content from status."""
         st_idx = self.status_idx  # noqa: F841
@@ -215,9 +223,9 @@ class HbtnRouter:
     async def set_module_group(self, mod: int, grp: int) -> None:
         """Store new module group setting into router."""
         self.groups = self.groups[:mod] + int.to_bytes(grp) + self.groups[mod + 1 :]
-        await self.set_config_mode(True)
+        # await self.set_config_mode(True)
         await self.hdlr.send_rt_mod_group(mod, grp)
-        await self.set_config_mode(False)
+        # await self.set_config_mode(False)
 
     def pack_descriptions(self) -> str:
         """Pack descriptions to string with lines."""
@@ -360,8 +368,6 @@ class HbtnRouter:
             await self.hdlr.send_rt_name(settings.name)
             await self.hdlr.send_mode_names(settings.user1_name, settings.user2_name)
             await self.hdlr.send_rt_group_deps(settings.mode_dependencies[1:])
-            # await self.hdlr.rt_reboot()
-            # await asyncio.sleep(6)
             await self.get_full_status()
             await self.api_srv.block_network_if(self._id, False)
 
@@ -482,26 +488,35 @@ class HbtnRouter:
             self.channel_list[ch_i] = []
 
         # get new settings
+        rm_list = []
         for m_i in range(len(self.modules)):
             mod = self.modules[m_i]
             mod_group = old_groups[mod._id - 1]
-            new_id = int(changes_dict["modid_" + mod._serial])
-            new_chan = int(changes_dict["modchan_" + mod._serial])
-            self.mod_addrs[m_i] = new_id
-            self.modules[m_i]._id = new_id
-            self.modules[m_i]._channel = new_chan
-            self.modules[m_i].status = (
-                chr(new_id).encode("iso8859-1") + self.modules[m_i].status[1:]
-            )
+            if "modid_" + mod._serial in changes_dict.keys():
+                new_id = int(changes_dict["modid_" + mod._serial])
+                new_chan = int(changes_dict["modchan_" + mod._serial])
+                self.mod_addrs[m_i] = new_id
+                self.modules[m_i]._id = new_id
+                self.modules[m_i]._channel = new_chan
+                self.modules[m_i].status = (
+                    chr(new_id).encode("iso8859-1") + self.modules[m_i].status[1:]
+                )
 
-            # build new channel list
-            self.channel_list[new_chan].append(new_id)
-            # build new group list
-            self.groups = (
-                self.groups[: new_id - 1]
-                + int.to_bytes(mod_group)  # type: ignore
-                + self.groups[new_id:]
-            )
+                # build new channel list
+                self.channel_list[new_chan].append(new_id)
+                # build new group list
+                self.groups = (
+                    self.groups[: new_id - 1]
+                    + int.to_bytes(mod_group)  # type: ignore
+                    + self.groups[new_id:]
+                )
+            else:
+                # remember model to be removed
+                rm_list.append(mod._serial)
+        for m_ser in rm_list:
+            # remove in second loop to not change order in fist loop
+            mod = self.get_module_by_serial(m_ser)
+            self.modules.remove(mod)
         # prepare channels byte string from channel list
         for ch_i in range(1, 5):
             channels_str += f"{chr(ch_i)}{chr(len(self.channel_list[ch_i]))}"

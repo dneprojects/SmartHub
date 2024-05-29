@@ -2,6 +2,7 @@ const save_btn = document.getElementById("config_button_sv");
 const teach_btn = document.getElementsByName("TeachNewFinger")[0];
 const check_boxes = document.getElementsByClassName("sel_element");
 const settngs_buttons = document.getElementsByName("ModSettings");
+var del_btn = null;
 for (let i = 0; i < settngs_buttons.length; i++) {
     if (settngs_buttons[i].innerHTML == "entfernen") {
         del_btn = settngs_buttons[i];
@@ -19,18 +20,18 @@ const max_btn = document.getElementById("max_cnt")
 const new_addr = document.getElementsByName("new_entry")[0]
 const setngs_tbl = document.getElementById("set_tbl");
 if (new_addr != null) {
-    new_addr.addEventListener("change", function(){
-    parseNewAddr()
+    new_addr.addEventListener("change", function () {
+        parseNewAddr()
     })
 }
 if (new_cntr_btn != null) {
-    new_cntr_btn.addEventListener("click", function(){
-    getCounterOptions()
+    new_cntr_btn.addEventListener("click", function () {
+        getCounterOptions()
     })
 }
-max_btn.addEventListener("click", function(){
+max_btn.addEventListener("click", function () {
     getMaxCount()
-    })
+})
 for (let i = 0; i < check_boxes.length; i++) {
     check_boxes[i].addEventListener("change", function () {
         controlDelButton();
@@ -39,19 +40,19 @@ for (let i = 0; i < check_boxes.length; i++) {
 controlNewButton();
 controlDelButton();
 
-function controlNewButton()  {
+function controlNewButton() {
     if (new_btn != null) {
         new_btn.disabled = true;  // for modules only
         if ((new_addr.value != "") & (setngs_tbl.rows.length - 2 < parseInt(new_addr.max))) {
-                new_btn.disabled = false;
+            new_btn.disabled = false;
         }
         if (setngs_tbl.rows.length - 2 >= parseInt(new_addr.max)) {
             new_addr.disabled = true;
         }
     }
-    
+
 }
-function controlDelButton()  {
+function controlDelButton() {
     if (del_btn != null) {
         del_btn.disabled = true;  // for modules only
         for (let i = 0; i < check_boxes.length; i++) {
@@ -66,12 +67,12 @@ function controlDelButton()  {
 var fngrNames = {}
 if (save_btn != null) {
     save_btn.addEventListener("click", function () {
-    openMsgPopup();
+        openMsgPopup();
     });
 }
 if (teach_btn != null) {
     teach_btn.addEventListener("click", function () {
-    openTeachPopup();
+        openTeachPopup();
     });
 }
 close_popup.addEventListener("click", function () {

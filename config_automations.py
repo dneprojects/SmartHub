@@ -57,19 +57,23 @@ class ConfigAutomationsServer:
             step = int(args[2])
             match action:
                 case "cancel":
-                    return show_module_overview(main_app, mod_addr)
+                    return show_module_overview(
+                        main_app, mod_addr, "Änderungen verworfen"
+                    )
                 case "save":
                     settings = main_app["settings"]
                     module = settings.module
                     await main_app["api_srv"].block_network_if(module.rt_id, True)
                     try:
                         await module.set_automations(settings)
+                        success_msg = "Änderungen übernommen"
                     except Exception as err_msg:
-                        main_app.logger.error(
+                        success_msg = (
                             f"Error while saving module automations: {err_msg}"
                         )
+                        main_app.logger.error(success_msg)
                     await main_app["api_srv"].block_network_if(module.rt_id, False)
-                    return show_module_overview(main_app, mod_addr)
+                    return show_module_overview(main_app, mod_addr, success_msg)
                 case "next":
                     step += 1
                 case "back":

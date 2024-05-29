@@ -1,186 +1,187 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
 
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <!--
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!--
 
-	This website is powered by Contao Open Source CMS :: Licensed under GNU/LGPL
-	Copyright ©2005-2023 by Leo Feyer :: Extensions are copyright of their respective owners
-	Visit the project website at http://www.contao.org for more information
+    This website is powered by Contao Open Source CMS :: Licensed under GNU/LGPL
+    Copyright ©2005-2023 by Leo Feyer :: Extensions are copyright of their respective owners
+    Visit the project website at http://www.contao.org for more information
 
-  //-->
-  <base href="/">
+    //-->
+    <base href="/">
 
-  <title>habitron - Smart Configurator</title>
-  <link rel="shortcut icon" href="configurator_files/habitron.ico" type="image/x-icon">
+    <title>habitron - Smart Configurator</title>
+    <link rel="shortcut icon" href="configurator_files/habitron.ico" type="image/x-icon">
 
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <meta http-equiv="Content-Script-Type" content="text/javascript">
-  <meta name="description" content="">
-  <meta name="keywords" content="">
-  <link href="configurator_files/style.css" rel="stylesheet" type="text/css" media="screen">
-  <link href="configurator_files/nav.css" rel="stylesheet" type="text/css" media="screen">
-  <link href="configurator_files/popup.css" rel="stylesheet" type="text/css" media="screen">
-  <!--[if IE]>
-<link href="tl_files/habitron/style_ie.css" rel="stylesheet" type="text/css" media="screen"  />
-<![endif]-->
+    <meta http-equiv="Content-Style-Type" content="text/css">
+    <meta http-equiv="Content-Script-Type" content="text/javascript">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <link href="configurator_files/style.css" rel="stylesheet" type="text/css" media="screen">
+    <link href="configurator_files/nav.css" rel="stylesheet" type="text/css" media="screen">
+    <link href="configurator_files/popup.css" rel="stylesheet" type="text/css" media="screen">
+    <!--[if IE]>
+  <link href="tl_files/habitron/style_ie.css" rel="stylesheet" type="text/css" media="screen"  />
+  <![endif]-->
 
-  <meta name="robots" content="index,follow">
-  <style type="text/css" media="screen">
-    <!--/*
-    -->
-  <![CDATA[/*><!--*/
-/*]]>*/-->
-  </style>
-  <link rel="stylesheet" href="configurator_files/contao.css" type="text/css" media="screen">
-  <!--[if lte IE 7]><link rel="stylesheet" href="system/iefixes.css" type="text/css" media="screen" /><![endif]-->
-  <link rel="stylesheet" href="configurator_files/tinymce.css" type="text/css" media="screen">
-</head>
+    <meta name="robots" content="index,follow">
+    <style type="text/css" media="screen">
+      <!--/*
+      -->
+    <![CDATA[/*><!--*/
+  /*]]>*/-->
+    </style>
+    <link rel="stylesheet" href="configurator_files/contao.css" type="text/css" media="screen">
+    <!--[if lte IE 7]><link rel="stylesheet" href="system/iefixes.css" type="text/css" media="screen" /><![endif]-->
+    <link rel="stylesheet" href="configurator_files/tinymce.css" type="text/css" media="screen">
+  </head>
 
-<body id="top" class="modules">
-  <div id="container">
-    <div id="content">
-      <div id="header">
-        <div class="inside">
-          <div style="height:20px; text-align: right; padding-top: 35px; padding-right: 60px;"><a
-              href="http://habitron.de/habitron.html"><img id="logo_habitron" src="configurator_files/logo.png"
-                width="267" height="47"></a>
-            <a href="./">
-              <div>
-                <h0>Smart Configurator</h0>
-              </div>
-            </a>
-          </div>
-          <div class="mod_article block" id="pic">
-
-
-            <div class="ce_image block">
-
-              <div class="image_container">
-                <img src="configurator_files/configuration.jpg" width="980" height="200" alt="Habitron GmbH">
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-      </div>
-      <div id="inhalt">
-        <div id="left">
+  <body id="top" class="modules">
+    <div id="container">
+      <div id="content">
+        <div id="header">
           <div class="inside">
-            <div class="mod_navigation block" id="subnavi">
-
-              <!-- SideMenu -->
-              
+            <div style="height:20px; text-align: right; padding-top: 35px; padding-right: 60px;"><a
+                href="http://habitron.de/habitron.html"><img id="logo_habitron" src="configurator_files/logo.png"
+                  width="267" height="47"></a>
+              <a href="./">
+                <div>
+                  <h0>Smart Configurator</h0>
+                </div>
+              </a>
             </div>
-          </div>
-        </div>
-        <div id="right">
-          <div class="inside">
-            <div class="mod_article block" id="bild-rechts">
+            <div class="mod_article block" id="pic">
+
+
               <div class="ce_image block">
+
                 <div class="image_container">
-                  <img src="configurator_files/controller.jpg" alt="Habitron GmbH">
+                  <img src="configurator_files/configuration.jpg" width="980" height="200" alt="Habitron GmbH">
                 </div>
 
               </div>
 
             </div>
+
           </div>
         </div>
-        <div id="mitte">
-          <div class="inside">
-            <div class="mod_article block" id="text-231">
+        <div id="inhalt">
+          <div id="left">
+            <div class="inside">
+              <div class="mod_navigation block" id="subnavi">
 
-
-              <div class="ce_text block">
-                <!-- MainContentStart -->
-                <h1>ContentTitle</h1>
-
-                <h2>ContentSubtitle</h2>
-                <p>ContentText</p>
-                <!-- MainContentEnd -->
+                <!-- SideMenu -->
+                
               </div>
-
             </div>
           </div>
-          <!-- SetupContentStart >
-          <div id="setup-buttons">
-            <div>
-              <form action="setup/remove" id="rem_form">
-                <button name="RemoveModule" id="rem-button" form="rem_form" type="submit" value="ModAddress">Modul entfernen</button>
+          <div id="right">
+            <div class="inside">
+              <div class="mod_article block" id="bild-rechts">
+                <div class="ce_image block">
+                  <div class="image_container">
+                    <img src="configurator_files/controller.jpg" alt="Habitron GmbH">
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+          </div>
+          <div id="mitte">
+            <div class="inside">
+              <div class="mod_article block" id="text-231">
+
+
+                <div class="ce_text block">
+                  <!-- MainContentStart -->
+                  <h1>ContentTitle</h1>
+
+                  <h2>ContentSubtitle</h2>
+                  <p>ContentText</p>
+                  <!-- MainContentEnd -->
+                </div>
+
+              </div>
+            </div>
+          </div>
+          <br><br>
+          <div id="clear"></div>
+        </div>
+        <div id="footer">
+          <div class="inside">
+            <div id="confbutton" style="position: relative;">
+              <form action="automations/list" id="atm_form">
               </form>
-              <form action="test/start" id="test_form">
-                <button name="TestModule" id="test-button" form="test_form" type="submit" value="ModAddress">Modul testen</button>
+              <form action="settings/settings" style="width:200px">
+                <button name="ModSettings" id="config_button" type="submit" value="ModAddress">Einstellungen</button>
+                  <!--<button name="EditAutomtns" id="automtns_button" form="atm_form" type="submit" value="ModAddress"
+                  style="float: center; position: absolute; top: 0; left: 280px;">Automatisierungen</button>-->
               </form>
+              <button name="ConfigFiles" id="files_button"
+                style="float: right; position: absolute; top: 0; left: 560px;">Konfigurationsdatei</button>
             </div>
           </div>
-          <!-- SetupContentEnd -->
         </div>
-        <br><br>
-        <div id="clear"></div>
+
       </div>
-      <div id="footer">
-        <div class="inside">
-          <div id="confbutton" style="position: relative;">
-            <form action="automations/list" id="atm_form">
+
+      <div id="file_popup" class="popup">
+        <div class="popup-content">
+          <h1>ContentTitle</h1>
+          <h2>Upload und Download der Konfigurationsdatei</h2>
+          <h3>Konfiguration sichern (download)</h3>
+          <div>
+            <form id="file_download" action="download">
+              <div style="position: relative;">
+                <input id="file_updwnload" name="file" type="text" value="my_module.hmd" />
+                <button name="ModDownload" id="file_button" type="submit" value="ModAddress">Download</button>
+              </div>
             </form>
-            <form action="settings/settings" style="width:200px">
-              <button name="ModSettings" id="config_button" type="submit" value="ModAddress">Einstellungen</button>
-                <!--<button name="EditAutomtns" id="automtns_button" form="atm_form" type="submit" value="ModAddress"
-                style="float: center; position: absolute; top: 0; left: 280px;">Automatisierungen</button>-->
+            <h3>Konfiguration ins Modul laden (upload)</h3>
+            <form id="file_upload" action="upload" enctype="multipart/form-data" method="post">
+              <div style="position: relative;">
+                <input id="file_updwnload" name="file" type="file" accept=".hmd" value="my_module.hmd" />
+                <button name="ModUpload" id="file_button" type="submit" value="ModAddress">Upload</button>
+              </div>
             </form>
-            <button name="ConfigFiles" id="files_button"
-              style="float: right; position: absolute; top: 0; left: 560px;">Konfigurationsdatei</button>
+          </div>
+          <div id="close_file_popup_box">
+            <button id="close_file_popup">
+              schließen
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="msg_popup" class="popup">
+        <div class="popup-content">
+          <h1 id="msg_popup_txt">ContentTitle</h1>
+          <h3 id="msg_popup_txt">Upload</h3>
+          <div id="image_container_wait">
+            <img src="configurator_files/wait_red.gif" alt="Please wait" id="msg_popup_img">
+          </div>
+        </div>
+      </div>
+
+      <div id="resp-popup-disabled" class="popup">
+        <div class="popup-content">
+          <h1 id="resp_popup_txt">Meldung</h1>
+          <h3 id="resp_popup_txt">response_message</h3>
+          <br>
+          <div id="close_resp_popup_box">
+            <button id="close_resp_popup">
+              schließen
+            </button>
           </div>
         </div>
       </div>
 
     </div>
 
-    <div id="file_popup" class="popup">
-      <div class="popup-content">
-        <h1>ContentTitle</h1>
-        <h2>Upload und Download der Konfigurationsdatei</h2>
-        <h3>Konfiguration sichern (download)</h3>
-        <div>
-          <form id="file_download" action="download">
-            <div style="position: relative;">
-              <input id="file_updwnload" name="file" type="text" value="my_module.hmd" />
-              <button name="ModDownload" id="file_button" type="submit" value="ModAddress">Download</button>
-            </div>
-          </form>
-          <h3>Konfiguration ins Modul laden (upload)</h3>
-          <form id="file_upload" action="upload" enctype="multipart/form-data" method="post">
-            <div style="position: relative;">
-              <input id="file_updwnload" name="file" type="file" accept=".hmd" value="my_module.hmd" />
-              <button name="ModUpload" id="file_button" type="submit" value="ModAddress">Upload</button>
-            </div>
-          </form>
-        </div>
-        <div id="close_file_popup_box">
-          <button id="close_file_popup">
-            schließen
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div id="msg_popup" class="popup">
-      <div class="popup-content">
-        <h1 id="msg_popup_txt">ContentTitle</h1>
-        <h3 id="msg_popup_txt">Upload</h3>
-        <div id="image_container_wait">
-          <img src="configurator_files/wait_red.gif" alt="Please wait" id="msg_popup_img">
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <script type="text/javascript" src="configurator_files/config.js"></script>
-</body>
-
+    <script type="text/javascript" src="configurator_files/config.js"></script>
+    <script type="text/javascript" src="configurator_files/button_help.js"></script>
+  </body>
 </html>

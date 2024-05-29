@@ -47,7 +47,7 @@ class ApiServer:
         self._init_mode: bool = True
         self._first_api_cmd: bool = True
         self.is_offline: bool = False
-        self.is_testing = False
+        self._test_mode = False
         self.token = os.getenv("SUPERVISOR_TOKEN")
         if self.token is None:
             self.is_addon: bool = False
@@ -142,7 +142,7 @@ class ApiServer:
                 self.logger.debug(f"API call returned: {response}")
             else:
                 self.logger.warning(f"API call failed: {response}")
-            await self.respond_client(response)  # Aknowledge the api command at last
+            await self.respond_client(response)  # type: ignore # Aknowledge the api command at last
             if (
                 self._auto_restart_opr
                 and (not self._opr_mode)
@@ -209,7 +209,7 @@ class ApiServer:
         if self._init_mode:
             self.logger.debug("Skipping set Operate mode due to init_mode")
             return True
-        if not self.get_client_ip():
+        if not self.get_client_ip() and not self._test_mode:
             self._opr_mode = False
             return False
         if self._opr_mode and self.evnt_srv.running():
@@ -308,12 +308,14 @@ class ApiServer:
         """Switch module testing mode according to bool arg."""
         if activate:
             await self.block_network_if(1, True)
+            self.last_operate = self._opr_mode
             await self.set_operate_mode()
-            self.is_testing = True
+            self._test_mode = True
         else:
-            self.is_testing = False
-            await self.set_operate_mode()
             await self.block_network_if(1, False)
+            if not self.last_operate:
+                await self.set_server_mode()
+            self._test_mode = False
 
     def get_client_ip(self) -> bool:
         """Return host id from latest call."""

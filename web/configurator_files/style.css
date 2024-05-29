@@ -693,7 +693,7 @@ body.produkte.sub #right h1 {
    padding-bottom: 8px;
 }
 
-#config_button {
+#config_button, transfer_button, files_button {
    height: 22px;
    width: 140px;
    margin-left: 0px;
@@ -804,7 +804,6 @@ div#setup-buttons {
    margin-right: 2px;
    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
    font: 11px arial, helvetica, clean, sans-serif;
-   border: 1px solid #C0372D;
 }
 
 
@@ -1297,6 +1296,10 @@ form#confbuttons {
 
 
 /*----------------------------------------------------------Diverse-----------------------------------*/
+p#button-evnt {
+   color: #c0372d;
+   font-weight: bold;
+}
 
 div#autmnbuttons {
    margin-top: 10px;

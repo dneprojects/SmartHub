@@ -80,7 +80,7 @@ class HdlrBase:
         if not self.api_srv._opr_mode:
             # await asyncio.sleep(0.25)
             try:
-                await asyncio.wait_for(self.rt_msg.rt_recv(), timeout=1)
+                await asyncio.wait_for(self.rt_msg.rt_recv(), timeout=1.5)
             except TimeoutError:
                 self.logger.warning("Timeout receiving router response, returning 0 0")
             except Exception as err_msg:

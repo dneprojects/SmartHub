@@ -72,6 +72,11 @@ class ConfigSetupServer:
         rtr.rem_module(mod_addr)
         return show_modules(main_app)
 
+    @routes.get("/table_close")
+    async def tbl_close(request: web.Request) -> web.Response:  # type: ignore
+        main_app = request.app["parent"]
+        return show_setup_page(main_app)
+
     @routes.get("/adapt")
     async def mod_adapt(request: web.Request) -> web.Response:  # type: ignore
         main_app = request.app["parent"]
@@ -86,13 +91,13 @@ class ConfigSetupServer:
         if client_not_authorized(request):
             return show_not_authorized(main_app)
         rtr.apply_id_chan_changes(request.query)
-        return show_module_table(main_app)
+        return show_setup_page(main_app)
 
 
 def show_setup_page(app) -> web.Response:
     """Prepare modules page."""
     side_menu = activate_side_menu(app["side_menu"], ">Einrichten<", app["is_offline"])
-    page = get_html("hub.html").replace("<!-- SideMenu -->", side_menu)
+    page = get_html("setup.html").replace("<!-- SideMenu -->", side_menu)
     page = page.replace("<h1>HubTitle", "<h1>Habitron-Geräte einrichten")
     page = page.replace("Overview", "Installationsbereich")
     page = page.replace(
@@ -102,14 +107,29 @@ def show_setup_page(app) -> web.Response:
         + "1. Modultyp auswählen<br>"
         + "2. Die Seriennummer, Modul-Adresse und das Kanalpaar des Routers eingeben,<br>"
         + "&nbsp;&nbsp;&nbsp;&nbsp;an dem das Modul angeschlossen werden soll.<br>"
+        + "3. Router und Module können in den Bereichen 'Router' und 'Module'<br>"
+        + "&nbsp;&nbsp;&nbsp;&nbsp;umbenannt und weiter konfiguriert werden.<br>"
+        + "4. Erst mit dem Button 'Übertragen' auf dieser Seite erhalten die intern angelegten<br>"
+        + "&nbsp;&nbsp;&nbsp;&nbsp;Module im System ihre Adressen und werden im Router registriert.<br>"
         + "<h3>Module verwalten</h3>"
-        + "Bereits angelegte Module können bezüglich der Adresse und der<br>"
-        + "Kanalzuordnung angepasst werden.<br><br>"
-        + "Mit dem Button 'Änderungen anwenden' wird die neue Adress- und Kanalzuordnung<br>"
-        + "in die Habitron-Anlage übertragen und dort umgesetzt.<br>"
-        + "Im offline-Betrieb des Konfigurators kann die Konfiguration als<br>"
-        + "Download gespeichert werden, um die Anlage später zu konfigurieren.",
+        + "1. Bereits angelegte Module können bezüglich der Adresse und der<br>"
+        + "&nbsp;&nbsp;&nbsp;&nbsp;Kanalzuordnung angepasst werden.<br>"
+        + "2. Module können ausgewählt und aus der Konfiguration entfernt werden.<br>"
+        + "3. Mit dem Button 'Übernehmen' wird die neue Adress- und Kanalzuordnung<br>"
+        + "&nbsp;&nbsp;&nbsp;&nbsp;intern im Configurator abgelegt, aber noch nicht übertragen.<br>"
+        + "&nbsp;&nbsp;&nbsp;&nbsp;Die Änderungen können mit 'Abbruch' auch verworfen werden.<br>"
+        + "4. Mit dem Button 'Übertragen' auf dieser Seite wird die Konfiguration in die <br>"
+        + "&nbsp;&nbsp;&nbsp;&nbsp;Habitron-Anlage übertragen und dort umgesetzt.<br>"
+        + "5. Über 'Systemkonfiguration' kann die Konfiguration auch als Download gespeichert<br>"
+        + "&nbsp;&nbsp;&nbsp;&nbsp;werden, um später in die Anlage übertragen zu werden."
+        + "<h3>Module testen</h3>"
+        + "1. Bereits angelegte und in der Habitron-Anlage eingespeicherte Module<br>"
+        + "&nbsp;&nbsp;&nbsp;&nbsp;können ausgewählt werden.<br>"
+        + "2. Auf der folgenden Seite kann das gewählte Modul getestet werden, indem<br>"
+        + "&nbsp;&nbsp;&nbsp;&nbsp;Eingangszustände angezeigt und Ausgänge geschaltet werden.<br>",
     )
+    page = page.replace(">Abbruch<", ' style="visibility: hidden;">Abbruch<')
+    page = page.replace(">Übernehmen<", ' style="visibility: hidden;">Übernehmen<')
     return web.Response(text=page, content_type="text/html", charset="utf-8")
 
 
@@ -140,9 +160,14 @@ def show_module_types(app) -> web.Response:
 def show_module_table(app) -> web.Response:
     """Build html table string from table line list."""
     side_menu = activate_side_menu(app["side_menu"], ">Einrichten<", app["is_offline"])
-    page = get_html("hub.html").replace("<!-- SideMenu -->", side_menu)
+    side_menu = activate_side_menu(side_menu, ">Module verwalten<", app["is_offline"])
+    page = get_html("setup.html").replace("<!-- SideMenu -->", side_menu)
     page = page.replace("<h1>HubTitle", "<h1>Module verwalten")
     page = page.replace("Overview", "Modulübersicht")
+    page = page.replace(
+        "<p>ContentText</p>",
+        "<p>Moduladressen und Kanalzugehörigkeit anpassen, sowie Module entfernen</p><br>\n<p>ContentText</p>",
+    )
 
     api_srv = app["api_srv"]
     rtr = api_srv.routers[0]
@@ -159,13 +184,14 @@ def show_module_table(app) -> web.Response:
         + "            <th data-sort-method='number' data-sort-input-attr='value'>Adr.</th>\n"
         + "            <th>Typ</th>\n"
         + "            <th data-sort-method='number' data-sort-input-attr='value'>Kanal</th>\n"
+        + "            <th></th>\n"
         + "        </tr>\n"
         + "    </thead>\n"
         + "    <tbody>\n"
     )
     tend_lines = (
         "  </tbody>\n</table>\n"
-        + '<button name="ApplyTable" id="tbl-button" form="table-form" type="submit">Änderungen anwenden</button>'
+        + '<button name="RemoveModules" id="tbl-button" type="button" disabled>Module entfernen</button>'
         + "</form>\n"
     )
 
@@ -175,19 +201,25 @@ def show_module_table(app) -> web.Response:
         table_str += td_line.replace("><", f">{mod._name}<")
         table_str += td_line.replace(
             "><",
-            f'><input type="number" value="{mod._id}" class="mod_ids" name="modid_{mod._serial}" id="mod-{mod._serial}" min="1" max="64"><',
+            f'><input type="number" value="{mod._id}" class="mod_ids" name="modid_{mod._serial}" id="modno-{mod._serial}" min="1" max="64"><',
         )
         table_str += td_line.replace("><", f">{mod._type}<")
         table_str += td_line.replace(
             "><",
-            f'><input type="number" value="{mod._channel}" class="mod_chans" name="modchan_{mod._serial}" id="mod-{mod._serial}" min="1" max="4"><',
+            f'><input type="number" value="{mod._channel}" class="mod_chans" name="modchan_{mod._serial}" id="modch-{mod._serial}" min="1" max="4"><',
+        )
+        table_str += td_line.replace(
+            "><",
+            f'><input type="checkbox" class="mod_sels" name="modsel_{mod._id}" id="mod-{mod._id}"><',
         )
         table_str += tre_line
     table_str += tend_lines
     page = page.replace("ContentText", table_str)
-    page = page.replace("Updates</button>", "Übertragen</button>")
-    if app["is_offline"]:
-        page = page.replace('id="updates_button"', 'id="transfer_button" disabled')
-    else:
-        page = page.replace('id="updates_button"', 'id="transfer_button"')
+    page = page.replace(
+        '<script type="text/javascript" src="configurator_files/files.js"></script>', ""
+    )
+    page = page.replace(">Übertragen<", ' style="visibility: hidden;">Übertragen<')
+    page = page.replace(
+        '">Systemkonfiguration<', ' visibility: hidden;">Systemkonfiguration<'
+    )
     return web.Response(text=page, content_type="text/html", charset="utf-8")

@@ -240,23 +240,24 @@ class ConfigServer:
             return show_modules(app)
         elif data["ModUpload"] == "ModAddress":
             # router upload
-            app.logger.info("Router configuration file uploaded")  # noqa: F541
             await send_to_router(app, content_str)
             init_side_menu(app)
-            return show_router_overview(app)
+            success_msg = "Router configuration file uploaded"
+            app.logger.info(success_msg)  # noqa: F541
+            return show_router_overview(app, success_msg)
         else:
             mod_addr = int(str(data["ModUpload"]))
             if data["ModUpload"] == content_str.split(";")[0]:
                 await send_to_module(app, content_str, mod_addr)
-                app.logger.info(
-                    f"Module configuration file for module {mod_addr} uploaded"
-                )
+                success_msg = f"Module configuration file for module {mod_addr} uploaded"
+                app.logger.info(success_msg)
             else:
-                app.logger.warning(
-                    f"Module configuration file does not fit to module number {mod_addr}, upload aborted"
-                )
+                success_msg = f"Module configuration file does not fit to module number {mod_addr}, upload aborted"
+                app.logger.warning(success_msg)
             init_side_menu(app)
-            return show_module_overview(app, mod_addr)  # web.HTTPNoContent()
+            return show_module_overview(
+                app, mod_addr, success_msg
+            )  # web.HTTPNoContent()
 
     @routes.post("/upd_upload")
     async def get_upd_upload(request: web.Request) -> web.Response:  # type: ignore
@@ -390,6 +391,7 @@ async def _(request):
     page = fill_page_template(
         f"Modul '{app['module']._name}'",
         type_desc,
+        "",
         warning_txt,
         app["side_menu"],
         mod_image,
@@ -408,6 +410,7 @@ async def _(request):
     page = fill_page_template(
         f"Modul '{app['settings'].name}'",
         type_desc,
+        "",
         warning_txt,
         app["side_menu"],
         mod_image,

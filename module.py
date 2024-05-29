@@ -1,4 +1,6 @@
 import logging
+import random
+import datetime
 from copy import deepcopy as dpcopy
 from const import MirrIdx, SMGIdx, MODULE_CODES, CStatBlkIdx, HA_EVENTS
 from configuration import ModuleSettings, ModuleSettingsLight
@@ -46,6 +48,7 @@ class HbtnModule:
         self.list = await self.hdlr.get_module_list(self._id)
         self.calc_SMC_crc(self.list)
         self.io_properties, self.io_prop_keys = self.get_io_properties()
+        self._serial = self.get_serial()
         await self.cleanup_descriptions()
 
         self.logger.debug(f"Module {self._name} at {self._id} initialized")
@@ -57,10 +60,13 @@ class HbtnModule:
             .decode("iso8859-1")
             .strip()
         )
-        if len(serial) == 0:
-            return ""
-        if serial[0] == "\x00":
-            return ""
+        if len(serial) == 0 or serial[0] == "\x00":
+            rand_serial = random.randrange(999999)
+            year = datetime.date.today().year - 2000
+            week = datetime.datetime.now().isocalendar().week
+            serial = (
+                f"{self._typ[0]:03}{self._typ[1]:03}{year:02}{week:02}{rand_serial:06}"
+            )
         return serial
 
     def get_sw_version(self):
@@ -74,6 +80,15 @@ class HbtnModule:
     def get_rtr(self):
         """Return router object."""
         return self.api_srv.routers[self.rt_id - 1]
+
+    def get_group(self) -> int:
+        """Return own group from router."""
+        return self.get_rtr().groups[self._id]
+
+    def get_group_name(self) -> str:
+        """Return own group from router."""
+        rtr = self.get_rtr()
+        return rtr.get_group_name(rtr.groups[self._id])
 
     def get_smc_crc(self) -> int:
         """Return smc crc from status."""
@@ -203,7 +218,7 @@ class HbtnModule:
                     if i_d in range(MirrIdx.MODE, MirrIdx.MODE + 1):
                         ev_type = HA_EVENTS.MODE
                         ev_str = "Mode"
-                        idv = 0
+                        idv = self.get_group()
                     elif i_d in range(MirrIdx.MOV, MirrIdx.MOV + 1):
                         ev_type = HA_EVENTS.MOVE
                         ev_str = "Movement"

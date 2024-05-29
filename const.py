@@ -39,7 +39,7 @@ AUTOMATIONEDIT_TEMPLATE_FILE = "automation_edit_template.html"
 class SMHUB_INFO:
     """Holds information."""
 
-    SW_VERSION = "1.2.0"
+    SW_VERSION = "1.2.1"
     TYPE = "Smart Hub"
     TYPE_CODE = "20"
     SERIAL = "RBPI"
@@ -320,7 +320,6 @@ class RT_CMDS:
     SET_GRP_MODE = "\x2a<rtr>\x09\x89\x4f\x53<grp><md>\xff"
     GET_GRPS_MODE = "\x2a<rtr>\x07\x89\x4f\x01\xff"
     SET_GRPS_MODE = "\x2a<rtr>\x47\x89\x4f\x02<mds>\xff"  # len: 0x47 = 7 + 64
-    SET_MOD_GROUP = "\x2a<rtr>\x09\x89\x53<mod><grp>\xff"
 
     GET_RT_NAME = "\x2a<rtr>\x06\x67\x4c\xff"
     GET_RT_STATUS = "\x2a<rtr>\x06\x64L\xff"
@@ -337,6 +336,7 @@ class RT_CMDS:
     CLEAR_RT_SENDBUF = "\x2a<rtr\x07\x66\x02\xc8\xff"
     SEND_RT_TIMEOUT = "\x2a<rtr>\x08\x66\x01\x54<tout>\xff"
     SEND_RT_GRPNO = "\x2a<rtr>\xff\x66\x01\x89\x02"
+    SET_MOD_GROUP = "\x2a<rtr>\x0a\x66\x01\x89\x53<mod><grp>\xff"
     SEND_RT_GRPMODE_DEP = "\x2a<rtr>\xff\x66\x01\x89\x66"
     SEND_RT_DAYNIGHT = "\x2a<rtr>\xff\x8c\x4c"
     SEND_RT_MODENAM = "\x2a<rtr>\xff\x68\x53<umd>\x01"
@@ -820,3 +820,21 @@ class HA_EVENTS:
     MOVE = 13
     MODE = 15
     SYS_ERR = 16
+
+    EVENT_DICT: dict[int, str] = {
+        1: "Button",
+        2: "Switch",
+        3: "Output",
+        4: "Cover position",
+        5: "Blind position",
+        6: "Dimm value",
+        7: "Ekey finger",
+        8: "IR command",
+        9: "Flag",
+        10: "Counter value",
+        11: "Percent",
+        12: "Direct command",
+        13: "Motion",
+        15: "Mode",
+        16: "System error",
+    }

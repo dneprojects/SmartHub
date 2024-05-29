@@ -36,7 +36,7 @@ class ModuleSettings:
         )
         self.save_desc_file_needed: bool = False
         self.upload_desc_info_needed: bool = False
-        self.group = dpcopy(module.get_rtr().groups[self.id - 1])
+        self.group = dpcopy(module.get_group())
         self.get_io_interfaces()
         self.get_counters()
         self.get_names()
@@ -782,7 +782,7 @@ class RouterSettings:
         self.logger = logging.getLogger(__name__)
         self.channels = rtr.channels
         self.timeout = rtr.timeout
-        self.mode_dependencies = rtr.mode_dependencies
+        self.mode_dependencies = rtr.mode_dependencies[1:]
         self.user_modes = rtr.user_modes
         self.serial = rtr.serial
         self.day_night = rtr.day_night
@@ -927,7 +927,7 @@ class ModuleSettingsLight(ModuleSettings):
         self.user2_name = module.get_rtr().user_modes[12:].decode("iso8859-1").strip()
         self.save_desc_file_needed: bool = False
         self.upload_desc_info_needed: bool = False
-        self.group = dpcopy(module.get_rtr().groups[self.id])
+        self.group = dpcopy(module.get_group())
         self.get_io_interfaces()
         self.get_counters()
         self.get_names()

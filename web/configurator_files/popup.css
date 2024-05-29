@@ -12,19 +12,7 @@
     display: none;
 }
 
-#count_popup .popup-content, #file_popup .popup-content, #updates_popup, .popup-content {
-    background-color: white;
-    margin: 10% auto;
-    padding: 20px;
-    border: 1px solid #888888;
-    color: #6b6c6e;
-    font-size: 11px;
-    line-height: 16px;
-    height: fit-content;
-    width: fit-content;
-}
-
-#newmod_popup {
+#count_popup .popup-content, #file_popup .popup-content, #updates_popup .popup-content, #newmod-popup .popup-content, #resp-popup .popup-content {
     background-color: white;
     margin: 10% auto;
     padding: 20px;
@@ -123,6 +111,10 @@
     font-size: 11px;
     line-height: 16px;
 }
+#resp_popup_txt {
+    text-align: center;
+}
+
 #file_button,
 #close_file_popup,
 #close_updates_popup {
@@ -131,6 +123,15 @@
     top: 0;
     margin-right: 0px;
     margin-left: 10px;
+    font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
+    font: 11px arial, helvetica, clean, sans-serif;
+}
+#close_resp_popup {
+    height: 22px;
+    width: 100px;
+    top: 0;
+    margin-right: 100px;
+    margin-left: 100px;
     font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
     font: 11px arial, helvetica, clean, sans-serif;
 }
