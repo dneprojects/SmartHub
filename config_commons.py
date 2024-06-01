@@ -249,11 +249,12 @@ def adjust_side_menu(modules, is_offline: bool, is_install: bool) -> str:
             side_menu.append(
                 '    <li class="setup sub"><a href="setup/adapt" title="Module verwalten" class="setup sub">Module verwalten</a></li>\n'
             )
-            side_menu.append(
-                '    <li class="setup sub"><a href="test/modules" title="Module testen" class="setup sub">Module testen</a></li>\n'
-                + "  </ul>\n"
-                + "</li>"
-            )
+            if not is_offline:
+                side_menu.append(
+                    '    <li class="setup sub"><a href="test/modules" title="Module testen" class="setup sub">Module testen</a></li>\n'
+                    + "  </ul>\n"
+                    + "</li>"
+                )
             side_menu.append("</ul>")
         else:
             side_menu = smf_id.read().splitlines(keepends=True)

@@ -103,34 +103,55 @@ def show_setup_page(app, popup_msg="") -> web.Response:
     page = get_html("setup.html").replace("<!-- SideMenu -->", side_menu)
     page = page.replace("<h1>HubTitle", "<h1>Habitron-Geräte einrichten")
     page = page.replace("Overview", "Installationsbereich")
-    page = page.replace(
-        "ContentText",
-        "<h3>Module anlegen</h3>"
-        + "Hier werden die Module erstmalig angelegt:<br>"
-        + "1. Modultyp auswählen<br>"
-        + "2. Die Seriennummer, Modul-Adresse und das Kanalpaar des Routers eingeben,<br>"
-        + "&nbsp;&nbsp;&nbsp;&nbsp;an dem das Modul angeschlossen werden soll.<br>"
-        + "3. Router und Module können in den Bereichen 'Router' und 'Module'<br>"
-        + "&nbsp;&nbsp;&nbsp;&nbsp;umbenannt und weiter konfiguriert werden.<br>"
-        + "4. Erst mit dem Button 'Übertragen' auf dieser Seite erhalten die intern angelegten<br>"
-        + "&nbsp;&nbsp;&nbsp;&nbsp;Module im System ihre Adressen und werden im Router registriert.<br>"
-        + "<h3>Module verwalten</h3>"
-        + "1. Bereits angelegte Module können bezüglich der Adresse und der<br>"
-        + "&nbsp;&nbsp;&nbsp;&nbsp;Kanalzuordnung angepasst werden.<br>"
-        + "2. Module können ausgewählt und aus der Konfiguration entfernt werden.<br>"
-        + "3. Mit dem Button 'Übernehmen' wird die neue Adress- und Kanalzuordnung<br>"
-        + "&nbsp;&nbsp;&nbsp;&nbsp;intern im Configurator abgelegt, aber noch nicht übertragen.<br>"
-        + "&nbsp;&nbsp;&nbsp;&nbsp;Die Änderungen können mit 'Abbruch' auch verworfen werden.<br>"
-        + "4. Mit dem Button 'Übertragen' auf dieser Seite wird die Konfiguration in die <br>"
-        + "&nbsp;&nbsp;&nbsp;&nbsp;Habitron-Anlage übertragen und dort umgesetzt.<br>"
-        + "5. Über 'Systemkonfiguration' kann die Konfiguration auch als Download gespeichert<br>"
-        + "&nbsp;&nbsp;&nbsp;&nbsp;werden, um später in die Anlage übertragen zu werden."
-        + "<h3>Module testen</h3>"
-        + "1. Bereits angelegte und in der Habitron-Anlage eingespeicherte Module<br>"
-        + "&nbsp;&nbsp;&nbsp;&nbsp;können ausgewählt werden.<br>"
-        + "2. Auf der folgenden Seite kann das gewählte Modul getestet werden, indem<br>"
-        + "&nbsp;&nbsp;&nbsp;&nbsp;Eingangszustände angezeigt und Ausgänge geschaltet werden.<br>",
-    )
+    if not app["api_srv"].is_offline:
+        page = page.replace(
+            "ContentText",
+            "<h3>Module anlegen</h3>"
+            + "Hier werden die Module erstmalig angelegt:<br>"
+            + "1. Modultyp auswählen<br>"
+            + "2. Die Seriennummer, Modul-Adresse und das Kanalpaar des Routers eingeben,<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;an dem das Modul angeschlossen werden soll.<br>"
+            + "3. Router und Module können in den Bereichen 'Router' und 'Module'<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;umbenannt und weiter konfiguriert werden.<br>"
+            + "4. Erst mit dem Button 'Übertragen' auf dieser Seite erhalten die intern angelegten<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;Module im System ihre Adressen und werden im Router registriert.<br>"
+            + "<h3>Module verwalten</h3>"
+            + "1. Bereits angelegte Module können bezüglich der Adresse und der<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;Kanalzuordnung angepasst werden.<br>"
+            + "2. Module können ausgewählt und aus der Konfiguration entfernt werden.<br>"
+            + "3. Mit dem Button 'Übernehmen' wird die neue Adress- und Kanalzuordnung<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;intern im Configurator abgelegt, aber noch nicht übertragen.<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;Die Änderungen können mit 'Abbruch' auch verworfen werden.<br>"
+            + "4. Mit dem Button 'Übertragen' auf dieser Seite wird die Konfiguration in die <br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;Habitron-Anlage übertragen und dort umgesetzt.<br>"
+            + "5. Über 'Systemkonfiguration' kann die Konfiguration auch als Download gespeichert<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;werden, um später in die Anlage übertragen zu werden."
+            + "<h3>Module testen</h3>"
+            + "1. Bereits angelegte und in der Habitron-Anlage eingespeicherte Module<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;können ausgewählt werden.<br>"
+            + "2. Auf der folgenden Seite kann das gewählte Modul getestet werden, indem<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;Eingangszustände angezeigt und Ausgänge geschaltet werden.<br>",
+        )
+    else:
+        page = page.replace(
+            "ContentText",
+            "<h3>Module anlegen</h3>"
+            + "Hier werden die Module erstmalig angelegt:<br>"
+            + "1. Modultyp auswählen<br>"
+            + "2. Die Seriennummer, Modul-Adresse und das Kanalpaar des Routers eingeben,<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;an dem das Modul angeschlossen werden soll.<br>"
+            + "3. Router und Module können in den Bereichen 'Router' und 'Module'<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;umbenannt und weiter konfiguriert werden.<br>"
+            + "<h3>Module verwalten</h3>"
+            + "1. Bereits angelegte Module können bezüglich der Adresse und der<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;Kanalzuordnung angepasst werden.<br>"
+            + "2. Module können ausgewählt und aus der Konfiguration entfernt werden.<br>"
+            + "3. Mit dem Button 'Übernehmen' wird die neue Adress- und Kanalzuordnung<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;intern im Configurator abgelegt.<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;Die Änderungen können mit 'Abbruch' auch verworfen werden.<br>"
+            + "4. Über 'Systemkonfiguration' kann die Konfiguration auch als Download gespeichert<br>"
+            + "&nbsp;&nbsp;&nbsp;&nbsp;werden, um später in die Anlage übertragen zu werden.",
+        )
     page = page.replace(">Abbruch<", ' style="visibility: hidden;">Abbruch<')
     page = page.replace(">Übernehmen<", ' style="visibility: hidden;">Übernehmen<')
     if len(popup_msg):
@@ -138,6 +159,8 @@ def show_setup_page(app, popup_msg="") -> web.Response:
             '<h3 id="resp_popup_txt">response_message</h3>',
             f'<h3 id="resp_popup_txt">{popup_msg}</h3>',
         ).replace('id="resp-popup-disabled"', 'id="resp-popup"')
+    if app["api_srv"].is_offline:
+        page = page.replace(">Übertragen<", ' style="visibility: hidden;">Übertragen<')
     return web.Response(text=page, content_type="text/html", charset="utf-8")
 
 
