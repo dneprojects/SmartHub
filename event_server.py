@@ -71,6 +71,7 @@ class EventServer:
         self.websck_is_closed = True
         self.default_token: str
         self.token_ok = True
+        self.failure_count = 0
         self.events_buffer: list[list[int]] = []
 
     def get_ident(self) -> str | None:
@@ -413,6 +414,8 @@ class EventServer:
         else:
             success = True
         if not success:
+            if self.api_srv._test_mode:
+                return
             self.logger.warning("Failed to send event via websocket, open failed")
             return
         if event is None:
@@ -472,6 +475,9 @@ class EventServer:
 
     async def ping_pong_reconnect(self) -> bool:
         """Check for living websocket connection, reconnect if needed."""
+        if self.api_srv._test_mode and self.failure_count > 2:
+            # Test mode does not use websocket
+            return True
         success = await self.open_websocket()
         if success:
             try:
@@ -498,9 +504,9 @@ class EventServer:
     async def open_websocket(self, retry=True) -> bool:
         """Opens web socket connection to home assistant."""
 
-        # if self.api_srv._test_mode:
-        #     # Test mode does not use websocket
-        #     return True
+        if self.api_srv._test_mode and self.failure_count > 2:
+            # Test mode does not use websocket
+            return False
         self.token_ok = retry
         if not self.websck_is_closed:
             return True
@@ -553,14 +559,16 @@ class EventServer:
                     open_timeout=4,
                 )
             else:
-                self.websck = await websockets.connect(self._uri, open_timeout=4)
+                self.websck = await websockets.connect(self._uri, open_timeout=1)
             await asyncio.sleep(1)
             resp = await self.websck.recv()
+            self.failure_count = 0
         except Exception as err_msg:
             await self.close_websocket()
             self.logger.error(f"Websocket connect failed: {err_msg}")
             self.websck_is_closed = True
             self.token_ok = False
+            self.failure_count += 1
             return False
         if json.loads(resp)["type"] == "auth_required":
             try:

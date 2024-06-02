@@ -174,6 +174,7 @@ async def build_status_table(app, mod_addr: int, update: bool) -> str:
     rtr = api_srv.routers[0]
     mod = rtr.get_module(mod_addr)
     if update:
+        await api_srv.set_server_mode()
         await mod.hdlr.get_module_status(mod_addr)
         # hot fix for comm errors
         await sleep(0.1)

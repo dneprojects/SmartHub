@@ -307,14 +307,11 @@ class ApiServer:
     async def set_testing_mode(self, activate: bool) -> None:
         """Switch module testing mode according to bool arg."""
         if activate:
-            # await self.block_network_if(1, True)
-            # self.last_operate = self._opr_mode
-            # await self.set_operate_mode()
+            self.last_operate = self._opr_mode
             self._test_mode = True
         else:
-            # await self.block_network_if(1, False)
-            # if not self.last_operate:
-            #     await self.set_server_mode()
+            if not self.last_operate:
+                await self.set_server_mode()
             self._test_mode = False
 
     def get_client_ip(self) -> bool:
