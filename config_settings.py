@@ -376,9 +376,7 @@ def get_module_properties(mod) -> str:
     props += f'<tr><td style="width:80px;">Adresse:</td><td>{mod._id}</td></tr>\n'
     props += f"<tr><td>Kanal:</td><td>{mod._channel}</td></tr>\n"
     props += f"<tr><td>Gruppe:</td><td>{mod.get_group_name()}</td></tr>\n"
-    ser = mod.get_serial()
-    if len(ser) > 0:
-        props += f"<tr><td>Hardware:</td><td>{mod.get_serial()}</td></tr>\n"
+    props += f"<tr><td>Hardware:</td><td>{mod._serial}</td></tr>\n"
     props += f"<tr><td>Firmware:</td><td>{mod.get_sw_version()}</td></tr>\n"
     props += "</table>\n"
     return props
@@ -711,6 +709,16 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             else:
                 tbl += "<td>&nbsp;&nbsp;Modi von Gruppe 0</td>"
         elif key == "users":
+            # add check buttons to enable user
+            id_name = "users_enable"
+            if main_app["settings"].users[ci].type > 0:
+                en_chkd = "checked"
+            else:
+                en_chkd = ""
+            tbl += (
+                f'<td><div style="position: absolute;"><label for="{id_name}-{ci}">aktiv</label><input type="checkbox" '
+                + f'name="{id_name}" id="{id_name}-{ci}" value="{main_app["settings"].users[ci].nmbr}" {en_chkd}></div>'
+            )
             # add radio buttons to select user
             id_name = "users_sel"
             if ci == main_app["settings"].users_sel:
@@ -718,8 +726,8 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             else:
                 sel_chkd = ""
             tbl += (
-                f'<td><label for="{id_name}">Auswahl</label><input type="radio" '
-                + f'name="{id_name}" id="{id_name}" value="{ci}" {sel_chkd}></td>'
+                f'<div style="margin-left: 60px;"><label for="{id_name}-{ci}">Fingerabdrücke</label><input type="radio" '
+                + f'name="{id_name}" id="{id_name}-{ci}" value="{ci}" {sel_chkd}></div></td>'
             )
         if key in [
             "glob_flags",
@@ -875,6 +883,12 @@ def parse_response_form(main_app, form_data):
                     )
         elif form_key == "users_sel":
             settings.users_sel = int(form_data[form_key][0])
+        elif form_key == "users_enable":
+            for usr in settings.users:
+                if f"{usr.nmbr}" in form_data[form_key]:
+                    usr.type = abs(usr.type)
+                else:
+                    usr.type = abs(usr.type) * (-1)
         else:
             indices = form_key.replace("data[", "").replace("]", "").split(",")
             indices[0] = int(indices[0])

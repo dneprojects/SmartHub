@@ -236,6 +236,22 @@ class ModHdlr(HdlrBase):
             await asyncio.sleep(0.1)
         return "OK"
 
+    async def set_module_serial(self, serial: str):
+        """Send module serial no to module."""
+        for cnt in range(1, 4):
+            # set serial no three times
+            cmd = (
+                RT_CMDS.SET_MOD_SERIAL.replace("<rtr>", chr(self.rt_id))
+                .replace("<mod>", chr(self.mod_id))
+                .replace("<cnt>", chr(cnt))
+            )
+            cmd += serial + "\xff"
+            await self.handle_router_cmd_resp(self.rt_id, cmd)
+            await asyncio.sleep(0.1)
+        new_serial = await self.get_module_serial()
+        self.logger.info(f"Send serial response: {new_serial}")
+        return "OK"
+
     async def set_output(self, out_no: int, out_val: int) -> None:
         """Set module output to new value"""
         outp_bit = 1 << (out_no - 1)
@@ -257,6 +273,16 @@ class ModHdlr(HdlrBase):
             f"Router {self.rt_id}, module {self.mod_id}: turn output {out_no} "
             + cmd_str
         )
+
+    async def get_module_serial(self) -> str:
+        """Get module serial no."""
+        cmd = RT_CMDS.GET_MOD_SERIAL.replace("<rtr>", chr(self.rt_id)).replace(
+            "<mod>", chr(self.mod_id)
+        )
+        await self.handle_router_cmd_resp(self.rt_id, cmd)
+        if self.rt_msg._resp_msg[0] == 83:  # "S" for serial
+            return self.rt_msg._resp_msg[1:].decode("iso8859-1")
+        return ""
 
     async def set_display_constrast(self):
         """Send display contrast setting to module."""

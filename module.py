@@ -48,25 +48,30 @@ class HbtnModule:
         self.list = await self.hdlr.get_module_list(self._id)
         self.calc_SMC_crc(self.list)
         self.io_properties, self.io_prop_keys = self.get_io_properties()
-        self._serial = self.get_serial()
+        self._serial = await self.get_serial()
         await self.cleanup_descriptions()
 
         self.logger.debug(f"Module {self._name} at {self._id} initialized")
 
-    def get_serial(self):
-        """Get serial no from status"""
+    async def get_serial(self):
+        """Get serial no from status, if not available, generate and set."""
         serial = (
             self.status[MirrIdx.MOD_SERIAL : MirrIdx.MOD_SERIAL + 16]
             .decode("iso8859-1")
             .strip()
         )
         if len(serial) == 0 or serial[0] == "\x00":
-            rand_serial = random.randrange(999999)
+            serial = await self.hdlr.get_module_serial()
+            if len(serial) > 0:
+                return serial
+            cont_serial = self._id + 800000
             year = datetime.date.today().year - 2000
             week = datetime.datetime.now().isocalendar().week
             serial = (
-                f"{self._typ[0]:03}{self._typ[1]:03}{year:02}{week:02}{rand_serial:06}"
+                f"{self._typ[0]:03}{self._typ[1]:03}{year:02}{week:02}{cont_serial:06}"
             )
+            # set serial in module
+            await self.hdlr.set_module_serial(serial)
         return serial
 
     def get_sw_version(self):

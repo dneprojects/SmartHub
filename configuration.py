@@ -1,4 +1,5 @@
 import logging
+import math
 from copy import deepcopy as dpcopy
 from const import (
     IfDescriptor,
@@ -294,8 +295,12 @@ class ModuleSettings:
                 if int(line[0]) == 252:
                     # Finger users: user, bitmap of fingers as type
                     user_id = int(line[1])
-                    f_map = int(line[4]) * 256 + int(line[3])
-                    self.users.append(IfDescriptor(text, user_id, f_map))
+                    user_enabled = (int(line[4]) & 0x80) > 0
+                    f_map = (int(line[4]) & 0x7F) * 256 + int(line[3])
+                    if user_enabled:
+                        self.users.append(IfDescriptor(text, user_id, f_map))
+                    else:
+                        self.users.append(IfDescriptor(text, user_id, f_map * (-1)))
                     self.all_fingers[user_id] = []
                     for fi in range(10):
                         if f_map & (1 << fi):
@@ -590,7 +595,9 @@ class ModuleSettings:
             f_msk = 0
             for fngr in new_fingers[usr_id]:
                 f_msk = f_msk | 1 << (fngr.nmbr - 1)
-            self.users[usr_nmbrs.index(usr_id)].type = f_msk
+            self.users[usr_nmbrs.index(usr_id)].type = f_msk * int(
+                math.copysign(1, self.users[usr_nmbrs.index(usr_id)].type)
+            )
 
     async def set_automations(self):
         """Store automation entries to list and send to module."""
@@ -704,6 +711,9 @@ class ModuleSettings:
             desc = uid.name
             fgr_low = abs(uid.type) & 0xFF
             fgr_high = abs(uid.type) >> 8
+            if uid.type > 0:
+                # set enable bit
+                fgr_high += 0x80
             desc += " " * (32 - len(desc))
             desc = desc[:32]
             new_list.append(

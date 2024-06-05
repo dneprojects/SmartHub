@@ -417,6 +417,8 @@ class RT_CMDS:
     SET_CLIMATE = "\x2a<rtr>\x0a\x44<mod>\x06\x04\x53<set>\xff"
     SET_DISPL_CONTR = "\x2a<rtr>\x0a\x44<mod>\x06\x03\x53<set>\xff"
     SET_MOD_NAME = "\x2a<rtr>\x12\x44<mod>\x0e\x67\x53<cnt><name8>\xff"
+    SET_MOD_SERIAL = "\x2a<rtr>\x19\x44<mod>\x15\x69<cnt>"
+    GET_MOD_SERIAL = "\x2a<rtr>\x09\x44<mod>\x05\x69\x4c\xff"
     SET_MOD_LANG = "\x2a<rtr>\x0a\x44<mod>\x06\x3c\x53<lang>\xff"
     SET_MOD_SUPPLY = "\x2a<rtr>\x0a\x44<mod>\x06\x07\x01<set>\xff"
     SET_MOD_T_LIGHT = "\x2a<rtr>\x0a\x44<mod>\x06\x03\x5a<tim>\xff"

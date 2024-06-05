@@ -483,7 +483,7 @@ class HbtnRouter:
         # clear structures
         channels_str = ""
         old_groups = self.groups
-        self.groups = b"\x40" + b"\0" * 64
+        self.groups = b"\x50" + b"\0" * 80
         for ch_i in range(1, 5):
             self.channel_list[ch_i] = []
 
