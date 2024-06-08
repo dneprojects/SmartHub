@@ -1,6 +1,7 @@
 from math import copysign
 from aiohttp import web
 from urllib.parse import parse_qs
+from automtn_trigger import Weekdays
 from configuration import RouterSettings
 from config_commons import (
     activate_side_menu,
@@ -22,6 +23,8 @@ from const import (
     FingerNames,
     MirrIdx,
     IfDescriptor,
+    DAY_NIGHT_MODES,
+    DAY_NIGHT_MODES_HELP,
 )
 from configuration import set_cover_name, set_cover_output_name
 
@@ -570,6 +573,7 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
 
 def prepare_table(main_app, mod_addr, step, key) -> str:
     """Prepare settings table with form of edit fields."""
+
     key_prompt = main_app["prompt"]
     if hasattr(main_app["settings"], "covers"):
         covers = getattr(main_app["settings"], "covers")
@@ -586,6 +590,16 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             if tbl_data[ci].type == user_id:
                 f_nmbr = tbl_data[ci].nmbr
                 tbl_entries.update({f_nmbr: ci})
+        elif key in ["day_sched", "night_sched"]:
+            light_modules: list[tuple[int, str]] = []
+            modules = main_app["api_srv"].routers[0].modules
+            for mod in modules:
+                if mod._typ[0] == 1 or mod._typ[0] == 0x14 or mod._typ == b"\x32\x01":
+                    light_modules.append((mod._id, mod._name))
+            if ci:
+                tbl_entries.update({ci: ci - 1})
+            else:
+                tbl_entries.update({0: 6})  # sunday 1st day
         else:
             tbl_entries.update({tbl_data[ci].nmbr: ci})
     tbl_entries = sorted(tbl_entries.items())
@@ -593,11 +607,13 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
         # For SC skip night light, for small SC skip ambient light
         tbl_entries = tbl_entries[1:]
     ci = 0
+    wd = 50  # code for weekdays, starting with Sunday
     for entry in tbl_entries:
         ci = entry[1]
         id_name = key[:-1] + str(ci)
-        prompt = key_prompt + f"&nbsp;{tbl_data[ci].nmbr}"
-        if key in ["leds", "buttons", "dir_cmds"]:
+        if key not in ["day_sched", "night_sched"]:
+            prompt = key_prompt + f"&nbsp;{tbl_data[ci].nmbr}"
+        if key in ["leds", "buttons", "dir_cmds", "messages"]:
             maxl = 18
         else:
             maxl = 32
@@ -614,13 +630,62 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                     + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" '
                     + f'type="text" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci].name[:maxl].strip()}"></td>'
                 )
+        elif key in ["day_sched", "night_sched"]:
+            tbl += (
+                indent(7)
+                + "<tr>"
+                + indent(8)
+                + f'<td><label for="{id_name}">{Weekdays[wd]}</label></td>'
+                + indent(8)
+                + f'<td><select name="data[{ci},2]" class="daytime" id="{id_name}">\n'
+            )
+            wd += 1
+            for md in range(-1, 4):
+                if tbl_data[ci]["mode"] == md:
+                    tbl += (
+                        indent(9)
+                        + f'<option value="{md}" title="{DAY_NIGHT_MODES_HELP[md]}" selected>{DAY_NIGHT_MODES[md]}</option>\n'
+                    )
+                else:
+                    tbl += (
+                        indent(9)
+                        + f'<option value="{md}" title="{DAY_NIGHT_MODES_HELP[md]}">{DAY_NIGHT_MODES[md]}</option>\n'
+                    )
+            tbl += (
+                indent(8)
+                + "</td>\n"
+                + indent(8)
+                + f'<td><input name="data[{ci},0]" '
+                + f'type="time" class="daytime" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci]["hour"]:02}:{tbl_data[ci]["minute"]:02}"></td>'
+                + indent(8)
+                + f'<td><input name="data[{ci},1]" type="number" min="0" max="2550" step="10" class="daytime" id="{id_name}" value="{tbl_data[ci]["light"] * 10}">&nbsp;Lux</td>'
+            )
+            if entry[0]:
+                tbl += indent(8) + "<td></td>\n"
+            else:
+                tbl += (
+                    indent(8)
+                    + f'<td><select name="data[{ci},3]" class="daytime" id="{id_name}">\n'
+                )
+                for mod in light_modules:
+                    if tbl_data[ci]["module"] == mod[0]:
+                        tbl += (
+                            indent(9)
+                            + f'<option value="{mod[0]}" title="Helligkeitssensor von Modul {mod[0]} verwenden" selected>{mod[0]} - {mod[1]}</option>\n'
+                        )
+                    else:
+                        tbl += (
+                            indent(9)
+                            + f'<option value="{mod[0]}" title="Helligkeitssensor von Modul {mod[0]} verwenden">{mod[0]} - {mod[1]}</option>\n'
+                        )
+                tbl += indent(8) + "</td>\n"
         else:
             tbl += (
                 indent(7)
                 + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" '
                 + f'type="text" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci].name[:maxl].strip()}"></td>'
             )
-        if key in ["leds", "buttons", "dir_cmds"]:
+        if key in ["leds", "buttons", "dir_cmds", "messages"]:
             tbl += (
                 f'<td><input name="data[{ci},1]" type="text" id="{id_name}" maxlength="14" '
                 + f'value="{tbl_data[ci].name[18:].strip()}"></td>'
@@ -736,6 +801,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             "vis_cmds",
             "coll_cmds",
             "dir_cmds",
+            "messages",
             "logic",
             "users",
             "fingers",
@@ -752,6 +818,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
         "groups",
         "dir_cmds",
         "vis_cmds",
+        "messages",
         "coll_cmds",
         "logic",
         "users",
@@ -777,6 +844,8 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             max_new = 16
         elif key in ["dir_cmds"]:
             max_new = 25
+        elif key in ["messages"]:
+            max_new = 150
         elif key in ["vis_cmds"]:
             max_new = 65280
         elif key in ["groups"]:
@@ -869,6 +938,15 @@ def parse_response_form(main_app, form_data):
                             max_cnt,
                         )
                     )
+                elif key == "messages":
+                    language_code: int = 1
+                    settings.__getattribute__(key).append(
+                        IfDescriptor(
+                            f"{key}_{int(form_data[form_key][0])}",
+                            int(form_data[form_key][0]),
+                            language_code,
+                        )
+                    )
                 else:
                     if key == "users":
                         settings.all_fingers[int(form_data[form_key][0])] = []
@@ -897,7 +975,7 @@ def parse_response_form(main_app, form_data):
                 settings.__getattribute__(key)[int(indices[0])].name = form_data[
                     form_key
                 ][0]
-            elif indices[1] == 0:
+            elif indices[1] == 0 and key not in ["day_sched", "night_sched"]:
                 settings.__getattribute__(key)[int(indices[0])].name = form_data[
                     form_key
                 ][0]
@@ -990,7 +1068,7 @@ def parse_response_form(main_app, form_data):
                                 settings.covers[c_idx].type = abs(
                                     settings.covers[c_idx].type
                                 ) * (-1)
-                    case "leds" | "buttons" | "dir_cmds":
+                    case "leds" | "buttons" | "dir_cmds" | "messages":
                         if indices[1] == 0:
                             # use only first part for parsing and look for second
                             if f"data[{indices[0]},1]" in form_data.keys():
@@ -1015,11 +1093,45 @@ def parse_response_form(main_app, form_data):
                                 + int.to_bytes(int(form_data[form_key][0]))
                                 + settings.mode_dependencies[grp_nmbr + 1 :]
                             )
+                    case "day_sched":
+                        if indices[1] == 3:
+                            for day in settings.day_sched:
+                                day["module"] = int(form_data[form_key][0])
+                        elif indices[1] == 2:
+                            settings.day_sched[indices[0]]["mode"] = int(
+                                form_data[form_key][0]
+                            )
+                        elif indices[1] == 1:
+                            settings.day_sched[indices[0]]["light"] = int(
+                                form_data[form_key][0]
+                            )
+                        else:
+                            time = form_data[form_key][0].split(":")
+                            settings.day_sched[indices[0]]["hour"] = int(time[0])
+                            settings.day_sched[indices[0]]["minute"] = int(time[1])
+                    case "night_sched":
+                        if indices[1] == 3:
+                            for day in settings.night_sched:
+                                day["module"] = int(form_data[form_key][0])
+                        elif indices[1] == 2:
+                            settings.night_sched[indices[0]]["mode"] = int(
+                                form_data[form_key][0]
+                            )
+                        elif indices[1] == 1:
+                            settings.night_sched[indices[0]]["light"] = int(
+                                int(form_data[form_key][0]) / 10
+                            )
+                        else:
+                            time = form_data[form_key][0].split(":")
+                            settings.night_sched[indices[0]]["hour"] = int(time[0])
+                            settings.night_sched[indices[0]]["minute"] = int(time[1])
 
     if key == "fingers":
         settings.all_fingers[settings.users[settings.users_sel].nmbr] = settings.fingers
         if "TeachNewFinger" in list(form_data.keys()):
             form_data["ModSettings"] = form_data["TeachNewFinger"]
+    if key in ["day_sched", "night_sched"]:
+        settings.set_day_night()
     main_app["settings"] = settings
     return form_data["ModSettings"][0]
 
@@ -1091,6 +1203,15 @@ def get_property_kind(main_app, step) -> tuple[str, str, str]:
         case "coll_cmds":
             header = "Einstellungen Sammelbefehle"
             prompt = "Sammelbefehl"
+        case "day_sched":
+            header = "Einstellungen Tagumschaltung"
+            prompt = "Tag"
+        case "messages":
+            header = "Einstellungen Meldungen"
+            prompt = "Meldung"
+        case "night_sched":
+            header = "Einstellungen Nachtumschaltung"
+            prompt = "Nacht"
         case "groups":
             header = "Einstellungen Gruppen"
             prompt = "Gruppe"

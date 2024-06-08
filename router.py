@@ -347,6 +347,7 @@ class HbtnRouter:
     async def set_settings(self, settings: RouterSettings) -> None:
         """Store settings into router."""
         self.settings = settings
+        self.day_night = self.settings.day_night
         if self.api_srv.is_offline:
             self._name = settings.name
             self.name = (chr(len(self._name)) + self._name).encode("iso8859-1")
@@ -381,11 +382,13 @@ class HbtnRouter:
         """Return number of flags, commands, etc."""
 
         props: dict = {}
+        props["day_sched"] = 7
+        props["night_sched"] = 7
         props["groups"] = 16
         props["glob_flags"] = 16
         props["coll_cmds"] = 16
 
-        keys = ["groups", "glob_flags", "coll_cmds"]
+        keys = ["day_sched", "night_sched", "groups", "glob_flags", "coll_cmds"]
         no_keys = 0
         for key in keys:
             if props[key] > 0:

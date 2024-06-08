@@ -1,5 +1,4 @@
 import logging
-import random
 import datetime
 from copy import deepcopy as dpcopy
 from const import MirrIdx, SMGIdx, MODULE_CODES, CStatBlkIdx, HA_EVENTS
@@ -484,6 +483,7 @@ class HbtnModule:
         props["vis_cmds"] = 0
         props["users"] = 0
         props["fingers"] = 0
+        props["messages"] = 0
         match type_code[0]:
             case 1:  # controller module
                 props["buttons"] = 8
@@ -501,6 +501,7 @@ class HbtnModule:
                 props["flags"] = 16
                 props["dir_cmds"] = 25
                 props["vis_cmds"] = 65280
+                props["messages"] = 100
             case 10:
                 match type_code[1]:
                     case 1 | 50 | 51:  # relais module
@@ -555,6 +556,7 @@ class HbtnModule:
                 props["flags"] = 16
                 props["dir_cmds"] = 25
                 props["vis_cmds"] = 65280
+                props["messages"] = 100
 
         keys = [
             "buttons",
@@ -568,6 +570,7 @@ class HbtnModule:
             "flags",
             "dir_cmds",
             "vis_cmds",
+            "messages",
         ]
         no_keys = 0
         for key in keys:

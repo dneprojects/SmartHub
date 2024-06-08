@@ -840,3 +840,19 @@ class HA_EVENTS:
         15: "Mode",
         16: "System error",
     }
+
+
+DAY_NIGHT_MODES: dict[int, str] = {
+    -1: "inaktiv",
+    0: "nur Zeit",
+    1: "Zeit und Helligkeit",
+    2: "Zeit oder Helligkeit",
+    3: "nur Helligkeit",
+}
+DAY_NIGHT_MODES_HELP: dict[int, str] = {
+    -1: "Keine Umschaltung an diesem Wochentag",
+    0: "Umschaltung zur Uhrzeit",
+    1: "Umschaltung nach der Uhrzeit und beim Erreichen der Helligkeitsschwelle",
+    2: "Umschaltung entweder zur Uhrzeit oder beim Erreichen der Helligkeitsschwelle",
+    3: "Umschaltung beim Erreichen der Helligkeitsschwelle",
+}

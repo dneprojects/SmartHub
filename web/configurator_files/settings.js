@@ -99,6 +99,11 @@ function getMaxCount() {
 function parseNewAddr() {
     controlNewButton()
     existing_numbers = [];
+    if (document.getElementsByTagName("h2")[0].innerHTML == "Einstellungen Meldungen") {
+        for (var i = 51; i <= 100; i++) {
+            existing_numbers.push(String(i));
+        }
+    }
     min_number = new_addr.min;
     max_number = parseInt(new_addr.max);
     for (var i = 0; i < setngs_tbl.rows.length - 2; i++) {

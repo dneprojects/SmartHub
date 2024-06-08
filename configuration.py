@@ -659,6 +659,14 @@ class ModuleSettings:
                 desc += " " * (32 - len(desc))
                 desc = desc[:32]
                 new_list.append(f"\xfd\0\xeb{chr(dir_cmd.nmbr)}\1\x23\0\xeb" + desc)
+        for msg in self.messages:
+            desc = msg.name
+            if len(desc.strip()) > 0:
+                desc += " " * (32 - len(desc))
+                desc = desc[:32]
+                new_list.append(
+                    f"\xfe\0\xeb{chr(msg.nmbr)}{chr(msg.type)}\x23\0\xeb" + desc
+                )
         for btn in self.buttons:
             desc = btn.name
             if len(desc.strip()) > 0:
@@ -807,6 +815,7 @@ class RouterSettings:
         self.max_group = 0
         self.get_definitions()
         self.get_glob_descriptions()
+        self.get_day_night()
         self.properties: dict = rtr.properties
         self.prop_keys = rtr.prop_keys
 
@@ -911,6 +920,54 @@ class RouterSettings:
             desc += f"\x01\xff\x07{chr(grp.nmbr)}\x00\x00\x00\x00{chr(len(grp.name))}{grp.name}"
             line_no += 1
         return chr(line_no & 0xFF) + chr(line_no >> 8) + desc[2:]
+
+    def get_day_night(self) -> None:
+        """Prepare day and night table."""
+        self.day_sched: list[dict[str, int]] = []
+        self.night_sched: list[dict[str, int]] = []
+        ptr = 1
+        for day in range(14):
+            setting: dict[str, int] = {}
+            setting["hour"] = self.day_night[ptr]
+            setting["minute"] = self.day_night[ptr + 1]
+            setting["light"] = self.day_night[ptr + 2]
+            if setting["hour"] == 24:
+                setting["mode"] = -1
+            elif setting["light"] == 0:
+                setting["mode"] = 0
+            else:
+                setting["mode"] = self.day_night[ptr + 3]
+            setting["module"] = self.day_night[ptr + 4]
+            self.day_sched.append(setting)
+            ptr += 5
+        self.night_sched = self.day_sched[7:]
+        self.day_sched = self.day_sched[:7]
+
+    def set_day_night(self) -> None:
+        """Prepare day and night table."""
+        day_night_str = chr(self.day_night[0])
+        for day in range(14):
+            if day < 7:
+                sched = self.day_sched
+                di = day
+            else:
+                sched = self.night_sched
+                di = day - 7
+            if sched[di]["mode"] != -1:
+                day_night_str += chr(sched[di]["hour"])
+            else:
+                day_night_str += chr(24)
+            day_night_str += chr(sched[di]["minute"])
+            if sched[di]["mode"] > 0:
+                day_night_str += chr(sched[di]["light"])
+            else:
+                day_night_str += chr(0)
+            if sched[di]["mode"] > 0:
+                day_night_str += chr(sched[di]["mode"])
+            else:
+                day_night_str += chr(0)
+            day_night_str += chr(sched[di]["module"])
+        self.day_night = day_night_str.encode("iso8859-1")
 
 
 class ModuleSettingsLight(ModuleSettings):

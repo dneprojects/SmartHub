@@ -1454,6 +1454,19 @@ select option[disabled] {
    display: none;
 }
 
+select.daytime {
+   width: 120px;
+}
+input[type="time"].daytime {
+   padding-top: 2px;
+   padding-bottom: 1px;
+   color: #333;
+   border: 1px solid #C0372D;
+}
+
+input[type="number"].daytime {
+   width: 55px;
+}
 input.sens_no {
    width: 44px; 
    height: 16px;

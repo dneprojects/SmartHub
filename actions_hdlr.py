@@ -172,7 +172,9 @@ class ActionsHdlr(HdlrBase):
                 mod = self._p5
                 self.check_router_module_no(rt, mod)
                 self.check_arg(
-                    self._args[0], range(1, 26), "Error: direct command no out of range 1..25"
+                    self._args[0],
+                    range(1, 26),
+                    "Error: direct command no out of range 1..25",
                 )
                 if self.args_err:
                     return
@@ -309,9 +311,9 @@ class ActionsHdlr(HdlrBase):
                     rt_cmd = RT_CMDS.SET_OUT_OFF
                 else:
                     rt_cmd = RT_CMDS.SET_OUT_ON
-                #  out_msk = 1 << (self._args[0] + 16)
+                out_msk = 1 << (self._args[0] + 15)
                 #  quick fix: use outputs 2..6, change also in Habitron module.py
-                out_msk = 1 << (self._args[0] + 2)
+                # out_msk = 1 << (self._args[0] + 2)
                 self._rt_command = (
                     rt_cmd.replace("<rtr>", chr(rt))
                     .replace("<mod>", chr(mod))
