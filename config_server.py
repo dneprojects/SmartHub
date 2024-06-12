@@ -244,12 +244,14 @@ class ConfigServer:
             init_side_menu(app)
             success_msg = "Router configuration file uploaded"
             app.logger.info(success_msg)  # noqa: F541
-            return show_router_overview(app, success_msg)
+            return show_router_overview(app, success_msg)  # type: ignore
         else:
             mod_addr = int(str(data["ModUpload"]))
             if data["ModUpload"] == content_str.split(";")[0]:
                 await send_to_module(app, content_str, mod_addr)
-                success_msg = f"Module configuration file for module {mod_addr} uploaded"
+                success_msg = (
+                    f"Module configuration file for module {mod_addr} uploaded"
+                )
                 app.logger.info(success_msg)
             else:
                 success_msg = f"Module configuration file does not fit to module number {mod_addr}, upload aborted"
@@ -459,8 +461,11 @@ def seperate_upload(upload_str: str) -> tuple[bytes, bytes]:
     l_l = len(lines)
     for l_i in range(l_l):
         # count backwards to keep line count after deletion
-        if lines[l_l - l_i - 1].strip() == "":
-            del lines[l_l - l_i - 1]
+        l_bi = l_l - l_i - 1  # runs from l_l-1 .. 0
+        if lines[l_bi].strip() == "":
+            del lines[l_bi]
+        else:
+            lines[l_bi] = lines[l_bi].replace(";\r", ";")
     smg_bytes = b""
     for byt in lines[0].split(";"):
         if len(byt) > 0:

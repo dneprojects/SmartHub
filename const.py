@@ -741,6 +741,7 @@ class RT_STAT_CODES:
 MODULE_CODES: Final[dict[str, str]] = {
     "\x01\x01": "Smart Controller XL-1",
     "\x01\x02": "Smart Controller XL-2",
+    "\x01\x03": "Smart Controller XL-2 (LE2)",
     # "\x01\x0a": "Smart Controller X",
     "\x0a\x01": "Smart Out 8/R",
     "\x0a\x02": "Smart Out 8/T",
@@ -755,7 +756,7 @@ MODULE_CODES: Final[dict[str, str]] = {
     "\x0b\x01": "Smart In 8/230V",
     "\x14\x01": "Smart Nature",
     "\x1e\x01": "Fanekey",
-    "\x1e\x03": "FanGSM",
+    "\x1e\x03": "Smart GSM",
     "\x1e\x28": "FanMatrix",
     "\x32\x01": "Smart Controller Mini",
     # "\x32\x28": "Smart Sensors",
@@ -766,6 +767,7 @@ MODULE_CODES: Final[dict[str, str]] = {
 
 MODULE_TYPES: Final[dict[str, str]] = {
     "\x01\x02": "Smart Controller XL-2",
+    "\x01\x03": "Smart Controller XL-2 (LE2)",
     # "\x01\x0a": "Smart Controller X",
     "\x32\x01": "Smart Controller Mini",
     "\x0a\x02": "Smart Out 8/T",
@@ -776,6 +778,7 @@ MODULE_TYPES: Final[dict[str, str]] = {
     "\x0b\x01": "Smart In 8/230V",
     "\x14\x01": "Smart Nature",
     "\x1e\x01": "Fanekey",
+    "\x1e\x03": "Smart GSM",
     "\x50\x66": "Smart Detect 180-2",
     "\x50\x65": "Smart Detect 360",
 }
@@ -789,6 +792,21 @@ class IfDescriptor:
         self.nmbr: int = inmbr
         self.type: int = itype
 
+
+class LgcDescriptor(IfDescriptor):
+    """Habitron logic interface descriptor."""
+
+    def __init__(self, iname, inmbr, itype, iinputs) -> None:
+        super().__init__(iname, inmbr, itype)
+        self.inputs: int = iinputs
+
+
+LGC_TYPES: dict[int, str] = {
+    1: "AND",
+    2: "NAND",
+    3: "OR",
+    4: "NOR",
+}
 
 FingerNames = [
     "Kleiner Finger links",

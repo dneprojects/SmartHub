@@ -23,6 +23,9 @@ ActionNames = {
     57: "Meldung zurücksetzen",
     58: "Meldung auf Zeit",
     64: "Modus setzen",
+    91: "Logikeingang setzen",
+    92: "Logikeingang rücksetzen",
+    93: "Logikeingang wechseln",
     111: "Merker setzen",
     112: "Merker rücksetzen",
     113: "Merker wechseln",
@@ -51,6 +54,7 @@ SelActCodes = {
     "output": 1,
     "led": 2,
     "counter": 6,
+    "logic": 9,
     "buzzer": 10,
     "cover": 17,
     "dimm": 20,
@@ -83,6 +87,7 @@ ActionsSets = {
         103,
     ],
     6: [6, 118, 119],
+    9: [9],
     10: [10],
     17: [17, 18],
     20: [20, 22, 23, 24],
@@ -175,6 +180,7 @@ class AutomationAction:
                 SelActCodes["led"]: "LED",
                 SelActCodes["climate"]: "Klima",
                 SelActCodes["collcmd"]: "Sammelbefehl",
+                SelActCodes["logic"]: "Logikeingang",
                 SelActCodes["flag"]: "Merker",
                 SelActCodes["mode"]: "Modus",
                 SelActCodes["counter"]: "Zähler",
@@ -182,15 +188,21 @@ class AutomationAction:
                 SelActCodes["msg"]: "Meldung",
                 SelActCodes["buzzer"]: "Summton",
             }
+        elif typ == b"\x1e\x03":  # Smart GSM
+            self.actions_dict = {
+                SelActCodes["msg"]: "Meldung",
+            }
         elif typ == b"\x32\x01":  # Smart Controller Mini
             self.actions_dict = {
                 SelActCodes["output"]: "Ausgang",
                 SelActCodes["rgb"]: "Farblicht",
                 SelActCodes["climate"]: "Klima",
                 SelActCodes["collcmd"]: "Sammelbefehl",
+                SelActCodes["logic"]: "Logikeingang",
                 SelActCodes["flag"]: "Merker",
                 SelActCodes["mode"]: "Modus",
                 SelActCodes["counter"]: "Zähler",
+                SelActCodes["msg"]: "Meldung",
                 SelActCodes["buzzer"]: "Summton",
             }
         elif (typ[0] == 10) and (typ[1] in [20, 21, 22]):  # dimm output modules
@@ -199,6 +211,7 @@ class AutomationAction:
                 SelActCodes["dimm"]: "Dimmen",
                 SelActCodes["climate"]: "Klima",
                 SelActCodes["collcmd"]: "Sammelbefehl",
+                SelActCodes["logic"]: "Logikeingang",
                 SelActCodes["flag"]: "Merker",
                 SelActCodes["mode"]: "Modus",
                 SelActCodes["counter"]: "Zähler",
@@ -209,6 +222,7 @@ class AutomationAction:
                 SelActCodes["cover"]: "Rollladen/Jalousie",
                 SelActCodes["climate"]: "Klima",
                 SelActCodes["collcmd"]: "Sammelbefehl",
+                SelActCodes["logic"]: "Logikeingang",
                 SelActCodes["flag"]: "Merker",
                 SelActCodes["mode"]: "Modus",
                 SelActCodes["counter"]: "Zähler",
@@ -234,16 +248,14 @@ class AutomationAction:
                     self.action_args[0], False
                 )
                 if actn_target[:6] == "Zähler":
-                    if self.unit % 2 == 0:  # even input numbers
-                        actn_desc = "abwärts zählen"
-                    else:
-                        actn_desc = "hoch zählen"
-                    self.unit = int((self.unit - 165) / 8) + 1
-                    actn_target = f"Zähler {self.get_dict_entry('logic', self.unit)}"
-            elif actn_target[:6] == "Zähler":
-                actn_desc = actn_target.replace("Zähler ", "")
-                self.unit = int((self.action_args[0] - 165) / 8) + 1
-                actn_target = f"Zähler {self.get_dict_entry('logic', self.unit)}"
+                    actn_desc = ""
+                elif actn_target[:5] == "Logik":
+                    if self.action_code == 1:
+                        actn_desc = "setzen"
+                    if self.action_code == 2:
+                        actn_desc = "rücksetzen"
+                    if self.action_code == 3:
+                        actn_desc = "wechseln"
             elif self.action_code in [9]:  # time dependant set functions
                 self.unit = self.action_args[3]
                 actn_target = self.automation.get_output_desc(self.unit, True)
@@ -289,7 +301,7 @@ class AutomationAction:
             elif actn_target == "Counter":
                 self.unit = self.action_args[0]
                 actn_target = (
-                    f"Zähler {self.get_dict_entry('logic', self.action_args[0])}"
+                    f"Zähler {self.get_dict_entry('counters', self.action_args[0])}"
                 )
                 actn_desc = f"auf {self.action_args[2]} setzen"
             elif actn_target[:6] == "Sammel":
@@ -492,22 +504,39 @@ class AutomationAction:
         for flg in app["settings"].glob_flags:
             opt_str += f'<option value="{flg.nmbr + 32}">{flg.name}</option>\n'
         page = page.replace('<option value="">-- AcMerker wählen --</option>', opt_str)
+
+        opt_str = '<option value="">-- Logikeingang wählen --</option>'
+        for lgc in app["settings"].logic:
+            for lgci in range(lgc.inputs):
+                inp_idx = 165 + (lgc.nmbr - 1) * 8 + lgci
+                opt_str += f'<option value="{inp_idx}">{lgc.name} - Input {lgci + 1}</option>\n'
+        page = page.replace(
+            '<option value="">-- Logikeingang wählen --</option>', opt_str
+        )
+
         opt_str = '<option value="">-- Zähler wählen --</option>'
         max_cnt = []
+        counter_numbers = []
         no_counters = 0
-        for cnt in app["settings"].logic:
+        for cnt in app["settings"].counters:
             no_counters += 1
             max_cnt.append(app["settings"].status[MirrIdx.LOGIC - 2 + cnt.nmbr * 3])
             opt_str += f'<option value="{cnt.nmbr}">{cnt.name}</option>\n'
+            counter_numbers.append(cnt.nmbr)
         page = page.replace('<option value="">-- AcZähler wählen --</option>', opt_str)
+        page = page.replace(
+            "counter_numbers = []", f"counter_numbers = {counter_numbers}"
+        )
         if (no_counters == 0) and (SelActCodes["counter"] in self.actions_dict.keys()):
             page = page.replace(
                 f'<option value="{SelActCodes["counter"]}">{self.actions_dict[SelActCodes["counter"]]}',
                 f'<option value="{SelActCodes["counter"]}" disabled>{self.actions_dict[SelActCodes["counter"]]}',
             )
+
         if len(app["settings"].messages) > 0:
             opt_str = '<option value="">-- Meldung wählen --</option>'
             for msg in app["settings"].messages:
+                # only entries in language 1 (german) supported
                 if msg.type == 1:
                     opt_str += f'<option value="{msg.nmbr}">{msg.name}</option>\n'
             page = page.replace(
@@ -619,8 +648,15 @@ class AutomationAction:
                 elif flg_no < 17:
                     flg_no += 16  # should not happen, only first 8 flags allowed
                 self.action_args.append(flg_no)
+
+        elif self.action_code in ActionsSets[SelActCodes["logic"]]:
+            # logic inputs
+            self.action_code = self.automation.get_sel(form_data, "act_logicopt")
+            inp_no = self.automation.get_sel(form_data, "act_logic")
+            self.action_args.append(inp_no)
+
         elif self.action_code in ActionsSets[SelActCodes["counter"]]:
-            # counter (logic inputs not supported)
+            # counter
             counter_opt = self.automation.get_sel(form_data, "act_countopt")
             counter_no = self.automation.get_sel(form_data, "act_counter")
             if counter_opt == 1:  # count up

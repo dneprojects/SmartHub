@@ -3,6 +3,8 @@ import math
 from copy import deepcopy as dpcopy
 from const import (
     IfDescriptor,
+    LgcDescriptor,
+    LGC_TYPES,
     MirrIdx,
     FingerNames,
 )
@@ -39,7 +41,7 @@ class ModuleSettings:
         self.upload_desc_info_needed: bool = False
         self.group = dpcopy(module.get_group())
         self.get_io_interfaces()
-        self.get_counters()
+        self.get_logic()
         self.get_names()
         self.get_settings()
         self.get_descriptions()
@@ -66,7 +68,8 @@ class ModuleSettings:
             IfDescriptor("", i + 1, -1) for i in range(self.properties["outputs_dimm"])
         ]
         self.flags: list[IfDescriptor] = []
-        self.logic: list[IfDescriptor] = []
+        self.counters: list[IfDescriptor] = []
+        self.logic: list[LgcDescriptor] = []
         self.messages: list[IfDescriptor] = []
         self.dir_cmds: list[IfDescriptor] = []
         self.vis_cmds: list[IfDescriptor] = []
@@ -76,7 +79,7 @@ class ModuleSettings:
         self.glob_flags: list[IfDescriptor] = []
         self.coll_cmds: list[IfDescriptor] = []
 
-    def get_counters(self) -> None:
+    def get_logic(self) -> None:
         """Get module counters from status."""
         self.logger.debug("Getting module settings from module status")
         conf = self.status
@@ -85,10 +88,22 @@ class ModuleSettings:
         for l_idx in range(10):
             if conf[MirrIdx.LOGIC + 3 * l_idx] == 5:
                 # counter found
-                self.logic.append(
+                self.counters.append(
                     IfDescriptor(
-                        f"Counter_{l_idx + 1}",
+                        f"Counter{conf[MirrIdx.LOGIC + 3 * l_idx + 1]}_{l_idx + 1}",
                         l_idx + 1,
+                        conf[MirrIdx.LOGIC + 3 * l_idx + 1],
+                    )
+                )
+            elif conf[MirrIdx.LOGIC + 3 * l_idx] == 0:
+                pass
+            else:
+                # logic found
+                self.logic.append(
+                    LgcDescriptor(
+                        f"{LGC_TYPES[conf[MirrIdx.LOGIC + 3 * l_idx]]}{conf[MirrIdx.LOGIC + 3 * l_idx + 1]}_{l_idx + 1}",
+                        l_idx + 1,
+                        conf[MirrIdx.LOGIC + 3 * l_idx],
                         conf[MirrIdx.LOGIC + 3 * l_idx + 1],
                     )
                 )
@@ -113,11 +128,7 @@ class ModuleSettings:
             .decode("iso8859-1")
             .strip()
         )
-        self.sw_version = (
-            conf[MirrIdx.SW_VERSION : MirrIdx.SW_VERSION + 22]
-            .decode("iso8859-1")
-            .strip()
-        )
+        self.sw_version = self.module.get_sw_version()
         self.supply_prio = conf[MirrIdx.SUPPLY_PRIO]
         self.displ_contr = conf[MirrIdx.DISPL_CONTR]
         self.displ_time = conf[MirrIdx.MOD_LIGHT_TIM]
@@ -126,16 +137,21 @@ class ModuleSettings:
                 self.displ_time = 100
         self.temp_ctl = conf[MirrIdx.CLIM_SETTINGS]
         self.temp_1_2 = conf[MirrIdx.TMP_CTL_MD]
-        self.t_short = self.status[MirrIdx.T_SHORT] * 10
-        self.t_long = self.status[MirrIdx.T_LONG] * 10
-        self.t_dimm = self.status[MirrIdx.T_DIM]
+        self.t_short = conf[MirrIdx.T_SHORT] * 10
+        self.t_long = conf[MirrIdx.T_LONG] * 10
+        self.t_dimm = conf[MirrIdx.T_DIM]
         inp_state = int.from_bytes(
             conf[MirrIdx.SWMOD_1_8 : MirrIdx.SWMOD_1_8 + 3], "little"
         )
+        ad_state = conf[MirrIdx.STAT_AD24_ACTIVE]
         for inp in self.inputs:
             nmbr = inp.nmbr - 1 + len(self.buttons)
             if inp_state & (0x01 << (nmbr)) > 0:
                 inp.type *= 2  # switch
+            if ad_state & (0x01 << (nmbr)) > 0:
+                inp.type *= 3  # ad input
+            if inp.nmbr > 10:
+                inp.type *= 3  # dedicated ad input of sc module
 
         # pylint: disable-next=consider-using-enumerate
         covr_pol = int.from_bytes(
@@ -210,10 +226,14 @@ class ModuleSettings:
             MirrIdx.SUPPLY_PRIO,
         )
         inp_state = 0
+        ad_state = 0
         no_btns = len(self.buttons)
         for inp in self.inputs:
-            if abs(inp.type) > 1:  # switch
+            if abs(inp.type) == 2:  # switch
                 inp_state = inp_state | (0x01 << (inp.nmbr + no_btns - 1))
+            if abs(inp.type) == 3:  # analog
+                ad_state = ad_state | (0x01 << (inp.nmbr + no_btns - 1))
+                ad_state = ad_state & 0xFF
         inp_bytes = (
             chr(inp_state & 0xFF)
             + chr((inp_state >> 8) & 0xFF)
@@ -224,6 +244,7 @@ class ModuleSettings:
             inp_bytes,
             MirrIdx.SWMOD_1_8,
         )
+        status = replace_bytes(status, int.to_bytes(ad_state), MirrIdx.STAT_AD24_ACTIVE)
         outp_state = 0
         covr_pol = 0
         for c_idx in range(len(self.covers)):
@@ -263,10 +284,16 @@ class ModuleSettings:
             b"\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00",
             MirrIdx.LOGIC,
         )
+        for cnt in self.counters:
+            status = replace_bytes(
+                status,
+                b"\x05" + int.to_bytes(cnt.type),  # type 5 counter + max_count
+                MirrIdx.LOGIC + 3 * (cnt.nmbr - 1),
+            )
         for lgk in self.logic:
             status = replace_bytes(
                 status,
-                b"\x05" + int.to_bytes(lgk.type),  # type 5 counter + max_count
+                int.to_bytes(lgk.type) + int.to_bytes(lgk.inputs),  # type + no_inputs
                 MirrIdx.LOGIC + 3 * (lgk.nmbr - 1),
             )
         return status
@@ -344,6 +371,11 @@ class ModuleSettings:
                                 self.inputs[arg_code - 40].name = text
                                 self.inputs[arg_code - 40].nmbr = arg_code - 39
                         elif arg_code in range(110, 120):
+                            # Description of counters
+                            for cnt in self.counters:
+                                if cnt.nmbr == arg_code - 109:
+                                    cnt.name = text
+                                    break
                             # Description of logic units
                             for lgc in self.logic:
                                 if lgc.nmbr == arg_code - 109:
@@ -385,6 +417,9 @@ class ModuleSettings:
             self.outputs[11].type = 2
             self.leds[0].name = "Nachtlicht"
             self.leds[0].nmbr = 0
+            if self.typ == b"\x01\x03":
+                self.inputs[-2].name = "A/D-Kanal 1"
+                self.inputs[-1].name = "A/D-Kanal 2"
             return True
         if self.type[:10] == "Smart Dimm":
             self.dimmers[0].name = self.outputs[0].name
@@ -476,9 +511,9 @@ class ModuleSettings:
                         self.save_desc_file_needed = True
                 elif content_code == 5:
                     # logic element, overwrite default name, if not stored in smc
-                    for lgc in self.logic:
-                        if lgc.nmbr == entry_no:
-                            if lgc.name == entry_name:
+                    for cnt in self.counters:
+                        if cnt.nmbr == entry_no:
+                            if cnt.name == entry_name:
                                 # remove line
                                 self.desc = self.desc.replace(
                                     line.decode("iso8859-1"), ""
@@ -490,9 +525,29 @@ class ModuleSettings:
                                 new_no_chars -= len(line)
                                 self.save_desc_file_needed = True
                             else:
-                                lgc.name = entry_name
+                                cnt.name = entry_name
                                 self.logger.info(
                                     f"Description entry of counter '{entry_name}' found, will be stored in module {self.id}."
+                                )
+                                self.upload_desc_info_needed = True
+                            break
+                    for lgc in self.logic:
+                        if lgc.nmbr == entry_no:
+                            if lgc.name == entry_name:
+                                # remove line
+                                self.desc = self.desc.replace(
+                                    line.decode("iso8859-1"), ""
+                                )
+                                self.logger.info(
+                                    f"Description entry of logic unit '{entry_name}' already stored in module {self.id}, will be removed."
+                                )
+                                new_no_lines -= 1
+                                new_no_chars -= len(line)
+                                self.save_desc_file_needed = True
+                            else:
+                                lgc.name = entry_name
+                                self.logger.info(
+                                    f"Description entry of logic unit '{entry_name}' found, will be stored in module {self.id}."
                                 )
                                 self.upload_desc_info_needed = True
                             break
@@ -513,6 +568,10 @@ class ModuleSettings:
             + chr(new_no_chars & 0xFF)
             + chr(new_no_chars >> 8)
         ) + self.desc[4:]
+        if (len(self.counters) > 0) and ("counters" not in self.prop_keys):
+            self.properties["counters"] = len(self.counters)
+            self.properties["no_keys"] += 1
+            self.prop_keys.append("counters")
         if (len(self.logic) > 0) and ("logic" not in self.prop_keys):
             self.properties["logic"] = len(self.logic)
             self.properties["no_keys"] += 1
@@ -533,6 +592,20 @@ class ModuleSettings:
             self.properties["users"] = len(self.users)
             self.properties["no_keys"] += 1
             self.prop_keys.append("users")
+
+    def get_counter_numbers(self) -> list[int]:
+        """Return counter numbers."""
+        cnt_nos = []
+        for cnt in self.counters:
+            cnt_nos.append(cnt.nmbr)
+        return cnt_nos
+
+    def get_logic_numbers(self) -> list[int]:
+        """Return logic unit numbers."""
+        lgc_nos = []
+        for lgc in self.logic:
+            lgc_nos.append(lgc.nmbr)
+        return lgc_nos
 
     def get_modes(self):
         """Return all mode strings as list."""
@@ -684,16 +757,21 @@ class ModuleSettings:
                     )
         for inpt in self.inputs:
             desc = inpt.name
-            if len(desc.strip()) > 0:
-                desc += " " * (32 - len(desc))
-                desc = desc[:32]
-                new_list.append(f"\xff\0\xeb{chr(39 + inpt.nmbr)}\1\x23\0\xeb" + desc)
+            # if len(desc.strip()) > 0:
+            desc += " " * (32 - len(desc))
+            desc = desc[:32]
+            new_list.append(f"\xff\0\xeb{chr(39 + inpt.nmbr)}\1\x23\0\xeb" + desc)
         for outpt in self.outputs:
             desc = outpt.name
             if len(desc.strip()) > 0:
                 desc += " " * (32 - len(desc))
                 desc = desc[:32]
                 new_list.append(f"\xff\0\xeb{chr(59 + outpt.nmbr)}\1\x23\0\xeb" + desc)
+        for cnt in self.counters:
+            desc = cnt.name
+            desc += " " * (32 - len(desc))
+            desc = desc[:32]
+            new_list.append(f"\xff\0\xeb{chr(109 + cnt.nmbr)}\1\x23\0\xeb" + desc)
         for lgc in self.logic:
             desc = lgc.name
             desc += " " * (32 - len(desc))
@@ -996,7 +1074,7 @@ class ModuleSettingsLight(ModuleSettings):
         self.upload_desc_info_needed: bool = False
         self.group = dpcopy(module.get_group())
         self.get_io_interfaces()
-        self.get_counters()
+        self.get_logic()
         self.get_names()
         self.get_settings()
         self.get_descriptions()

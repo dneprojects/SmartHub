@@ -10,6 +10,7 @@ button_help_dict["Automatisierungen"] = "Automatisierungen im Habitron-System an
 button_help_dict["Konfigurationsdatei"] = "Router- oder Moduleinstellungen sichern oder wiederherstellen";
 button_help_dict["zurück"] = "Zur vorherigen Einstellungsseite wechseln";
 button_help_dict["weiter"] = "Zur nächsten Einstellungsseite wechseln";
+button_help_dict["Weiter"] = "Externe Automatisierung anlegen";
 button_help_dict["Abbruch"] = "Geänderte Einstellungen verwerfen";
 button_help_dict["Speichern"] = "Geänderte Einstellungen im Router oder Modul speichern";
 button_help_dict["OK"] = "Einstellungen übernehmen";
@@ -25,9 +26,23 @@ button_help_dict["Löschen"] = "Ausgewählte Automatisierungsregel löschen";
 button_help_dict["Übernehmen"] = "Alle Änderungen von Modulen, Adressen und Kanälen im Configurator intern ablegen";
 button_help_dict["Übertragen"] = "Alle Änderungen von Modulen, Adressen und Kanälen ins System übertragen";
 
+var button_acceskey_dict = {};
+button_acceskey_dict["Neu"] = "n";
+button_acceskey_dict["Ändern"] = "ä";
+button_acceskey_dict["Löschen"] = "l";
+button_acceskey_dict["schließen"] = "s";
+button_acceskey_dict["zurück"] = "z";
+button_acceskey_dict["weiter"] = "w";
+button_acceskey_dict["Weiter"] = "w";
+button_acceskey_dict["Abbruch"] = "a";
+button_acceskey_dict["anlegen"] = "a";
+
 const buttons = document.getElementsByTagName("button")
 for (let i = 0; i < buttons.length; i++) {
     if (button_help_dict[buttons[i].innerHTML.trim()]) {
         buttons[i].title = button_help_dict[buttons[i].innerHTML.trim()];
+    }
+    if (button_acceskey_dict[buttons[i].innerHTML.trim()]) {
+        buttons[i].accessKey = button_acceskey_dict[buttons[i].innerHTML.trim()];
     }
 }

@@ -41,7 +41,14 @@ class HbtnModule:
             .decode("iso8859-1")
             .strip()
         )
+        sw_vers = (
+            self.status[MirrIdx.SW_VERSION : MirrIdx.SW_VERSION + 22]
+            .decode("iso8859-1")
+            .strip()
+        )
         self._typ = self.status[MirrIdx.MOD_DESC : MirrIdx.MOD_DESC + 2]
+        if sw_vers[:8] == "SC2 V4.6":
+            self._typ = b"\x01\x03"
         self._type = MODULE_CODES[self._typ.decode("iso8859-1")]
 
         self.list = await self.hdlr.get_module_list(self._id)
@@ -126,7 +133,11 @@ class HbtnModule:
 
     def has_automations(self) -> bool:
         """Return True if automations are allowed."""
-        return (self._typ[0] in [1, 10]) or (self._typ == b"\x32\x01")
+        return (
+            (self._typ[0] in [1, 10])
+            or (self._typ == b"\x32\x01")
+            or (self._typ == b"\x1e\x03")
+        )
 
     def swap_mirr_cover_idx(self, mirr_idx: int) -> int:
         """Return cover index from mirror index (0..2 -> 2..4)."""
@@ -160,7 +171,7 @@ class HbtnModule:
         # print(f"Module update {self._id}")
         if self._type in [
             "Smart Nature",
-            "FanGSM",
+            "Smart GSM",
             "FanM-Bus",
             "Smart In 8/24V",
             "Smart In 8/24V-1",
@@ -448,6 +459,8 @@ class HbtnModule:
             .decode("iso8859-1")
             .strip()
         )
+        self.settings.status = self.status
+        self.settings.list = self.list
         # self.list = await self.hdlr.get_module_list(self._id)
         self.calc_SMC_crc(self.list)
 
@@ -470,6 +483,7 @@ class HbtnModule:
         props["inputs"] = 0
         props["inputs_230V"] = 0
         props["inputs_24V"] = 0
+        props["inputs_analog"] = 0
         props["outputs"] = 0
         props["outputs_230V"] = 0
         props["outputs_dimm"] = 0
@@ -477,6 +491,7 @@ class HbtnModule:
         props["outputs_relais"] = 0
         props["leds"] = 0
         props["covers"] = 0
+        props["counters"] = 0
         props["logic"] = 0
         props["flags"] = 0
         props["dir_cmds"] = 0
@@ -497,17 +512,23 @@ class HbtnModule:
                 props["outputs_relais"] = 1
                 props["leds"] = 9
                 props["covers"] = 5
+                props["counters"] = 10
                 props["logic"] = 10
                 props["flags"] = 16
                 props["dir_cmds"] = 25
                 props["vis_cmds"] = 65280
                 props["messages"] = 100
+                if type_code[1] == 3:
+                    props["inputs"] = 12  # add 2 dedicated analog inputs
+                    props["inputs_24V"] = 8
+                    props["inputs_analog"] = 2
             case 10:
                 match type_code[1]:
                     case 1 | 50 | 51:  # relais module
                         props["outputs"] = 8
                         props["outputs_relais"] = 8
                         props["covers"] = 4
+                        props["counters"] = 10
                         props["logic"] = 10
                         props["flags"] = 16
                         props["vis_cmds"] = 16
@@ -515,12 +536,14 @@ class HbtnModule:
                         props["outputs"] = 8
                         props["outputs_230V"] = 8
                         props["covers"] = 4
+                        props["counters"] = 10
                         props["logic"] = 10
                         props["flags"] = 16
                         props["vis_cmds"] = 65280
                     case 20 | 21 | 22:  # dimm module
                         props["outputs"] = 4
                         props["outputs_dimm"] = 4
+                        props["counters"] = 10
                         props["logic"] = 10
                         props["flags"] = 16
                         props["vis_cmds"] = 65280
@@ -530,6 +553,7 @@ class HbtnModule:
                         props["outputs"] = 2
                         props["outputs_relais"] = 2
                         props["covers"] = 1
+                        props["counters"] = 10
                         props["logic"] = 10
                         props["flags"] = 16
                         props["vis_cmds"] = 65280
@@ -541,9 +565,15 @@ class HbtnModule:
                     case 30 | 31:  # in 24 module
                         props["inputs"] = 8
                         props["inputs_24V"] = 8
-            case 30:  # ekey module
-                props["users"] = 256
-                props["fingers"] = props["users"] * 10
+                        if type_code[1] == 31:
+                            props["inputs_analog"] = 6
+            case 30:
+                match type_code[1]:
+                    case 1:  # ekey module
+                        props["users"] = 256
+                        props["fingers"] = props["users"] * 10
+                    case 3:  # gsm module
+                        props["messages"] = 100
             case 50:  # compact controller module
                 props["buttons"] = 2
                 props["inputs"] = 4
@@ -552,6 +582,7 @@ class HbtnModule:
                 props["outputs"] = 2
                 props["outputs_24V"] = 2
                 props["leds"] = 5
+                props["counters"] = 10
                 props["logic"] = 10
                 props["flags"] = 16
                 props["dir_cmds"] = 25
@@ -564,6 +595,7 @@ class HbtnModule:
             "inputs",
             "outputs",
             "covers",
+            "counters",
             "logic",
             "users",
             "fingers",

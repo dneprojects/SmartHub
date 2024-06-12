@@ -153,7 +153,7 @@ def show_update_modules(mod_list, new_fw: str, mod_type: str) -> web.Response:
         "</html>",
         '</html>\n<script type="text/javascript" src="configurator_files/update_status.js"></script>',
     )
-    page = page.replace("Overview", f"Version {new_fw} für {mod_type}")
+    page = page.replace("Übersicht", f"Version {new_fw} für {mod_type}")
     images = '<form id="mod-update-grid" action="update_modules" method="post">'
     for module in mod_list:
         pic_file, title = get_module_image(module.typ)
@@ -338,8 +338,13 @@ def get_module_image(type_code: bytes) -> tuple[str, str]:
             mod_image = "smart-nature.jpg"
             type_desc = "Smart Nature - Externe Wetterstation"
         case 30:
-            mod_image = "mod_smartkey.jpg"
-            type_desc = "Smart Key - Zugangskontroller über Fingerprint"
+            match type_code[1]:
+                case 1:
+                    mod_image = "mod_smartkey.jpg"
+                    type_desc = "Smart Key - Zugangskontroller über Fingerprint"
+                case 3:
+                    mod_image = "smart-gsm.jpg"
+                    type_desc = "Smart GSM - Kommunikationsmodul über GSM"
         case 31:
             mod_image = "finger_numbers.jpg"
             type_desc = "Smart Key - Zugangskontroller über Fingerprint"

@@ -12,7 +12,7 @@
     display: none;
 }
 
-#count_popup .popup-content, #file_popup .popup-content, #updates_popup .popup-content, #newmod-popup .popup-content, #resp-popup .popup-content {
+#count_popup .popup-content, #logic_popup .popup-content, #file_popup .popup-content, #updates_popup .popup-content, #newmod-popup .popup-content, #resp-popup .popup-content {
     background-color: white;
     margin: 10% auto;
     padding: 20px;
@@ -136,9 +136,15 @@
     font: 11px arial, helvetica, clean, sans-serif;
 }
 
-#max_count_input {
+#max_count_input{
     width: 80px;
     margin-left: 30px;
+}
+#max_inputs {
+    width: 80px;
+    margin-top: 50px;
+    height: 22px;
+    margin-left: -135px;
 }
 
 #close_file_popup_box,

@@ -3,7 +3,8 @@ from const import FingerNames
 
 EventCodes = {
     0: "---",
-    6: "Merker/Logik",
+    6: "Merker",
+    8: "Logikfunktion",
     10: "Ausgangsänderung",
     12: "Netzspannung",
     23: "IR-Befehl kurz",
@@ -53,6 +54,7 @@ EventCodesSel = {
     50: "Sammelbefehl",
     31: "Visualisierungsbefehl",
     6: "Merker",
+    8: "Logikfunktion",
     137: "Modusänderung",
     40: "Bewegung",
     41: "Bewegung",
@@ -77,12 +79,13 @@ EventCodesSel = {
 EventArgsLogic = {
     1: "Merker lokal",
     33: "Merker global",
-    81: "Logikausgang",  # 1 to 10 for each unit
+    81: "Logikfunktion",  # 1 to 10 for each unit
     96: "Zählerwert",  # 16 for each counter x 10 .. 255
 }
 
 SelTrgCodes = {
-    "logic": 6,
+    "flag": 6,
+    "logic": 8,
     "count": 9,
     "output": 10,
     "remote": 23,
@@ -103,6 +106,7 @@ SelTrgCodes = {
 
 EventsSets = {
     6: [6],
+    8: [8],
     9: [9],
     10: [10],
     23: [23],
@@ -264,7 +268,8 @@ class AutomationTrigger:
                 SelTrgCodes["dircmd"]: "Direktbefehl",
                 SelTrgCodes["collcmd"]: "Sammelbefehl",
                 SelTrgCodes["viscmd"]: "Visualisierungsbefehl",
-                SelTrgCodes["logic"]: "Merker",
+                SelTrgCodes["logic"]: "Logikfunktion",
+                SelTrgCodes["flag"]: "Merker",
                 SelTrgCodes["mode"]: "Modusänderung",
                 SelTrgCodes["move"]: "Bewegung",
                 SelTrgCodes["sensor"]: "Sensor",
@@ -295,7 +300,8 @@ class AutomationTrigger:
                 SelTrgCodes["dircmd"]: "Direktbefehl",
                 SelTrgCodes["collcmd"]: "Sammelbefehl",
                 SelTrgCodes["viscmd"]: "Visualisierungsbefehl",
-                SelTrgCodes["logic"]: "Merker",
+                SelTrgCodes["logic"]: "Logikfunktion",
+                SelTrgCodes["flag"]: "Merker",
                 SelTrgCodes["mode"]: "Modusänderung",
                 SelTrgCodes["move"]: "Bewegung",
                 SelTrgCodes["sensor"]: "Sensor",
@@ -320,7 +326,8 @@ class AutomationTrigger:
                 SelTrgCodes["output"]: "Ausgangsänderung",
                 SelTrgCodes["collcmd"]: "Sammelbefehl",
                 SelTrgCodes["viscmd"]: "Visualisierungsbefehl",
-                SelTrgCodes["logic"]: "Merker",
+                SelTrgCodes["logic"]: "Logikfunktion",
+                SelTrgCodes["flag"]: "Merker",
                 SelTrgCodes["mode"]: "Modusänderung",
                 SelTrgCodes["sensor"]: "Sensor",
                 SelTrgCodes["count"]: "Zählerwert",
@@ -353,8 +360,23 @@ class AutomationTrigger:
                 SelTrgCodes["ekey"]: "Fingerprint",
                 SelTrgCodes["collcmd"]: "Sammelbefehl",
                 SelTrgCodes["viscmd"]: "Visualisierungsbefehl",
-                SelTrgCodes["logic"]: "Merker",
+                SelTrgCodes["logic"]: "Logikgatter",
+                SelTrgCodes["flag"]: "Merker",
                 SelTrgCodes["mode"]: "Modusänderung",
+            }
+            self.sensors_dict = {
+                SelSensCodes["temp_ext"]: "Temperatur außen",
+                SelSensCodes["humid_ext"]: "Feuchte außen",
+                SelSensCodes["light_ext"]: "Helligkeit außen",
+                SelSensCodes["rain"]: "Regen",
+                SelSensCodes["wind_peak"]: "Wind",
+            }
+        if mod_typ == b"\x1e\x03":  # Smart GSM
+            self.triggers_dict = {
+                SelTrgCodes["collcmd"]: "Sammelbefehl",
+                SelTrgCodes["viscmd"]: "Visualisierungsbefehl",
+                SelTrgCodes["mode"]: "Modusänderung",
+                SelTrgCodes["time"]: "Zeit",
             }
             self.sensors_dict = {
                 SelSensCodes["temp_ext"]: "Temperatur außen",
@@ -398,8 +420,11 @@ class AutomationTrigger:
                 else:
                     trig_command += f" {self.get_dict_entry('inputs',event_arg - 8)}"
                     self.unit = event_arg - 8
-            elif self.event_code in EventsSets[SelTrgCodes["logic"]]:
-                trig_command = "Logik Eingang"
+            elif (
+                self.event_code in EventsSets[SelTrgCodes["flag"]]
+                or self.event_code in EventsSets[SelTrgCodes["logic"]]
+            ):
+                trig_command = ""
                 if event_arg == 0:
                     set_str = "rückgesetzt"
                     self.value = 0
@@ -422,7 +447,7 @@ class AutomationTrigger:
                     # self.event_id = 8
                     self.unit = event_arg - 80
                     self.event_arg_name = self.get_dict_entry("logic", self.unit)
-                    trig_command = f"Logikausgang {self.event_arg_name}"
+                    trig_command = f"Logikfunktion {self.event_arg_name}"
                     event_desc = set_str
                 else:
                     # range(96,256)
@@ -630,6 +655,14 @@ class AutomationTrigger:
             '<option value="">-- Ausgang oder LED wählen --</option>', opt_str
         )
 
+        opt_str = '<option value="">-- Logikfunktion wählen --</option>'
+        for lgc in self.settings.logic:
+            if len(lgc.name.strip()) > 0:
+                opt_str += f'<option value="{lgc.nmbr + 80}">{lgc.name}</option>'
+        page = page.replace(
+            '<option value="">-- Logikfunktion wählen --</option>', opt_str
+        )
+
         opt_str = '<option value="">-- Modus wählen --</option>'
         md_lst = self.get_modes()
         for mod in md_lst:
@@ -640,7 +673,9 @@ class AutomationTrigger:
         page = page.replace('<option value="">-- TrModus wählen --</option>', opt_str)
         opt_str = '<option value="">-- Merker wählen --</option>'
         for flg in self.settings.flags:
-            if (self.event_code == 6) and (self.event_arg1 + self.event_arg2 == flg.nmbr):
+            if (self.event_code == 6) and (
+                self.event_arg1 + self.event_arg2 == flg.nmbr
+            ):
                 opt_str += f'<option value="{flg.nmbr}" selected>{flg.name}</option>\n'
             else:
                 opt_str += f'<option value="{flg.nmbr}">{flg.name}</option>\n'
@@ -762,7 +797,16 @@ class AutomationTrigger:
             self.src_rt = 0
             self.src_mod = 0
         self.event_code = self.automation.get_sel(form_data, "trigger_sel")
-        if self.event_code in EventsSets[SelTrgCodes["logic"]]:
+        if self.event_code == SelTrgCodes["logic"]:
+            self.event_id = 8
+            self.event_code = 6
+            if form_data["trigger_logic2"][0] == "1":
+                self.event_arg1 = self.automation.get_sel(form_data, "trigger_logic")
+                self.event_arg2 = 0
+            else:
+                self.event_arg1 = 0
+                self.event_arg2 = self.automation.get_sel(form_data, "trigger_logic")
+        elif self.event_code in EventsSets[SelTrgCodes["flag"]]:
             if form_data["trigger_flag2"][0] == "1":
                 self.event_arg1 = self.automation.get_sel(form_data, "trigger_flag")
                 self.event_arg2 = 0

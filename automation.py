@@ -30,6 +30,7 @@ class AutomationsSet:
         self.autmn_dict["leds"] = {}
         self.autmn_dict["flags"] = {}
         self.autmn_dict["logic"] = {}
+        self.autmn_dict["counters"] = {}
         self.autmn_dict["messages"] = {}
         self.autmn_dict["dir_cmds"] = {}
         self.autmn_dict["vis_cmds"] = {}
@@ -246,12 +247,13 @@ class AutomationDefinition:
                 l_inp = arg - 164
                 unit_no, inp_no, l_name = self.get_counter_inputs(l_inp)
                 if l_name == "":
-                    out_desc = f"Logikeingang {inp_no} von Unit {unit_no}"
+                    l_name = self.get_logic_name(unit_no)
+                    out_desc = f"Logikeingang {inp_no} von {l_name}"
                 else:
                     if inp_no == 1:
-                        out_desc = f"Zähler '{l_name}' hoch"
+                        out_desc = f"Zähler '{l_name}' hoch zählen"
                     elif inp_no == 2:
-                        out_desc = f"Zähler '{l_name}' runter"
+                        out_desc = f"Zähler '{l_name}' abwärts zählen"
                     else:
                         out_desc = f"Zähler '{l_name}' ???"
             return out_desc
@@ -260,11 +262,19 @@ class AutomationDefinition:
         """Return counter information, if counter input found."""
         unit_no = int(log_inp / 8)
         inp_no = log_inp - unit_no * 8
-        l_units = self.settings.logic
+        l_units = self.settings.counters
         for lg_unit in l_units:
             if lg_unit.nmbr == unit_no + 1:
                 return unit_no + 1, inp_no, lg_unit.name
         return unit_no + 1, inp_no, ""
+
+    def get_logic_name(self, unit_no: int) -> str:
+        """Return name of lgoc unit"""
+        l_units = self.settings.logic
+        for lg_unit in l_units:
+            if lg_unit.nmbr == unit_no:
+                return lg_unit.name
+        return f"Unit {unit_no }"
 
     def get_mode_desc(self, md_no: int) -> str:
         """Return description for mode number."""

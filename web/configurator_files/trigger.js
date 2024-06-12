@@ -1,4 +1,5 @@
-const logic_trg = new Set([6])
+const flag_trg = new Set([6])
+const logic_trg = new Set([8])
 const count_trg = new Set([9])
 const output_trg = new Set([10])
 const remote_trg = new Set([23])
@@ -21,7 +22,7 @@ const ad_sens = new Set([218, 219])
 const climate_trg = new Set([220, 221, 222])
 const sys_trg = new Set([12, 101, 249])
 const dircmd_trg = new Set([253])
- 
+
 function initTrigElements(trg_code, trg_arg1, trg_arg2, trg_time) {
     if (button_trg.has(trg_code)) {
         setElement("trigger-select", 150);
@@ -67,13 +68,21 @@ function initTrigElements(trg_code, trg_arg1, trg_arg2, trg_time) {
         setElement("trigger-select", 31);
         setElement("viscmd-select", trg_arg1 * 256 + trg_arg2);
     }
-    else if (logic_trg.has(trg_code)) {
+    else if (flag_trg.has(trg_code)) {
         setElement("trigger-select", 6);
-        setElement("mode-select", trg_arg1 + trg_arg2);
+        setElement("flag-select", trg_arg1 + trg_arg2);
         if (trg_arg1 > 0)
             setElement("flag2-select", 1);
         else
             setElement("flag2-select", 2);
+    }
+    else if (logic_trg.has(trg_code)) {
+        setElement("trigger-select", 8);
+        setElement("logic-select", trg_arg1 + trg_arg2);
+        if (trg_arg1 > 0)
+            setElement("logic2-select", 1);
+        else
+            setElement("logic2-select", 2);
     }
     else if (mode_trg.has(trg_code)) {
         setElement("trigger-select", 137);
@@ -96,7 +105,7 @@ function initTrigElements(trg_code, trg_arg1, trg_arg2, trg_time) {
             setElement("mov-intens", trg_arg1);
             setElement("mov-light", trg_arg2 * 10);
         }
-        
+
     }
     else if (sensor_trg.has(trg_code)) {
         setElement("trigger-select", 203);
@@ -150,7 +159,7 @@ function initTrigElements(trg_code, trg_arg1, trg_arg2, trg_time) {
     }
     trig_sel.dispatchEvent(new Event("change"));
 }
-        
+
 function setTriggerSels() {
     var idx = trig_sel.selectedIndex
     var selectn = trig_sel[idx].value
@@ -159,6 +168,8 @@ function setTriggerSels() {
     setElementVisibility("output-select", "hidden");
     setElementVisibility("flag-select", "hidden");
     setElementVisibility("flag2-select", "hidden");
+    setElementVisibility("logic-select", "hidden");
+    setElementVisibility("logic2-select", "hidden");
     setElementVisibility("mode-select", "hidden");
     setElementVisibility("mode2-select", "hidden");
     setElementVisibility("viscmd-select", "hidden");
@@ -190,7 +201,7 @@ function setTriggerSels() {
     setElementVisibility("sys-select", "hidden");
     setElementVisibility("supply-select", "hidden");
     setElementVisibility("syserr-div", "hidden");
-    
+
     if (selectn == "150") {
         setElementVisibility("button-select", "visible");
         setElementVisibility("shortlong-select", "visible");
@@ -221,6 +232,10 @@ function setTriggerSels() {
     if (selectn == "6") {
         setElementVisibility("flag-select", "visible");
         setElementVisibility("flag2-select", "visible");
+    }
+    if (selectn == "8") {
+        setElementVisibility("logic-select", "visible");
+        setElementVisibility("logic2-select", "visible");
     }
     if (selectn == "137") {
         setElementVisibility("mode-select", "visible");
@@ -262,7 +277,7 @@ function setTriggerSels() {
 
 function setMaxCount() {
     var idx = counter_sel.selectedIndex
-    var max_cnt_val = max_count[idx-1]
+    var max_cnt_val = max_count[idx - 1]
     var cnt_sel = document.getElementById("count-vals")
     for (var i = 0; i < cnt_sel.length; i++) {
         if (i > max_cnt_val)
@@ -291,10 +306,10 @@ function setEkeyUsrFingers() {
     var finger_sel = document.getElementById("finger-select")
     for (var i = 0; i < 10; i++) {
         var mask = 1 << i;
-        if (finger_mask & mask) 
-            finger_sel.options[i+1].disabled = false;
+        if (finger_mask & mask)
+            finger_sel.options[i + 1].disabled = false;
         else
-            finger_sel.options[i+1].disabled = true;
+            finger_sel.options[i + 1].disabled = true;
     }
     if (finger_sel.options[finger_sel.selectedIndex].disabled)
         finger_sel.selectedIndex = 0
@@ -324,5 +339,5 @@ function u2sign7(uint_in) {
     if (uint_in > 60) {
         return uint_in - 128
     }
-    return uint_in 
+    return uint_in
 }

@@ -53,6 +53,7 @@
         const amb_white = [0, 0, 0];
         const amb_warm = [0, 0, 0];
         const amb_cool = [0, 0, 0];
+        const counter_numbers = [];
     </script>
 </head>
 
@@ -131,6 +132,10 @@
                                         <select name="trigger_output" style="visibility: hidden; position: absolute"
                                             id="output-select">
                                             <option value="">-- Ausgang oder LED wählen --</option>
+                                        </select>
+                                        <select name="trigger_logic" style="visibility: hidden; position: absolute"
+                                            id="logic-select">
+                                            <option value="">-- Logikfunktion wählen --</option>
                                         </select>
                                         <select name="trigger_mov" style="visibility: hidden; position: absolute" 
                                             id="mov-select">
@@ -242,6 +247,11 @@
                                             <option value="2">langer Tastendruck</option>
                                         </select>
                                         <select name="trigger_flag2" style="visibility: hidden; position: absolute" id="flag2-select">
+                                            <option value="">-- Zustand wählen --</option>
+                                            <option value="1">gesetzt</option>
+                                            <option value="2">rückgesetzt</option>
+                                        </select>
+                                        <select name="trigger_logic2" style="visibility: hidden; position: absolute" id="logic2-select">
                                             <option value="">-- Zustand wählen --</option>
                                             <option value="1">gesetzt</option>
                                             <option value="2">rückgesetzt</option>
@@ -415,6 +425,9 @@
                                         <select name="act_flag" style="visibility: hidden; position: absolute" id="flag-act">
                                             <option value="">-- AcMerker wählen --</option>
                                         </select>
+                                        <select name="act_logic" style="visibility: hidden; position: absolute" id="logic-act">
+                                            <option value="">-- Logikeingang wählen --</option>
+                                        </select>
                                         <select name="act_climopt" style="visibility: hidden; position: absolute" id="climopt-act">
                                             <option value="">-- Regelungsoption wählen --</option>
                                             <option value="1">Temperatursollwert 1</option>
@@ -483,6 +496,12 @@
                                             <option value="11">Rollladenposition inaktiv</option>
                                             <option value="2">Lamellenposition [%]:</option>
                                             <option value="12">Lamellenposition inaktiv</option>
+                                        </select>
+                                        <select name="act_logicopt" style="visibility: hidden; position: absolute" id="logicopt-act">
+                                            <option value="">-- Logikeingangsaktion wählen --</option>
+                                            <option value="1">setzen</option>
+                                            <option value="2">rücksetzen</option>
+                                            <option value="3">wechseln</option>
                                         </select>
                                         <select name="act_countopt" style="visibility: hidden; position: absolute" id="countopt-act">
                                             <option value="">-- Zähleraktion wählen --</option>

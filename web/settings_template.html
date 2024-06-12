@@ -37,6 +37,9 @@
   <link rel="stylesheet" href="configurator_files/contao.css" type="text/css" media="screen">
   <!--[if lte IE 7]><link rel="stylesheet" href="system/iefixes.css" type="text/css" media="screen" /><![endif]-->
   <link rel="stylesheet" href="configurator_files/tinymce.css" type="text/css" media="screen">
+  <script>
+      const reserved_numbers = [];
+  </script>
 </head>
 
 <body id="top" class="modules">
@@ -146,6 +149,28 @@
           <div style="position: relative; display: flex;">
             <input type="number" id="max_count_input" name="max_number" value="2" min="2" max="16"/>
             <button name="ModSettings" id="max_cnt" type="submit" form="settings_table" value="max_count-ModAddress-">OK</button>
+          </div>
+        </form>
+        <div> </div>
+      </div>
+    </div>
+    <div id="logic_popup" class="popup">
+      <div class="popup-content">
+        <h1>ContentTitle</h1>
+        <form id="counter_max" action="settings/new_logic">
+        <h3>Art der Logikfunktion angeben</h3>
+          <div style="position: relative; display: flex;">
+            <select id="logic_type" name="logic_type">
+              <option value="1" selected>AND</option>
+              <option value="2">NAND</option>
+              <option value="3">OR</option>
+              <option value="4">NOR</option>
+            </select>                                            
+          </div>
+        <h3>Zahl der Eingänge angeben</h3>
+          <div style="position: relative; display: flex;">
+            <input type="number" id="max_lgc_inputs" name="max_inputs" value="2" min="2" max="8"/>
+            <button name="ModSettings" id="max_inputs" type="submit" form="settings_table" value="max_inputs-ModAddress-">OK</button>
           </div>
         </form>
         <div> </div>

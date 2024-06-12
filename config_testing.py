@@ -214,6 +214,8 @@ async def build_status_table(app, mod_addr: int, update: bool) -> str:
             )
             if inp.nmbr <= settings.properties["inputs_230V"]:
                 table_str += td_line.replace("><", ">230V<")
+            elif inp.type == 3:
+                table_str += td_line.replace("><", ">0..10V<")
             else:
                 table_str += td_line.replace("><", ">24V<")
             if inp_state & 1 << (inp_nmbr - 1):
@@ -224,6 +226,11 @@ async def build_status_table(app, mod_addr: int, update: bool) -> str:
                 table_str += td_line.replace(
                     "><",
                     f'><input type="checkbox" class="inp_chk" name="inp-{inp_nmbr}" {sel_chkd}><',
+                )
+            elif inp.type == 3:
+                table_str += td_line.replace(
+                    "><",
+                    ">analog<",
                 )
             else:
                 table_str += td_line.replace(

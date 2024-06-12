@@ -1464,8 +1464,21 @@ input[type="time"].daytime {
    border: 1px solid #C0372D;
 }
 
+.disabled {
+   color: hsl(0, 0%, 70%);
+   border: 1px solid hsl(0, 0%, 70%);
+}
+
 input[type="number"].daytime {
    width: 55px;
+}
+input[type="number"].disabled {
+   color: hsl(0, 0%, 70%);
+   border: 1px solid hsl(0, 0%, 70%);
+}
+input[type="time"].disabled {
+   color: hsl(0, 0%, 70%);
+   border: 1px solid hsl(0, 0%, 70%);
 }
 input.sens_no {
    width: 44px; 

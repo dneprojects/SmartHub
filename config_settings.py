@@ -16,6 +16,7 @@ from config_commons import (
     show_not_authorized,
 )
 from const import (
+    LGC_TYPES,
     WEB_FILES_DIR,
     SETTINGS_TEMPLATE_FILE,
     CONF_PORT,
@@ -23,6 +24,7 @@ from const import (
     FingerNames,
     MirrIdx,
     IfDescriptor,
+    LgcDescriptor,
     DAY_NIGHT_MODES,
     DAY_NIGHT_MODES_HELP,
 )
@@ -368,6 +370,16 @@ def fill_settings_template(main_app, title, subtitle, step, settings, key: str) 
         if step == main_app["props"]["no_keys"]:
             page = disable_button("weiter", page)
         settings_form = prepare_table(main_app, mod_addr, step, key)
+    if key == "logic":
+        page = page.replace(
+            "reserved_numbers = []",
+            f"reserved_numbers = {settings.get_counter_numbers()}",
+        )
+    if key == "counters":
+        page = page.replace(
+            "reserved_numbers = []",
+            f"reserved_numbers = {settings.get_logic_numbers()}",
+        )
     page = page.replace("<p>ContentText</p>", settings_form)
     return page
 
@@ -517,13 +529,13 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
             indent(7)
             + f'<td style="vertical-align: top;">{prompt}</td>'
             + f'<td><div><label for="{id_name}_cl1">Heizen</label><input type="radio" '
-            + f'name="{id_name}" id="{id_name}_cl1" value = "1" {cl1_checked}></div>'
+            + f'name="{id_name}" id="{id_name}_cl1" value="1" {cl1_checked}></div>'
             + f'<div><label for="{id_name}_cl2">Kühlen</label><input type="radio" '
-            + f'name="{id_name}" id="{id_name}_cl2" value = "2" {cl2_checked}></div>'
+            + f'name="{id_name}" id="{id_name}_cl2" value="2" {cl2_checked}></div>'
             + f'<div><label for="{id_name}_cl3">Heizen / Kühlen</label><input type="radio" '
-            + f'name="{id_name}" id="{id_name}_cl3" value = "3" {cl3_checked}></div>'
+            + f'name="{id_name}" id="{id_name}_cl3" value="3" {cl3_checked}></div>'
             + f'<div><label for="{id_name}_cl4">Aus</label><input type="radio" '
-            + f'name="{id_name}" id="{id_name}_cl4" value = "4" {cl4_checked}></div></td></tr>\n'
+            + f'name="{id_name}" id="{id_name}_cl4" value="4" {cl4_checked}></div></td></tr>\n'
         )
         id_name = "temp_1_2"
         prompt = "Temperatursensor"
@@ -541,9 +553,9 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
             indent(7)
             + f'<td style="vertical-align: top;">{prompt}</td>'
             + f'<td><div><label for="{id_name}_s1">Sensor 1</label><input type="radio" '
-            + f'name="{id_name}" id="{id_name}_s1" value = "1" {s1_checked}></div>'
+            + f'name="{id_name}" id="{id_name}_s1" value="1" {s1_checked}></div>'
             + f'<div><label for="{id_name}_s2">Sensor 2</label><input type="radio" '
-            + f'name="{id_name}" id="{id_name}_s2" value = "2" {s2_checked}></div></td></tr>\n'
+            + f'name="{id_name}" id="{id_name}_s2" value="2" {s2_checked}></div></td></tr>\n'
         )
     if settings.type in ["Smart Controller XL-1", "Smart Controller XL-2"]:
         id_name = "supply_prio"
@@ -562,9 +574,9 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
             indent(7)
             + f'<td style="vertical-align: top;">{prompt}</td>'
             + f'<td><div><label for="{id_name}_230">230V</label><input type="radio" '
-            + f'name="{id_name}" id="{id_name}_230" value = "230" {v230_checked}></div>'
+            + f'name="{id_name}" id="{id_name}_230" value="230" {v230_checked}></div>'
             + f'<div><label for="{id_name}_24">24V</label><input type="radio" '
-            + f'name="{id_name}" id="{id_name}_24" value = "24" {v24_checked}></div></td></tr>\n'
+            + f'name="{id_name}" id="{id_name}_24" value="24" {v24_checked}></div></td></tr>\n'
         )
     tbl += indent(5) + "</table>\n"
     tbl += indent(4) + "</form>\n"
@@ -594,12 +606,21 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             light_modules: list[tuple[int, str]] = []
             modules = main_app["api_srv"].routers[0].modules
             for mod in modules:
-                if mod._typ[0] == 1 or mod._typ[0] == 0x14 or mod._typ == b"\x32\x01":
+                if mod._typ[0] == 0x14:
+                    # smart nature
+                    light_modules.append((mod._id, mod._name))
+            for mod in modules:
+                if mod._typ[0] == 1 or mod._typ == b"\x32\x01" or mod._typ[0] == 0x50:
+                    # smart controllers and smart detect
                     light_modules.append((mod._id, mod._name))
             if ci:
                 tbl_entries.update({ci: ci - 1})
             else:
                 tbl_entries.update({0: 6})  # sunday 1st day
+        elif key == "messages":
+            # only entries in language 1 (german) supported
+            if tbl_data[ci].type == 1:
+                tbl_entries.update({tbl_data[ci].nmbr: ci})
         else:
             tbl_entries.update({tbl_data[ci].nmbr: ci})
     tbl_entries = sorted(tbl_entries.items())
@@ -667,6 +688,9 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                     indent(8)
                     + f'<td><select name="data[{ci},3]" class="daytime" id="{id_name}">\n'
                 )
+                if tbl_data[ci]["module"] == 0:
+                    # use smart nature (first in list, if available)
+                    tbl_data[ci]["module"] = light_modules[0][0]
                 for mod in light_modules:
                     if tbl_data[ci]["module"] == mod[0]:
                         tbl += (
@@ -694,17 +718,49 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             if tbl_data[ci].type == 1:
                 btn_checked = "checked"
                 sw_checked = ""
+                anlg_checked = ""
             elif tbl_data[ci].type == 2:
                 btn_checked = ""
                 sw_checked = "checked"
-            tbl += (
-                f'<td><label for="{id_name}_sw">Schalter</label><input type="radio" '
-                + f'name="data[{ci},1]" id="{id_name}_sw" value = "sw" {sw_checked}></td>'
-            )
-            tbl += (
-                f'<td><label for="{id_name}_btn">Taster</label><input type="radio" '
-                + f'name="data[{ci},1]" id="{id_name}_btn" value = "btn" {btn_checked}></td>'
-            )
+                anlg_checked = ""
+            elif tbl_data[ci].type == 3:
+                btn_checked = ""
+                sw_checked = ""
+                anlg_checked = "checked"
+
+            mod = main_app["api_srv"].routers[0].get_module(mod_addr)
+            if (
+                mod._typ == b"\x01\x03"
+                and ci
+                >= mod.io_properties["inputs_230V"]
+                + mod.io_properties["inputs_24V"]
+                - mod.io_properties["inputs_analog"]
+            ):
+                tbl += "<td></td><td></td>"
+                tbl += (
+                    f'<td><label for="{id_name}_btn">analog</label><input type="radio" '
+                    + f'name="data[{ci},1]" id="{id_name}_anlg" value="anlg" checked></td>'
+                )
+            else:
+                tbl += (
+                    f'<td><label for="{id_name}_sw">Schalter</label><input type="radio" '
+                    + f'name="data[{ci},1]" id="{id_name}_sw" value="sw" {sw_checked}></td>'
+                )
+                tbl += (
+                    f'<td><label for="{id_name}_btn">Taster</label><input type="radio" '
+                    + f'name="data[{ci},1]" id="{id_name}_btn" value="btn" {btn_checked}></td>'
+                )
+            if (
+                mod._typ == b"\x0b\x1f"
+                and ci
+                >= mod.io_properties["inputs_230V"]
+                + mod.io_properties["inputs_24V"]
+                - mod.io_properties["inputs_analog"]
+            ):
+                tbl += (
+                    f'<td><label for="{id_name}_btn">analog</label><input type="radio" '
+                    + f'name="data[{ci},1]" id="{id_name}_anlg" value="anlg" {anlg_checked}></td>'
+                )
         elif key == "outputs":
             if (ci < 2 * len(covers)) and ((ci % 2) == 0):
                 if tbl_data[ci].type == -10:
@@ -731,11 +787,11 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                     ipol_chkd = ""
                 tbl += (
                     f'<td></td><td><input name="data[{ci},1]" type="number" id="{id_name}_tc" min="0" step="1" max="255" '
-                    + f'placeholder="Verfahrzeit in s" value = {cov_t[ci]} style="width: 40px;"></td>'
+                    + f'placeholder="Verfahrzeit in s" value={cov_t[ci]} style="width: 40px;"></td>'
                 )
                 tbl += (
                     f'<td></td><td><input name="data[{ci},2]" type="number" id="{id_name}_tb" min="0" step="0.5" max="25.5" '
-                    + f'placeholder="Jalousiezeit in s (0 falls Rollladen)" value = {bld_t[ci]} style="width: 40px;"></td>'
+                    + f'placeholder="Jalousiezeit in s (0 falls Rollladen)" value={bld_t[ci]} style="width: 40px;"></td>'
                 )
                 tbl += (
                     f'<td><input type="checkbox" name="data[{ci},3]" value="pol_nrm" id="{id_name}_pinv" '
@@ -802,6 +858,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             "coll_cmds",
             "dir_cmds",
             "messages",
+            "counters",
             "logic",
             "users",
             "fingers",
@@ -820,6 +877,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
         "vis_cmds",
         "messages",
         "coll_cmds",
+        "counters",
         "logic",
         "users",
         "fingers",
@@ -854,7 +912,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             max_new = 255
         elif key in ["fingers"]:
             max_new = 10
-        elif key in ["logic"]:
+        elif key in ["counters", "logic"]:
             max_new = 10
         tbl += indent(7) + "<tr><td>&nbsp;</td></tr>"
         tbl += (
@@ -862,10 +920,16 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="new_entry" '
             + f'type="number" min="{min_new}" max="{max_new}" placeholder="Neue Nummer eintragen" id="{id_name}"/></td>\n'
         )
-        if key in ["logic"]:
+        if key == "counters":
             tbl += (
                 indent(7)
                 + '<td><button name="ModSettings" class="new_cntr_button" id="config_button" '
+                + f'type="button" value="new-{mod_addr}-{step}">anlegen</button>\n'
+            )
+        elif key == "logic":
+            tbl += (
+                indent(7)
+                + '<td><button name="ModSettings" class="new_lgc_button" id="config_button" '
                 + f'type="button" value="new-{mod_addr}-{step}">anlegen</button>\n'
             )
         else:
@@ -896,7 +960,11 @@ def parse_response_form(main_app, form_data):
     key = main_app["key"]
     settings = main_app["settings"]
     if form_data["ModSettings"][0][:4] == "del-":  # remove element
-        idxs = [int(form_data[ky][0]) for ky in form_data.keys() if ky[:4] == "sel_"]
+        idxs = [
+            int(form_data[ky][0], base=10)
+            for ky in form_data.keys()
+            if ky[:4] == "sel_"
+        ]
         idxs.sort(reverse=True)
         for idx in idxs:
             del settings.__getattribute__(key)[idx]
@@ -904,6 +972,9 @@ def parse_response_form(main_app, form_data):
                 del settings.all_fingers[idx]
         main_app["settings"] = settings
         return form_data["ModSettings"][0]
+    for elem in settings.__getattribute__(key):
+        if "name" in dir(elem):
+            elem.name = ""  # clear names to get empty entries
 
     for form_key in list(form_data.keys())[:-1]:
         if form_key[:4] == "sel_":
@@ -929,16 +1000,28 @@ def parse_response_form(main_app, form_data):
                             settings.users[settings.users_sel].nmbr,
                         )
                     )
-                elif key == "logic":
+                elif key in ["counters"]:
                     max_cnt = int(form_data["ModSettings"][0].split("-")[-1])
                     settings.__getattribute__(key).append(
                         IfDescriptor(
-                            f"Counter_{int(form_data[form_key][0])}",
+                            f"Counter{max_cnt}_{int(form_data[form_key][0])}",
                             int(form_data[form_key][0]),
                             max_cnt,
                         )
                     )
+                elif key in ["logic"]:
+                    no_inpts = int(form_data["ModSettings"][0].split("-")[-1])
+                    lgc_type = int(form_data["ModSettings"][0].split("-")[-2])
+                    settings.__getattribute__(key).append(
+                        LgcDescriptor(
+                            f"{LGC_TYPES[lgc_type]}{no_inpts}_{int(form_data[form_key][0])}",
+                            int(form_data[form_key][0]),
+                            lgc_type,
+                            no_inpts,
+                        )
+                    )
                 elif key == "messages":
+                    # only entries in language 1 (german) supported
                     language_code: int = 1
                     settings.__getattribute__(key).append(
                         IfDescriptor(
@@ -982,10 +1065,12 @@ def parse_response_form(main_app, form_data):
             if len(indices) > 1:
                 match main_app["key"]:
                     case "inputs":
-                        if form_data[form_key][0] == "sw":
-                            settings.inputs[indices[0]].type = 2
-                        else:
+                        if form_data[form_key][0] == "btn":
                             settings.inputs[indices[0]].type = 1
+                        elif form_data[form_key][0] == "sw":
+                            settings.inputs[indices[0]].type = 2
+                        elif form_data[form_key][0] == "anlg":
+                            settings.inputs[indices[0]].type = 3
                     case "outputs":
                         o_idx = indices[0]
                         c_idx = settings.out_2_cvr(o_idx)
@@ -1093,38 +1178,26 @@ def parse_response_form(main_app, form_data):
                                 + int.to_bytes(int(form_data[form_key][0]))
                                 + settings.mode_dependencies[grp_nmbr + 1 :]
                             )
-                    case "day_sched":
+                    case "day_sched" | "night_sched":
                         if indices[1] == 3:
-                            for day in settings.day_sched:
+                            for day in settings.__getattribute__(key):
                                 day["module"] = int(form_data[form_key][0])
                         elif indices[1] == 2:
-                            settings.day_sched[indices[0]]["mode"] = int(
+                            settings.__getattribute__(key)[indices[0]]["mode"] = int(
                                 form_data[form_key][0]
                             )
                         elif indices[1] == 1:
-                            settings.day_sched[indices[0]]["light"] = int(
-                                form_data[form_key][0]
-                            )
-                        else:
-                            time = form_data[form_key][0].split(":")
-                            settings.day_sched[indices[0]]["hour"] = int(time[0])
-                            settings.day_sched[indices[0]]["minute"] = int(time[1])
-                    case "night_sched":
-                        if indices[1] == 3:
-                            for day in settings.night_sched:
-                                day["module"] = int(form_data[form_key][0])
-                        elif indices[1] == 2:
-                            settings.night_sched[indices[0]]["mode"] = int(
-                                form_data[form_key][0]
-                            )
-                        elif indices[1] == 1:
-                            settings.night_sched[indices[0]]["light"] = int(
+                            settings.__getattribute__(key)[indices[0]]["light"] = int(
                                 int(form_data[form_key][0]) / 10
                             )
                         else:
                             time = form_data[form_key][0].split(":")
-                            settings.night_sched[indices[0]]["hour"] = int(time[0])
-                            settings.night_sched[indices[0]]["minute"] = int(time[1])
+                            settings.__getattribute__(key)[indices[0]]["hour"] = int(
+                                time[0]
+                            )
+                            settings.__getattribute__(key)[indices[0]]["minute"] = int(
+                                time[1]
+                            )
 
     if key == "fingers":
         settings.all_fingers[settings.users[settings.users_sel].nmbr] = settings.fingers
@@ -1165,9 +1238,12 @@ def get_property_kind(main_app, step) -> tuple[str, str, str]:
         case "covers":
             header = "Einstellungen Rollladen"
             prompt = "Rollladen"
-        case "logic":
+        case "counters":
             header = "Einstellungen Zähler"
             prompt = "Zähler"
+        case "logic":
+            header = "Einstellungen Logikfunktionen"
+            prompt = "Logik"
         case "users":
             header = "Benutzerverwaltung"
             prompt = "Benutzer"

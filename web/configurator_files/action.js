@@ -1,5 +1,6 @@
 const switching_act = new Set([1, 2, 3, 9, 111, 112, 113, 114]);
 const counter_act = new Set([6, 118, 119]);
+const logic_act = new Set([9]);
 const buzzer_act = new Set([10]);
 const cover_act = new Set([17, 18])
 const dimm_act = new Set([20, 22, 23, 24]);
@@ -36,14 +37,21 @@ function initActElements(act_code, act_args) {
             setElement("led-act", out_no);
         }
         else if (out_no > 164) {
-            setElement("action-select", 6)
             var cnt_no = Math.floor((out_no - 165) / 8) + 1;
-            setElement("counter-act", cnt_no)
-            if (cnt_no % 2  == 0)
-                setElement("countopt-act", 2);
-            else
-                setElement("countopt-act", 1);
+            if (counter_numbers.includes(cnt_no)) {
+                setElement("action-select", 6)
+                setElement("counter-act", cnt_no)
+                if (out_no % 2 == 0)
+                    setElement("countopt-act", 2);
+                else
+                    setElement("countopt-act", 1);
             }
+            else {
+                setElement("action-select", 9)
+                setElement("logic-act", out_no)
+                setElement("logicopt-act", act_code);
+            }
+        }
         else {
             setElement("action-select", 111);
             if (out_no > 100)
@@ -86,7 +94,7 @@ function initActElements(act_code, act_args) {
             if (act_args[0] == 2)
                 setElement("rgb-opts", 2)
             else {
-                if (sel_col == amb_white.toString()) 
+                if (sel_col == amb_white.toString())
                     setElement("rgb-opts", 11)
                 else if (sel_col == amb_warm.toString())
                     setElement("rgb-opts", 12)
@@ -129,7 +137,7 @@ function initActElements(act_code, act_args) {
             setElement("covopt-act", act_args[0]);
             setElement("perc-val", act_args[2]);
         }
-        
+
     }
     else if (ccmd_act.has(act_code)) {
         setElement("action-select", 50)
@@ -137,7 +145,7 @@ function initActElements(act_code, act_args) {
     }
     else if (climate_act.has(act_code)) {
         setElement("action-select", 220)
-        if(act_code > 220) {
+        if (act_code > 220) {
             setElement("climopt-act", (act_code - 200));
             setElement("climoutput-act", act_args[1]);
         }
@@ -159,7 +167,7 @@ function initActElements(act_code, act_args) {
         }
     }
     else if (mode_act.has(act_code)) {
-        setElement("action-select",64)
+        setElement("action-select", 64)
         setElement("mode-low", act_args[0]);
         setElement("mode-high", act_args[1]);
     }
@@ -173,8 +181,8 @@ function initActElements(act_code, act_args) {
             var cnt_no = act_args[0];
             setElement("countopt-act", "3")
             setElement("cnt-val", act_args[2])
-        setElement("counter-act", cnt_no)
-        }   
+            setElement("counter-act", cnt_no)
+        }
     }
     else if (ambient_act.has(act_code)) {
         setElement("action-select", 240)
@@ -203,6 +211,8 @@ function setActionSels() {
     setElementVisibility("led-act", "hidden");
     setElementVisibility("collcmd-act", "hidden");
     setElementVisibility("flag-act", "hidden");
+    setElementVisibility("logic-act", "hidden");
+    setElementVisibility("logicopt-act", "hidden");
     setElementVisibility("counter-act", "hidden");
     setElementVisibility("countopt-act", "hidden");
     setElementVisibility("outopt-act", "hidden");
@@ -231,13 +241,27 @@ function setActionSels() {
     setElementVisibility("msgset-time", "hidden");
     if (selectn == "1") {
         setElementVisibility("output-act", "visible");
-        setElementVisibility("outopt-act", "visible"); 
+        setElementVisibility("outopt-act", "visible");
         setActTimeinterval();
     }
     if (selectn == "2") {
         setElementVisibility("led-act", "visible");
         setElementVisibility("outopt-act", "visible");
         setActTimeinterval();
+    }
+    if (selectn == "6") {
+        setElementVisibility("counter-act", "visible");
+        setElementVisibility("countopt-act", "visible");
+        setActCntval();
+    }
+    if (selectn == "9") {
+        setElementVisibility("logic-act", "visible");
+        setElementVisibility("logicopt-act", "visible");
+        setActCntval();
+    }
+    if (selectn == "10") {
+        setElementVisibility("buzz-pars", "visible");
+        setElementVisibility("buzz-pars2", "visible");
     }
     if (selectn == "20") {
         setElementVisibility("dimmout-act", "visible");
@@ -267,30 +291,21 @@ function setActionSels() {
         setElementVisibility("msgopt-act", "visible");
         setMsgTime()
     }
-    if (selectn == "111") {
-        setElementVisibility("flag-act", "visible");
-        setElementVisibility("outopt-act", "visible"); 
-        setActTimeinterval();
-    }
-    if (selectn == "6") {
-        setElementVisibility("counter-act", "visible");
-        setElementVisibility("countopt-act", "visible");
-        setActCntval();
-    }
-    if (selectn == "10") {
-        setElementVisibility("buzz-pars", "visible");
-        setElementVisibility("buzz-pars2", "visible");
-    }
     if (selectn == "64") {
         setElementVisibility("mode-low", "visible");
         setElementVisibility("mode-high", "visible");
+    }
+    if (selectn == "111") {
+        setElementVisibility("flag-act", "visible");
+        setElementVisibility("outopt-act", "visible");
+        setActTimeinterval();
     }
     if (selectn == "240") {
         setElementVisibility("modlite-pars", "visible");
     }
 }
 
-function setMovLight(){
+function setMovLight() {
     var idx = mov_sel.selectedIndex
     setElementVisibility("mov-light", "hidden");
     setElementVisibility("mov-light-lbl", "hidden");
@@ -307,7 +322,7 @@ function setMovLight(){
 function setActCntval() {
     var idx = cnt_actopt.selectedIndex
     setElementVisibility("cnt-val", "hidden");
-    if (idx == 3){
+    if (idx == 3) {
         setElementVisibility("cnt-val", "visible");
         setMaxCountAct()
     }
@@ -406,13 +421,13 @@ function setSensorNums() {
     }
     if ((selectn == "203") || (selectn == "216")) {
         setElementVisibility("sens-lims-lux", "visible");
-    } 
+    }
     if ((selectn == "201") || (selectn == "213")) {
         setElementVisibility("sens-lims-temp", "visible");
-    } 
+    }
     if ((selectn == "202") || (selectn == "215")) {
         setElementVisibility("sens-lims-perc", "visible");
-    } 
+    }
     if (selectn == "205") {
         setElementVisibility("rain-select", "visible");
     }
@@ -474,7 +489,7 @@ function setRGBColorOptions() {
 }
 
 function colArray2Str(col) {
-    
+
     return "#" + ("0" + col[0].toString(16)).slice(-2) + ("0" + col[1].toString(16)).slice(-2) + ("0" + col[2].toString(16)).slice(-2);
 }
 
@@ -493,25 +508,25 @@ function setRGBPicker() {
     else
         setElementVisibility("rgb-colorpicker", "hidden");
 }
-    
+
 function disableOption(elem, opt) {
     const selector = document.getElementById(elem)
-    for (var i= 0; i<selector.options.length; i++) {
-        if (selector.options[i].value==opt) {
+    for (var i = 0; i < selector.options.length; i++) {
+        if (selector.options[i].value == opt) {
             selector.options[i].disabled = true;
             break;
         }
-    }  
+    }
 }
 
 function enableOption(elem, opt) {
     const selector = document.getElementById(elem)
-    for (var i= 0; i<selector.options.length; i++) {
-        if (selector.options[i].value==opt) {
+    for (var i = 0; i < selector.options.length; i++) {
+        if (selector.options[i].value == opt) {
             selector.options[i].disabled = false;
             break;
         }
-    }  
+    }
 }
 function setMsgTime() {
     if (document.getElementById("msgopt-act").value == 58)
