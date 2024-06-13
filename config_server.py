@@ -13,6 +13,7 @@ from config_testing import ConfigTestingServer
 from config_commons import (
     adjust_settings_button,
     fill_page_template,
+    format_hmd,
     get_html,
     get_module_image,
     init_side_menu,
@@ -419,39 +420,6 @@ async def _(request):
     )
     page = adjust_settings_button(page, "", f"{0}")
     return web.Response(text=page, content_type="text/html", charset="utf-8")
-
-
-def format_smc(buf: bytes) -> str:
-    """Parse line structure and add ';' and linefeeds."""
-    no_lines = int.from_bytes(buf[:2], "little")
-    str_data = ""
-    for byt in buf[:4]:
-        str_data += f"{byt};"
-    str_data += "\n"
-    ptr = 4  # behind header with no of lines/chars
-    for l_idx in range(no_lines):
-        l_len = buf[ptr + 5] + 5
-        for byt in buf[ptr : ptr + l_len]:
-            str_data += f"{byt};"  # dezimal values, seperated with ';'
-        str_data += "\n"
-        ptr += l_len
-    return str_data
-
-
-def format_smg(buf: bytes) -> str:
-    """Parse structure and add ';' and final linefeed."""
-    str_data = ""
-    for byt in buf:
-        str_data += f"{byt};"
-    str_data += "\n"
-    return str_data
-
-
-def format_hmd(status, list: bytes) -> str:
-    """Generate single module data file."""
-    smg_str = format_smg(status)
-    smc_str = format_smc(list)
-    return smg_str + smc_str
 
 
 def seperate_upload(upload_str: str) -> tuple[bytes, bytes]:
