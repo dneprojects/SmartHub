@@ -383,11 +383,13 @@ class AutomationAction:
                 actn_target += f" {self.action_args[2]}x:"
                 actn_desc = f"Höhe {self.action_args[0]}, Dauer {self.action_args[1]}"
             elif actn_target[:3] == "SMS":
-                actn_target = f"SMS an {self.action_args[0]}:"
-                actn_desc = self.action_args[1]
+                actn_target = f"SMS an {self.automation.settings.gsm_numbers[self.action_args[0] - 1]}:"
+                actn_desc = self.automation.settings.gsm_messages[
+                    self.action_args[1] - 1
+                ]
             elif actn_target[:7] == "Telefon":
-                actn_target = f"Telefonanruf: {self.action_args[0]}"
-                actn_desc = self.action_args[1]
+                actn_target = f"Telefonanruf: {self.automation.settings.gsm_numbers[self.action_args[0] - 1]}"
+                actn_desc = ""
             elif self.action_code == 35:  # RGB-LED
                 task = self.action_args[0]
                 led_id = self.action_args[2]

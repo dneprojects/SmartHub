@@ -8,6 +8,8 @@ const rgb_act = new Set([35]);
 const ccmd_act = new Set([50]);
 const mode_act = new Set([64]);
 const msg_act = new Set([56, 57, 58]);
+const gsmcall_act = new Set([167]);
+const gsmsend_act = new Set([168]);
 const climate_act = new Set([220, 221, 222]);
 const ambient_act = new Set([240]);
 
@@ -196,6 +198,15 @@ function initActElements(act_code, act_args) {
             setElement("msgset-time", act_args[1]);
         }
     }
+    else if (gsmcall_act.has(act_code)) {
+        setElement("action-select", 167)
+        setElement("gsm-act", act_args[0]);
+    }
+    else if (gsmcall_act.has(act_code)) {
+        setElement("action-select", 168)
+        setElement("gsm-act", act_args[0]);
+        setElement("gsmmsg-act", act_args[1]);
+    }
     else if (buzzer_act.has(act_code)) {
         setElement("action-select", 10)
         setElement("buzz-freq", act_args[0]);
@@ -239,6 +250,8 @@ function setActionSels() {
     setElementVisibility("msg-act", "hidden");
     setElementVisibility("msgopt-act", "hidden");
     setElementVisibility("msgset-time", "hidden");
+    setElementVisibility("gsm-act", "hidden");
+    setElementVisibility("gsmmsg-act", "hidden");
     if (selectn == "1") {
         setElementVisibility("output-act", "visible");
         setElementVisibility("outopt-act", "visible");
@@ -299,6 +312,13 @@ function setActionSels() {
         setElementVisibility("flag-act", "visible");
         setElementVisibility("outopt-act", "visible");
         setActTimeinterval();
+    }
+    if (selectn == "167") {
+        setElementVisibility("gsm-act", "visible");
+    }
+    if (selectn == "168") {
+        setElementVisibility("gsm-act", "visible");
+        setElementVisibility("gsmmsg-act", "visible");
     }
     if (selectn == "240") {
         setElementVisibility("modlite-pars", "visible");

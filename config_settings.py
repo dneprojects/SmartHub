@@ -1029,7 +1029,7 @@ def parse_response_form(main_app, form_data):
                             no_inpts,
                         )
                     )
-                elif key == "messages":
+                elif key in ["messages", "gsm_messages", "gsm_numbers"]:
                     # only entries in language 1 (german) supported
                     language_code: int = 1
                     settings.__getattribute__(key).append(
