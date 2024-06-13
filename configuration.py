@@ -81,7 +81,7 @@ class ModuleSettings:
 
     def get_logic(self) -> None:
         """Get module counters from status."""
-        self.logger.debug("Getting module settings from module status")
+        self.logger.debug("Getting logic settings from module status")
         conf = self.status
         if len(conf) == 0:
             return
@@ -95,9 +95,7 @@ class ModuleSettings:
                         conf[MirrIdx.LOGIC + 3 * l_idx + 1],
                     )
                 )
-            elif conf[MirrIdx.LOGIC + 3 * l_idx] == 0:
-                pass
-            else:
+            elif conf[MirrIdx.LOGIC + 3 * l_idx] in [1, 2, 3, 4]:
                 # logic found
                 self.logic.append(
                     LgcDescriptor(
