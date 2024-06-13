@@ -202,7 +202,7 @@ function initActElements(act_code, act_args) {
         setElement("action-select", 167)
         setElement("gsm-act", act_args[0]);
     }
-    else if (gsmcall_act.has(act_code)) {
+    else if (gsmsend_act.has(act_code)) {
         setElement("action-select", 168)
         setElement("gsm-act", act_args[0]);
         setElement("gsmmsg-act", act_args[1]);
