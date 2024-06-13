@@ -346,9 +346,9 @@ class ModuleSettings:
                 elif int(line[0]) == 255:
                     try:
                         if self.type == "Smart GSM":
-                            self.gsm_messages.append(IfDescriptor(
-                                text, arg_code, line[4]
-                            ))
+                            self.gsm_messages.append(
+                                IfDescriptor(text, arg_code, line[4])
+                            )
                         else:
                             if arg_code in range(10, 18):
                                 if self.type == "Smart Controller Mini":
@@ -813,6 +813,14 @@ class ModuleSettings:
             new_list.append(
                 f"\xfc{chr(uid.nmbr)}\xeb{chr(fgr_low)}{chr(fgr_high)}\x23\0\xeb" + desc
             )
+        for nr in self.gsm_numbers:
+            desc = nr.name
+            desc += " " * (32 - len(desc))
+            new_list.append(f"\xfe\0\xeb{chr(nr.nmbr)}\x01\x23\0\xeb" + desc)
+        for msg in self.gsm_messages:
+            desc = msg.name
+            desc += " " * (32 - len(desc))
+            new_list.append(f"\xff\0\xeb{chr(msg.nmbr)}\x01\x23\0\xeb" + desc)
         return self.adapt_list_header(new_list)
 
     def adapt_list_header(self, new_list: list[str]) -> bytes:

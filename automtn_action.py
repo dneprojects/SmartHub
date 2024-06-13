@@ -383,12 +383,12 @@ class AutomationAction:
                 actn_target += f" {self.action_args[2]}x:"
                 actn_desc = f"Höhe {self.action_args[0]}, Dauer {self.action_args[1]}"
             elif actn_target[:3] == "SMS":
-                actn_target = f"SMS an {self.automation.settings.gsm_numbers[self.action_args[0] - 1]}:"
+                actn_target = f"SMS an {self.automation.settings.gsm_numbers[self.action_args[0] - 1].name}:"
                 actn_desc = self.automation.settings.gsm_messages[
                     self.action_args[1] - 1
-                ]
+                ].name
             elif actn_target[:7] == "Telefon":
-                actn_target = f"Telefonanruf: {self.automation.settings.gsm_numbers[self.action_args[0] - 1]}"
+                actn_target = f"Telefonanruf: {self.automation.settings.gsm_numbers[self.action_args[0] - 1].name}"
                 actn_desc = ""
             elif self.action_code == 35:  # RGB-LED
                 task = self.action_args[0]
@@ -727,6 +727,13 @@ class AutomationAction:
             self.action_args.append(int(form_data["act_msg"][0]))
             if self.action_code == 58:
                 self.action_args.append(int(form_data["msgset_time"][0]))
+
+        elif self.action_code in ActionsSets[SelActCodes["call"]]:
+            self.action_args.append(int(form_data["act_gsm"][0]))
+
+        elif self.action_code in ActionsSets[SelActCodes["send"]]:
+            self.action_args.append(int(form_data["act_gsm"][0]))
+            self.action_args.append(int(form_data["act_gsmmsg"][0]))
 
         elif self.action_code in ActionsSets[SelActCodes["buzzer"]]:
             self.action_args.append(int(form_data["buzz_freq"][0]))
