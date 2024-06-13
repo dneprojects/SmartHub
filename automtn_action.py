@@ -32,6 +32,8 @@ ActionNames = {
     114: "Zeitfunktion Merker",
     118: "Zähler hoch zählen",
     119: "Zähler abwärts zählen",
+    167: "Telefonnummer anrufen",
+    168: "SMS versenden",
     220: "Temperatursollwert",
     221: "Klimaregelung interner Sensor",
     222: "Klimaregelung externer Sensor",
@@ -63,6 +65,8 @@ SelActCodes = {
     "msg": 56,
     "mode": 64,
     "flag": 111,
+    "call": 167,
+    "send": 168,
     "climate": 220,
     "ambient": 240,
 }
@@ -96,6 +100,8 @@ ActionsSets = {
     56: [56, 57, 58],
     64: [64],
     111: [111, 112, 113, 114],
+    167: [167],
+    168: [168],
     220: [220, 221, 222],
     240: [240],
 }
@@ -190,7 +196,8 @@ class AutomationAction:
             }
         elif typ == b"\x1e\x03":  # Smart GSM
             self.actions_dict = {
-                SelActCodes["msg"]: "Meldung",
+                SelActCodes["send"]: "SMS",
+                SelActCodes["call"]: "Anruf",
             }
         elif typ == b"\x32\x01":  # Smart Controller Mini
             self.actions_dict = {
@@ -375,6 +382,12 @@ class AutomationAction:
             elif actn_target[:4] == "Summ":
                 actn_target += f" {self.action_args[2]}x:"
                 actn_desc = f"Höhe {self.action_args[0]}, Dauer {self.action_args[1]}"
+            elif actn_target[:3] == "SMS":
+                actn_target = f"SMS an {self.action_args[0]}:"
+                actn_desc = self.action_args[1]
+            elif actn_target[:7] == "Telefon":
+                actn_target = f"Telefonanruf: {self.action_args[0]}"
+                actn_desc = self.action_args[1]
             elif self.action_code == 35:  # RGB-LED
                 task = self.action_args[0]
                 led_id = self.action_args[2]
@@ -547,6 +560,41 @@ class AutomationAction:
                 f'<option value="{SelActCodes["msg"]}">{self.actions_dict[SelActCodes["msg"]]}',
                 f'<option value="{SelActCodes["msg"]}" disabled>{self.actions_dict[SelActCodes["msg"]]}',
             )
+
+        if len(app["settings"].gsm_messages) > 0:
+            opt_str = '<option value="">-- SMS-Meldung wählen --</option>'
+            for msg in app["settings"].gsm_messages:
+                # only entries in language 1 (german) supported
+                if msg.type == 1:
+                    opt_str += f'<option value="{msg.nmbr}">{msg.name}</option>\n'
+            page = page.replace(
+                '<option value="">-- SMS-Meldung wählen --</option>', opt_str
+            )
+        elif SelActCodes["send"] in self.actions_dict.keys():
+            page = page.replace(
+                f'<option value="{SelActCodes["send"]}">{self.actions_dict[SelActCodes["send"]]}',
+                f'<option value="{SelActCodes["send"]}" disabled>{self.actions_dict[SelActCodes["send"]]}',
+            )
+
+        if len(app["settings"].gsm_numbers) > 0:
+            opt_str = '<option value="">-- Telefonnummer wählen --</option>'
+            for nmbr in app["settings"].gsm_numbers:
+                # only entries in language 1 (german) supported
+                if nmbr.type == 1:
+                    opt_str += f'<option value="{nmbr.nmbr}">{nmbr.name}</option>\n'
+            page = page.replace(
+                '<option value="">-- Telefonnummer wählen --</option>', opt_str
+            )
+        elif SelActCodes["msg"] in self.actions_dict.keys():
+            page = page.replace(
+                f'<option value="{SelActCodes["call"]}">{self.actions_dict[SelActCodes["call"]]}',
+                f'<option value="{SelActCodes["call"]}" disabled>{self.actions_dict[SelActCodes["call"]]}',
+            )
+            page = page.replace(
+                f'<option value="{SelActCodes["send"]}">{self.actions_dict[SelActCodes["send"]]}',
+                f'<option value="{SelActCodes["send"]}" disabled>{self.actions_dict[SelActCodes["send"]]}',
+            )
+
         page = page.replace(">User1Mode<", f">{self.autmn_dict['user_modes'][1]}<")
         page = page.replace(">User2Mode<", f">{self.autmn_dict['user_modes'][2]}<")
         if app["settings"].typ == b"\x32\x01":

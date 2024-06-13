@@ -499,6 +499,8 @@ class HbtnModule:
         props["users"] = 0
         props["fingers"] = 0
         props["messages"] = 0
+        props["gsm_numbers"] = 0
+        props["gsm_messages"] = 0
         match type_code[0]:
             case 1:  # controller module
                 props["buttons"] = 8
@@ -573,7 +575,8 @@ class HbtnModule:
                         props["users"] = 256
                         props["fingers"] = props["users"] * 10
                     case 3:  # gsm module
-                        props["messages"] = 100
+                        props["gsm_messages"] = 255
+                        props["gsm_numbers"] = 50
             case 50:  # compact controller module
                 props["buttons"] = 2
                 props["inputs"] = 4
@@ -603,6 +606,8 @@ class HbtnModule:
             "dir_cmds",
             "vis_cmds",
             "messages",
+            "gsm_numbers",
+            "gsm_messages",
         ]
         no_keys = 0
         for key in keys:

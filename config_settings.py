@@ -617,7 +617,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                 tbl_entries.update({ci: ci - 1})
             else:
                 tbl_entries.update({0: 6})  # sunday 1st day
-        elif key == "messages":
+        elif key in ["messages", "gsm_messages", "gsm_numbers"]:
             # only entries in language 1 (german) supported
             if tbl_data[ci].type == 1:
                 tbl_entries.update({tbl_data[ci].nmbr: ci})
@@ -634,7 +634,12 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
         id_name = key[:-1] + str(ci)
         if key not in ["day_sched", "night_sched"]:
             prompt = key_prompt + f"&nbsp;{tbl_data[ci].nmbr}"
-        if key in ["leds", "buttons", "dir_cmds", "messages"]:
+        if key in [
+            "leds",
+            "buttons",
+            "dir_cmds",
+            "messages",
+        ]:
             maxl = 18
         else:
             maxl = 32
@@ -862,6 +867,8 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             "logic",
             "users",
             "fingers",
+            "gsm_numbers",
+            "gsm_messages",
         ]:
             # Add additional checkbox element
             if key == "groups" and tbl_data[ci].nmbr == 0:
@@ -881,6 +888,8 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
         "logic",
         "users",
         "fingers",
+        "gsm_numbers",
+        "gsm_messages",
     ]:
         # Add additional line to append or delete element
         prompt = key_prompt
@@ -908,12 +917,12 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             max_new = 65280
         elif key in ["groups"]:
             max_new = 80
-        elif key in ["coll_cmds", "users"]:
+        elif key in ["coll_cmds", "users", "gsm_messages"]:
             max_new = 255
-        elif key in ["fingers"]:
+        elif key in ["counters", "logic", "fingers"]:
             max_new = 10
-        elif key in ["counters", "logic"]:
-            max_new = 10
+        elif key in ["gsm_numbers"]:
+            max_new = 50
         tbl += indent(7) + "<tr><td>&nbsp;</td></tr>"
         tbl += (
             indent(7)
@@ -1178,6 +1187,10 @@ def parse_response_form(main_app, form_data):
                                 + int.to_bytes(int(form_data[form_key][0]))
                                 + settings.mode_dependencies[grp_nmbr + 1 :]
                             )
+                    case "gsm_numbers" | "gsm_messages":
+                        settings.__getattribute__(key)[indices[0]].name = form_data[
+                            form_key
+                        ][0]
                     case "day_sched" | "night_sched":
                         if indices[1] == 3:
                             for day in settings.__getattribute__(key):
@@ -1285,6 +1298,12 @@ def get_property_kind(main_app, step) -> tuple[str, str, str]:
         case "messages":
             header = "Einstellungen Meldungen"
             prompt = "Meldung"
+        case "gsm_messages":
+            header = "Einstellungen SMS-Meldungen"
+            prompt = "Meldung"
+        case "gsm_numbers":
+            header = "Einstellungen Mobilfunkrufnummern"
+            prompt = "Nummer"
         case "night_sched":
             header = "Einstellungen Nachtumschaltung"
             prompt = "Nacht"

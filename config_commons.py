@@ -1,5 +1,4 @@
 from aiohttp import web
-import re
 from const import (
     WEB_FILES_DIR,
     SIDE_MENU_FILE,

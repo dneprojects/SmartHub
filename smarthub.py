@@ -276,13 +276,15 @@ def setup_logging() -> Logger:
     return logging.getLogger(__name__)
 
 
-async def open_serial_interface(device, logger) -> tuple[StreamReader, StreamWriter]:
+async def open_serial_interface(
+    device: str, bd_rate: int, logger
+) -> tuple[StreamReader, StreamWriter]:
     """Open serial connection of given device."""
 
     logger.info(f"   Open serial connection: {device}")
     ser_rd, ser_wr = await serial_asyncio.open_serial_connection(
         url=device,
-        baudrate=RT_BAUDRATE,
+        baudrate=RT_BAUDRATE[bd_rate],
         bytesize=serial.EIGHTBITS,
         parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_ONE,
@@ -297,7 +299,7 @@ async def open_serial_interface(device, logger) -> tuple[StreamReader, StreamWri
     return (ser_rd, ser_wr)
 
 
-async def init_serial(logger):
+async def init_serial(bd_rate: int, logger):
     """Open and initialize serial interface to router."""
 
     def prepare_buf_crc(buf: str) -> str:
@@ -314,7 +316,7 @@ async def init_serial(logger):
     # For Pi5: "dtparam=uart0_console" into config.txt on sd boot partition
     def_device = "/dev/serial0"  # ["/dev/ttyS0", "/dev/ttyS1", "/dev/ttyAMA0", "/dev/tty1", "/dev/tty0"]
     try:
-        rt_serial = await open_serial_interface(def_device, logger)
+        rt_serial = await open_serial_interface(def_device, bd_rate, logger)
     except Exception as err_msg:
         logger.info(f"   Error opening {def_device}: {err_msg}")
 
@@ -388,7 +390,9 @@ async def main(ev_loop):
                 logger.warning(
                     f"   Initialization of serial connection failed, retry {retry_max-retry_serial}"
                 )
-            rt_serial = await init_serial(logger)
+            rt_serial = await init_serial(0, logger)  # lower baud rate
+            if rt_serial is None:
+                rt_serial = await init_serial(1, logger)  # higher baud rate
             retry_serial -= 1
         if rt_serial is None:
             init_flag = False

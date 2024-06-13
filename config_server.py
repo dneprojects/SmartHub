@@ -34,7 +34,6 @@ import logging
 import pathlib
 from const import (
     MODULE_CODES,
-    HOMEPAGE,
     LICENSE_PAGE,
     OWN_INGRESS_IP,
     CONF_PORT,
