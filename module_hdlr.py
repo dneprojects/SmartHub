@@ -3,7 +3,6 @@ import asyncio
 from math import ceil
 from const import MirrIdx, SMGIdx, RT_CMDS
 from hdlr_class import HdlrBase
-from config_commons import format_hmd
 
 
 class ModHdlr(HdlrBase):
@@ -94,7 +93,9 @@ class ModHdlr(HdlrBase):
             await self.set_ekey_version()
         if self.mod._typ == b"\x1e\x03":
             # GSM specific settings
-            await self.set_pin()
+            if self.mod.settings.sim_pin_changed:
+                self.logger.info(f"Changed SIM Pin: {self.mod.settings.sim_pin}")
+                # await self.set_pin()
             await self.set_logic_units()
         await self.api_srv.set_operate_mode()
 
@@ -148,9 +149,6 @@ class ModHdlr(HdlrBase):
 
     async def send_module_list(self, mod_addr: int):
         """Send SMC data from Smart Hub to router/module."""
-        str_data = format_hmd(self.mod.smg_upload, self.mod.list_upload)
-        self.logger.info(str_data)
-        return
 
         await self.api_srv.set_server_mode(self.rt_id)
         flg_250 = False

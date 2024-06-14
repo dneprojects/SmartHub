@@ -79,6 +79,17 @@ class ConfigSettingsServer:
         resp = await request.text()
         form_data = parse_qs(resp)
         settings = request.app["parent"]["settings"]
+        if "sim_pin1" in form_data.keys() and "sim_pin2" in form_data.keys():
+            if form_data["sim_pin1"] == form_data["sim_pin2"]:
+                if form_data["sim_pin1"][0] != settings.sim_pin:
+                    settings.sim_pin = form_data["sim_pin1"][0]
+                    settings.sim_pin_changed = True
+            else:
+                # both fields filled, but don't match
+                return show_settings(request.app["parent"], settings.id)
+        elif "sim_pin1" in form_data.keys() or "sim_pin2" in form_data.keys():
+            # only one field filled
+            return show_settings(request.app["parent"], settings.id)
         for form_key in list(form_data.keys())[:-1]:
             settings.__setattr__(form_key, form_data[form_key][0])
         args = form_data["ModSettings"][0]
@@ -577,6 +588,23 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
             + f'name="{id_name}" id="{id_name}_230" value="230" {v230_checked}></div>'
             + f'<div><label for="{id_name}_24">24V</label><input type="radio" '
             + f'name="{id_name}" id="{id_name}_24" value="24" {v24_checked}></div></td></tr>\n'
+        )
+    if settings.type in [
+        "Smart GSM",
+        "Smart Controller XL-2",
+        "Smart Controller XL-2 (LE2)",
+    ]:
+        tbl += (
+            indent(7)
+            + '<td style="vertical-align: top;">SIM Pin (nur bei Änderung eingeben)</td>'
+            + '<td><div><input type="password" '
+            + 'name="sim_pin1" id="sim_pin1" minlength="4" maxlength="4">'
+            + "</div></td></tr>\n"
+            + indent(7)
+            + '<td style="vertical-align: top;">SIM Pin (wiederholen)</td>'
+            + '<td><div><input type="password" '
+            + 'name="sim_pin2" id="sim_pin2" minlength="4" maxlength="4">'
+            + "</div></td></tr>\n"
         )
     tbl += indent(5) + "</table>\n"
     tbl += indent(4) + "</form>\n"

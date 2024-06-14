@@ -6,6 +6,7 @@ from const import (
     LgcDescriptor,
     LGC_TYPES,
     MirrIdx,
+    SMGIdx,
     FingerNames,
 )
 from automation import AutomationsSet
@@ -172,7 +173,65 @@ class ModuleSettings:
                 self.covers[c_idx] = IfDescriptor(cname.strip(), c_idx + 1, pol)
                 self.outputs[o_idx].type = -10  # disable light output
                 self.outputs[o_idx + 1].type = -10
+        if self.typ == b"\x1e\x03":  # Smart GSM
+            self.sim_pin = self.get_pin()  # from smg
+            self.sim_pin_changed = False
+            self.logger.info(f"Found SIM Pin: {self.sim_pin}")
         return True
+
+    def get_pin(self) -> str:
+        """Return GSM SIM Pin from smg."""
+        p1_idx = SMGIdx.index(MirrIdx.COVER_T)  # 1a
+        p3_idx = p1_idx + 3  # 2b
+        p4_idx = p1_idx + 6  # 4a
+        p2_idx = p3_idx + 3  # 5b
+        p1 = int((self.smg[p1_idx] / 9) - 9)
+        p2 = int((((self.smg[p2_idx] / 2) + 88) / 10) - 10)
+        p3 = int((self.smg[p3_idx] / 7) - 4)
+        p4 = int(self.smg[p4_idx])
+        if (p1 >= 10) or (p2 >= 10) or (p3 >= 10) or (p4 >= 10):
+            self.logger.error(f"Error decoding pin for module {self.id}.")
+            return "ERROR"
+        return f"{p1}{p2}{p3}{p4}"
+
+    def set_pin(self) -> None:
+        """Store GSM SIM Pin to smg."""
+        if not self.sim_pin_changed:
+            return
+
+        p1_idx = SMGIdx.index(MirrIdx.COVER_T)  # 1a
+        p3_idx = p1_idx + 3  # 2b
+        p4_idx = p1_idx + 6  # 4a
+        p2_idx = p3_idx + 3  # 5b
+        p1 = int(self.sim_pin[1])
+        p2 = int(self.sim_pin[2])
+        p3 = int(self.sim_pin[3])
+        p4 = int(self.sim_pin[4])
+        ps1 = (p1 + 9) * 9
+        ps2 = ((p2 + 10) * 10 - 88) * 2
+        ps3 = (p3 + 4) * 7
+        ps4 = p4
+
+        self.smg = replace_bytes(
+            self.smg,
+            int.to_bytes(ps1),
+            p1_idx,
+        )
+        self.smg = replace_bytes(
+            self.smg,
+            int.to_bytes(ps2),
+            p2_idx,
+        )
+        self.smg = replace_bytes(
+            self.smg,
+            int.to_bytes(ps3),
+            p3_idx,
+        )
+        self.smg = replace_bytes(
+            self.smg,
+            int.to_bytes(ps4),
+            p4_idx,
+        )
 
     def set_module_settings(self, status: bytes) -> bytes:
         """Restore settings to module status."""
@@ -296,6 +355,9 @@ class ModuleSettings:
                 int.to_bytes(lgk.type) + int.to_bytes(lgk.inputs),  # type + no_inputs
                 MirrIdx.LOGIC + 3 * (lgk.nmbr - 1),
             )
+        if self.typ == b"\x1e\x03":  # Smart GSM
+            self.logger.info(f"SIM Pin: {self.sim_pin}")
+            # self.set_pin()  # to smg
         return status
 
     def get_names(self) -> bool:
@@ -375,7 +437,7 @@ class ModuleSettings:
                                     if arg_code in range(44, 48):
                                         self.inputs[arg_code - 44].name = text
                                         self.inputs[arg_code - 44].nmbr = arg_code - 43
-                                else:
+                                else:  # sc inputs 24V
                                     self.inputs[arg_code - 40].name = text
                                     self.inputs[arg_code - 40].nmbr = arg_code - 39
                             elif arg_code in range(110, 120):
@@ -763,12 +825,18 @@ class ModuleSettings:
                     new_list.append(
                         f"\xff\0\xeb{chr(17 + led.nmbr)}\1\x23\0\xeb" + desc
                     )
+        if self.module._typ[0] == 1 or self.module._typ == b"\x32\x01":
+            inpt_offs = 39
+        else:
+            inpt_offs = 9
         for inpt in self.inputs:
             desc = inpt.name
-            # if len(desc.strip()) > 0:
-            desc += " " * (32 - len(desc))
-            desc = desc[:32]
-            new_list.append(f"\xff\0\xeb{chr(39 + inpt.nmbr)}\1\x23\0\xeb" + desc)
+            if len(desc.strip()) > 0 or self.module._typ[0] == 11:
+                desc += " " * (32 - len(desc))
+                desc = desc[:32]
+                new_list.append(
+                    f"\xff\0\xeb{chr(inpt_offs + inpt.nmbr)}\1\x23\0\xeb" + desc
+                )
         for outpt in self.outputs:
             desc = outpt.name
             if len(desc.strip()) > 0:
