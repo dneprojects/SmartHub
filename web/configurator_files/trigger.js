@@ -12,7 +12,8 @@ const button_trg = new Set([150, 151, 154])
 const switch_trg = new Set([152, 153])
 const ekey_trg = new Set([169])
 const time_trg = new Set([170])
-const sensor_trg = new Set([201, 202, 203, 204, 205, 213, 214, 215, 216, 217, 218, 219])
+const sensor_trg = new Set([201, 202, 203, 204, 205, 213, 214, 215, 216, 217])
+const ad_trg = new Set([218, 219, 224, 225, 226, 227])
 const temp_sens = new Set([201, 213])
 const perc_sens = new Set([202, 215, 217])
 const light_sens = new Set([203, 216])
@@ -129,10 +130,12 @@ function initTrigElements(trg_code, trg_arg1, trg_arg2, trg_time) {
         if (rain_sens.has(trg_code)) {
             setElement("rain-select", trg_arg1);
         }
-        if (ad_sens.has(trg_code)) {
-            setElement("sens-low-ad", trg_arg1 / 25);
-            setElement("sens-high-ad", trg_arg2 / 25);
-        }
+    }
+    else if (ad_trg.has(trg_code)) {
+        setElement("trigger-select", 218);
+        setElement("ad-select", trg_code);
+        setElement("sens-low-ad", trg_arg1 / 25);
+        setElement("sens-high-ad", trg_arg2 / 25);
     }
     else if (count_trg.has(trg_code)) {
         setElement("trigger-select", 9);
@@ -176,6 +179,7 @@ function setTriggerSels() {
     setElementVisibility("collcmd-select", "hidden");
     setElementVisibility("dircmd-select", "hidden");
     setElementVisibility("sensor-select", "hidden");
+    setElementVisibility("ad-select", "hidden");
     setElementVisibility("counter-select", "hidden");
     setElementVisibility("mov-select", "hidden");
     setElementVisibility("mov-params", "hidden");
@@ -244,6 +248,10 @@ function setTriggerSels() {
     if (selectn == "203") {
         setElementVisibility("sensor-select", "visible");
         setSensorNums();
+    }
+    if (selectn == "218") {
+        setElementVisibility("ad-select", "visible");
+        setElementVisibility("sens-lims-ad", "visible");
     }
     if (selectn == "9") {
         setElementVisibility("counter-select", "visible");

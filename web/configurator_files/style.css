@@ -797,7 +797,7 @@ div#setup-buttons {
 
 }
 
-#config_button.new_button, #config_button.new_cntr_button {
+#config_button.new_button, #config_button.new_cntr_button, #config_button.new_lgc_button {
    height: 21.78px;
    width: 70px;
    margin-left: 5px;

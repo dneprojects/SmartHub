@@ -152,9 +152,26 @@ class EventServer:
                     # Normal behaviour, read prefix of 4 bytes
                     prefix = await rt_rd.readexactly(4)
 
-                if (prefix[3] == 0) or (prefix[0] != 0xFF) or (prefix[1] != 0x23):
+                if prefix[0:2] != b"\xff\x23":
+                    # If one is wrong, prefix is not a correct header
+                    # look for header in next bytes
+                    self.logger.warning(
+                        f"Operate mode router message with wrong header bytes: {prefix}, resync"
+                    )
+                    if prefix[1:3] == b"\xff\x23":
+                        prefix = prefix[1:4] + await rt_rd.readexactly(1)
+                    elif prefix[2:4] == b"\xff\x23":
+                        prefix = prefix[2:4] + await rt_rd.readexactly(2)
+                    elif prefix[3] == 0xFF:
+                        prefix = prefix[3:4] + await rt_rd.readexactly(1)
+                        if prefix[-1] == 0x23:
+                            prefix += await rt_rd.readexactly(2)
+
+                if prefix[3] == 0 or len(prefix) < 4:
                     # Something went wrong, start reading until sequence 0xFF 0x23 found
-                    self.logger.warning("API mode router message with length=0, resync")
+                    self.logger.warning(
+                        "Operate mode router message with length=0, resync"
+                    )
                     resynced = False
                     while not resynced:
                         recvd_byte = b"\00"
@@ -162,11 +179,17 @@ class EventServer:
                             # Look for new start byte
                             recvd_byte = await rt_rd.readexactly(1)
                         resynced = await rt_rd.readexactly(1) == b"\x23"
-                        # continue with 'elif recvd_byte == b"\xff":'
+                    prefix = b"\xff\x23" + await rt_rd.readexactly(2)
 
-                elif prefix[3] < 4:
+                if prefix[2:4] == b"\xff\x23":
                     self.logger.warning(
-                        f"API mode router message too short, length: {prefix[3]-3} bytes"
+                        f"Operate mode router message with header {prefix}"
+                    )
+                    prefix = prefix[2:4] + await rt_rd.readexactly(2)
+
+                if prefix[3] < 4:
+                    self.logger.warning(
+                        f"Operate mode router message too short, length: {prefix[3]-3} bytes"
                     )
                 else:
                     # Read rest of message

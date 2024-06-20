@@ -81,20 +81,8 @@ class ConfigSettingsServer:
         settings = request.app["parent"]["settings"]
         if "sim_pin1" in form_data.keys() and "sim_pin2" in form_data.keys():
             if form_data["sim_pin1"] == form_data["sim_pin2"]:
-                if form_data["sim_pin1"][0] != settings.sim_pin:
-                    settings.sim_pin = form_data["sim_pin1"][0]
-                    settings.sim_pin_changed = True
-            else:
-                # both fields filled, but don't match
-                return show_settings(request.app["parent"], settings.id)
-        elif "sim_pin1" in form_data.keys() or "sim_pin2" in form_data.keys():
-            # only one field filled
-            return show_settings(request.app["parent"], settings.id)
-        if "sim_pin1" in form_data.keys() and "sim_pin2" in form_data.keys():
-            if form_data["sim_pin1"] == form_data["sim_pin2"]:
-                if form_data["sim_pin1"][0] != settings.sim_pin:
-                    settings.sim_pin = form_data["sim_pin1"][0]
-                    settings.sim_pin_changed = True
+                settings.sim_pin = form_data["sim_pin1"][0]
+                settings.sim_pin_changed = True
             else:
                 # both fields filled, but don't match
                 return show_settings(request.app["parent"], settings.id)
@@ -698,7 +686,7 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                 + indent(8)
                 + f'<td><label for="{id_name}">{Weekdays[wd]}</label></td>'
                 + indent(8)
-                + f'<td><select name="data[{ci},2]" class="daytime" id="{id_name}">\n'
+                + f'<td><select title="Auswahl des Umschaltmodus" name="data[{ci},2]" class="daytime" id="{id_name}">\n'
             )
             wd += 1
             for md in range(-1, 4):
@@ -717,16 +705,16 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                 + "</td>\n"
                 + indent(8)
                 + f'<td><input name="data[{ci},0]" '
-                + f'type="time" class="daytime" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci]["hour"]:02}:{tbl_data[ci]["minute"]:02}"></td>'
+                + f'type="time" title="Uhrzeit" class="daytime" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci]["hour"]:02}:{tbl_data[ci]["minute"]:02}"></td>'
                 + indent(8)
-                + f'<td><input name="data[{ci},1]" type="number" min="0" max="2550" step="10" class="daytime" id="{id_name}" value="{tbl_data[ci]["light"] * 10}">&nbsp;Lux</td>'
+                + f'<td><input title="Helligkeitswert" name="data[{ci},1]" type="number" min="0" max="2550" step="10" class="daytime" id="{id_name}" value="{tbl_data[ci]["light"] * 10}">&nbsp;Lux</td>'
             )
             if entry[0]:
                 tbl += indent(8) + "<td></td>\n"
             else:
                 tbl += (
                     indent(8)
-                    + f'<td><select name="data[{ci},3]" class="daytime" id="{id_name}">\n'
+                    + f'<td><select title="Auswahl des Helligkeitssensors" name="data[{ci},3]" class="daytime" id="{id_name}">\n'
                 )
                 if tbl_data[ci]["module"] == 0:
                     # use smart nature (first in list, if available)
@@ -747,14 +735,17 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             tbl += (
                 indent(7)
                 + f'<tr><td><label for="{id_name}">{prompt}</label></td><td><input name="data[{ci},0]" '
-                + f'type="text" id="{id_name}" maxlength="{maxl}" value="{tbl_data[ci].name[:maxl].strip()}"></td>'
+                + f'type="text" id="{id_name}" maxlength="{maxl}" title="Beschriftung (max. {maxl} Zeichen)"value="{tbl_data[ci].name[:maxl].strip()}"></td>'
             )
         if key in ["leds", "buttons", "dir_cmds", "messages"]:
             tbl += (
                 f'<td><input name="data[{ci},1]" type="text" id="{id_name}" maxlength="14" '
-                + f'value="{tbl_data[ci].name[18:].strip()}"></td>'
+                + f'title="2. Zeile (max. 14 Zeichen)" value="{tbl_data[ci].name[18:].strip()}"></td>'
             )
         elif key == "inputs":
+            title_sw = "Eingang für Schalteranschluss konfigurieren"
+            title_btn = "Eingang für Tasteranschluss konfigurieren"
+            title_anl = "Eingang für analogen Messwert (0..10 V) konfigurieren"
             if tbl_data[ci].type == 1:
                 btn_checked = "checked"
                 sw_checked = ""
@@ -778,17 +769,17 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             ):
                 tbl += "<td></td><td></td>"
                 tbl += (
-                    f'<td><label for="{id_name}_btn">analog</label><input type="radio" '
-                    + f'name="data[{ci},1]" id="{id_name}_anlg" value="anlg" checked></td>'
+                    f'<td><label title="{title_anl}" for="{id_name}_btn">analog</label><input type="radio" '
+                    + f'name="data[{ci},1]" id="{id_name}_anlg" title="{title_anl}" value="anlg" checked></td>'
                 )
             else:
                 tbl += (
-                    f'<td><label for="{id_name}_sw">Schalter</label><input type="radio" '
-                    + f'name="data[{ci},1]" id="{id_name}_sw" value="sw" {sw_checked}></td>'
+                    f'<td><label title="{title_sw}" for="{id_name}_sw">Schalter</label><input type="radio" '
+                    + f'name="data[{ci},1]" id="{id_name}_sw" title="{title_sw}" value="sw" {sw_checked}></td>'
                 )
                 tbl += (
-                    f'<td><label for="{id_name}_btn">Taster</label><input type="radio" '
-                    + f'name="data[{ci},1]" id="{id_name}_btn" value="btn" {btn_checked}></td>'
+                    f'<td><label title="{title_btn}" for="{id_name}_btn">Taster</label><input type="radio" '
+                    + f'name="data[{ci},1]" id="{id_name}_btn" title="{title_btn}" value="btn" {btn_checked}></td>'
                 )
             if (
                 mod._typ == b"\x0b\x1f"
@@ -802,6 +793,8 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                     + f'name="data[{ci},1]" id="{id_name}_anlg" value="anlg" {anlg_checked}></td>'
                 )
         elif key == "outputs":
+            title_out = "Ausgänge einzeln verwenden"
+            title_cov = "Ausgangspaar für Rollladen gebündelt"
             if (ci < 2 * len(covers)) and ((ci % 2) == 0):
                 if tbl_data[ci].type == -10:
                     out_chkd = ""
@@ -810,32 +803,33 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                     out_chkd = "checked"
                     cvr_chkd = ""
                 tbl += (
-                    f'<td><label for="{id_name}_out">Ausgang</label><input type="radio" '
-                    + f'name="data[{ci},1]" id="{id_name}_out" value="out" {out_chkd}></td>'
+                    f'<td><label title="{title_out}" for="{id_name}_out">Ausgang</label><input type="radio" '
+                    + f'name="data[{ci},1]" id="{id_name}_out" title="{title_out}" value="out" {out_chkd}></td>'
                 )
                 tbl += (
-                    f'<td><label for="{id_name}_cvr">Rollladen</label><input type="radio" '
-                    + f'name="data[{ci},1]" id="{id_name}_cvr" value="cvr" {cvr_chkd}></td>'
+                    f'<td><label title="{title_cov}" for="{id_name}_cvr">Rollladen</label><input type="radio" '
+                    + f'name="data[{ci},1]" id="{id_name}_cvr" title="{title_cov}" value="cvr" {cvr_chkd}></td>'
                 )
         elif key == "covers":
             if covers[ci].type != 0:
                 cov_t = main_app["settings"].cover_times
                 bld_t = main_app["settings"].blade_times
+                title_txt = "Auswahl: Ausgang A auf, B ab / Abwahl: B auf, A ab "
                 if tbl_data[ci].type > 0:
                     ipol_chkd = "checked"
                 else:
                     ipol_chkd = ""
                 tbl += (
                     f'<td></td><td><input name="data[{ci},1]" type="number" id="{id_name}_tc" min="0" step="1" max="255" '
-                    + f'placeholder="Verfahrzeit in s" value={cov_t[ci]} style="width: 40px;"></td>'
+                    + f'title="Verfahrzeit in s" value={cov_t[ci]} style="width: 40px;"></td>'
                 )
                 tbl += (
                     f'<td></td><td><input name="data[{ci},2]" type="number" id="{id_name}_tb" min="0" step="0.5" max="25.5" '
-                    + f'placeholder="Jalousiezeit in s (0 falls Rollladen)" value={bld_t[ci]} style="width: 40px;"></td>'
+                    + f'title="Jalousiezeit in s (0 falls Rollladen)" value={bld_t[ci]} style="width: 40px;"></td>'
                 )
                 tbl += (
-                    f'<td><input type="checkbox" name="data[{ci},3]" value="pol_nrm" id="{id_name}_pinv" '
-                    + f'{ipol_chkd}><label for="{id_name}_pinv">Polarität, Ausg. A: auf</label></td>'
+                    f'<td><input type="checkbox" title="{title_txt}" name="data[{ci},3]" value="pol_nrm" id="{id_name}_pinv" '
+                    + f'{ipol_chkd}><label title="{title_txt}" for="{id_name}_pinv">Polarität, Ausg. A: auf</label></td>'
                 )
         elif key == "groups":
             if tbl_data[ci].nmbr != 0:
@@ -846,12 +840,21 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                     "Alarm",
                     "Tag/Nacht, Alarm",
                 ]
-                tbl += indent(7) + f'<td><select name="data[{ci},1]" id="{id_name}">\n'
+                dep_titles = [
+                    "Tag/Nacht- und Alarm-Zustand sind unabhängig von Gruppe 0",
+                    "Tag/Nacht-Zustand ist wie in Gruppe 0, Alarm-Zustand ist unabhängig",
+                    "Alarm-Zustand ist wie in Gruppe 0, Tag/Nacht-Zustand ist unabhängig",
+                    "Tag/Nacht- und Alarm-Zustand sind wie in Gruppe 0",
+                ]
+                tbl += (
+                    indent(7)
+                    + f'<td><select title="Auswahl der Abhängigkeit des Tag/Nacht- und Alarm-Zustands von Gruppe 0" name="data[{ci},1]" id="{id_name}">\n'
+                )
                 for dep in range(4):
                     if main_app["settings"].mode_dependencies == b"":
                         tbl += (
                             indent(8)
-                            + f'<option value="{dep}">{dep_names[dep]}</option>\n'
+                            + f'<option title="{dep_titles[dep]}" value="{dep}">{dep_names[dep]}</option>\n'
                         )
                     elif (
                         dep
@@ -859,12 +862,12 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
                     ):
                         tbl += (
                             indent(8)
-                            + f'<option value="{dep}" selected>{dep_names[dep]}</option>\n'
+                            + f'<option title="{dep_titles[dep]}" value="{dep}" selected>{dep_names[dep]}</option>\n'
                         )
                     else:
                         tbl += (
                             indent(8)
-                            + f'<option value="{dep}">{dep_names[dep]}</option>\n'
+                            + f'<option title="{dep_titles[dep]}" value="{dep}">{dep_names[dep]}</option>\n'
                         )
                 tbl += indent(7) + "/select></td>\n"
             else:
@@ -872,23 +875,25 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
         elif key == "users":
             # add check buttons to enable user
             id_name = "users_enable"
+            title_txt = "Benutzerzugang freigeben bzw. sperren"
             if main_app["settings"].users[ci].type > 0:
                 en_chkd = "checked"
             else:
                 en_chkd = ""
             tbl += (
-                f'<td><div style="position: absolute;"><label for="{id_name}-{ci}">aktiv</label><input type="checkbox" '
-                + f'name="{id_name}" id="{id_name}-{ci}" value="{main_app["settings"].users[ci].nmbr}" {en_chkd}></div>'
+                f'<td><div style="position: absolute;"><label title="{title_txt}" for="{id_name}-{ci}">aktiv</label><input type="checkbox" '
+                + f'name="{id_name}" id="{id_name}-{ci}" title="{title_txt}" value="{main_app["settings"].users[ci].nmbr}" {en_chkd}></div>'
             )
             # add radio buttons to select user
             id_name = "users_sel"
+            title_txt = "Fingerabdrücke auf der nächsten Seite bearbeiten"
             if ci == main_app["settings"].users_sel:
                 sel_chkd = "checked"
             else:
                 sel_chkd = ""
             tbl += (
-                f'<div style="margin-left: 60px;"><label for="{id_name}-{ci}">Fingerabdrücke</label><input type="radio" '
-                + f'name="{id_name}" id="{id_name}-{ci}" value="{ci}" {sel_chkd}></div></td>'
+                f'<div style="margin-left: 60px;"><label title="{title_txt}" for="{id_name}-{ci}">Fingerabdrücke</label><input type="radio" '
+                + f'name="{id_name}" id="{id_name}-{ci}" title="{title_txt}" value="{ci}" {sel_chkd}></div></td>'
             )
         if key in [
             "glob_flags",
@@ -906,10 +911,11 @@ def prepare_table(main_app, mod_addr, step, key) -> str:
             "gsm_messages",
         ]:
             # Add additional checkbox element
+            title_txt = "Auswahl um Eintrag zu entfernen"
             if key == "groups" and tbl_data[ci].nmbr == 0:
                 pass  # group 0 not removable
             else:
-                tbl += f'<td><input type="checkbox" class="sel_element" name="sel_{ci}" value="{ci}"></td>'
+                tbl += f'<td><input type="checkbox" class="sel_element" name="sel_{ci}" title="{title_txt}" value="{ci}"></td>'
         tbl += "</tr>\n"
     if key in [
         "glob_flags",

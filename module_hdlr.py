@@ -271,7 +271,10 @@ class ModHdlr(HdlrBase):
             .replace("<outm>", chr((outp_bit >> 8) & 0xFF))
             .replace("<outh>", chr((outp_bit >> 16) & 0xFF))
         )
-        await self.handle_router_cmd_resp(self.rt_id, cmd)
+        if self.api_srv._opr_mode:
+            await self.handle_router_cmd(self.rt_id, cmd)
+        else:
+            await self.handle_router_cmd_resp(self.rt_id, cmd)
         self.logger.debug(
             f"Router {self.rt_id}, module {self.mod_id}: turn output {out_no} "
             + cmd_str

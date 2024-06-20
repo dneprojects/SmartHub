@@ -39,6 +39,10 @@ EventCodes = {
     219: "A/D Eingang 2",
     221: "Klima Sensor intern",
     222: "Klima Sensor extern",
+    224: "A/D Eingang 3",
+    225: "A/D Eingang 4",
+    226: "A/D Eingang 5",
+    227: "A/D Eingang 6",
     249: "Modulstart",
     253: "Direktbefehl",
 }
@@ -67,11 +71,15 @@ EventCodesSel = {
     215: "Sensor",
     216: "Sensor",
     217: "Sensor",
-    218: "AD1",
-    219: "AD2",
+    218: "AD",
+    219: "AD",
     220: "Klima",
     221: "Klima",
     222: "Klima",
+    224: "AD",
+    225: "AD",
+    226: "AD",
+    227: "AD",
     170: "Zeit",
     249: "System",
 }
@@ -99,6 +107,7 @@ SelTrgCodes = {
     "ekey": 169,
     "time": 170,
     "sensor": 203,
+    "ad": 218,
     "climate": 220,
     "system": 249,
     "dircmd": 253,
@@ -119,7 +128,8 @@ EventsSets = {
     152: [152, 153],
     169: [169],
     170: [170],
-    203: [201, 202, 203, 204, 205, 206, 213, 214, 215, 216, 217, 218, 219],
+    203: [201, 202, 203, 204, 205, 206, 213, 214, 215, 216, 217],
+    218: [218, 219, 224, 225, 226, 227],
     220: [220, 221, 222],
     249: [12, 101, 249],
     253: [253],
@@ -135,8 +145,6 @@ SelSensCodes = {
     "humid_int": 215,
     "light_int": 216,
     "airqual": 217,
-    "ad_1": 218,
-    "ad_2": 219,
 }
 SensorUnit = {
     201: "°C",
@@ -149,8 +157,17 @@ SensorUnit = {
     215: "%",
     216: "Lux",
     217: "%",
-    218: "V",
-    219: "V",
+}
+
+InpAdMap: dict[int, int] = {
+    3: 218,
+    4: 219,
+    5: 224,
+    6: 225,
+    7: 226,
+    8: 227,
+    11: 218,
+    12: 219,
 }
 
 Weekdays = {
@@ -272,14 +289,13 @@ class AutomationTrigger:
                 SelTrgCodes["flag"]: "Merker",
                 SelTrgCodes["mode"]: "Modusänderung",
                 SelTrgCodes["move"]: "Bewegung",
+                SelTrgCodes["ad"]: "Analogwert",
                 SelTrgCodes["sensor"]: "Sensor",
                 SelTrgCodes["count"]: "Zählerwert",
                 SelTrgCodes["time"]: "Zeit",
                 SelTrgCodes["system"]: "System",
             }
             self.sensors_dict = {
-                SelSensCodes["ad_1"]: "A/D-Kanal 1",
-                SelSensCodes["ad_2"]: "A/D-Kanal 2",
                 SelSensCodes["temp_ext"]: "Temperatur außen",
                 SelSensCodes["temp_int"]: "Temperatur innen",
                 SelSensCodes["humid_ext"]: "Feuchte außen",
@@ -309,8 +325,6 @@ class AutomationTrigger:
                 SelTrgCodes["time"]: "Zeit",
             }
             self.sensors_dict = {
-                SelSensCodes["ad_1"]: "A/D-Kanal 1",
-                SelSensCodes["ad_2"]: "A/D-Kanal 2",
                 SelSensCodes["temp_ext"]: "Temperatur außen",
                 SelSensCodes["temp_int"]: "Temperatur innen",
                 SelSensCodes["humid_ext"]: "Feuchte außen",
@@ -345,6 +359,7 @@ class AutomationTrigger:
                 SelTrgCodes["button"]: "Taster",
                 SelTrgCodes["switch"]: "Schalter",
                 SelTrgCodes["dimm"]: "Dimmen",
+                SelTrgCodes["ad"]: "Analogwert",
                 SelTrgCodes["collcmd"]: "Sammelbefehl",
                 SelTrgCodes["mode"]: "Modusänderung",
             }
@@ -549,8 +564,6 @@ class AutomationTrigger:
                     SelSensCodes["temp_int"],
                 ]:
                     trig_command = f"{EventCodes[self.event_code]} zwischen {self.u2sign7(self.event_arg1)} und {self.u2sign7(self.event_arg2)} {unit}"
-                elif self.event_code in [SelSensCodes["ad_1"], SelSensCodes["ad_2"]]:
-                    trig_command = f"{EventCodes[self.event_code]} zwischen {self.event_arg1 / 25} und {self.event_arg2 / 25} {unit}"
                 elif self.event_code in [
                     SelSensCodes["light_ext"],
                     SelSensCodes["light_int"],
@@ -559,6 +572,9 @@ class AutomationTrigger:
                 else:
                     trig_command = f"{EventCodes[self.event_code]} zwischen {self.event_arg1} und {self.event_arg2} {unit}"
                 event_desc = ""
+            elif self.event_code in EventsSets[SelTrgCodes["ad"]]:
+                trig_command = f"{EventCodes[self.event_code]} "
+                event_desc = f"zwischen {round(self.event_arg1 / 25, 2)} und {round(self.event_arg2 / 25, 2)} V"
             elif self.event_code in EventsSets[SelTrgCodes["ekey"]]:
                 id = self.event_arg1
                 if id == 255:
@@ -608,10 +624,27 @@ class AutomationTrigger:
         page = page.replace(
             '<option value="">-- Auslösendes Ereignis wählen --</option>', opt_str
         )
+
         opt_str = '<option value="">-- Sensor wählen --</option>\n'
         for key in sel_sensors:
             opt_str += f'<option value="{key}">{sel_sensors[key]}</option>\n'
         page = page.replace('<option value="">-- Sensor wählen --</option>', opt_str)
+
+        opt_str = '<option value="">-- Analogeingang wählen --</option>\n'
+        no_analog = 0
+        for inp in self.settings.inputs:
+            if inp.type == 3:
+                no_analog += 1
+                key = InpAdMap[inp.nmbr]
+                opt_str += f'<option value="{key}">{inp.name}</option>\n'
+        page = page.replace(
+            '<option value="">-- Analogeingang wählen --</option>', opt_str
+        )
+        if no_analog == 0:
+            page = page.replace(
+                '<option value="218">Analogwert</option>',
+                '<option disabled value="218">Analogwert</option>',
+            )
 
         opt_str = '<option value="">-- Taster wählen --</option>'
         for butt in self.settings.buttons:
@@ -886,13 +919,16 @@ class AutomationTrigger:
                 + self.automation.get_sel(form_data, "count_vals")
             )
             self.event_arg2 = 0
+        elif self.event_code in EventsSets[SelTrgCodes["ad"]]:
+            self.event_code = int(self.automation.get_val(form_data, "trigger_ad"))
+            self.event_arg1 = int(
+                self.automation.get_val(form_data, "sens_low_ad") * 25
+            )
+            self.event_arg2 = int(
+                self.automation.get_val(form_data, "sens_high_ad") * 25
+            )
         elif self.event_code in EventsSets[SelTrgCodes["sensor"]]:
             self.event_code = self.automation.get_sel(form_data, "trigger_sensor")
-            if self.event_code in [SelSensCodes["ad_1"], SelSensCodes["ad_2"]]:
-                self.event_arg1 = self.automation.get_val(form_data, "sens_low_ad") * 25
-                self.event_arg2 = (
-                    self.automation.get_val(form_data, "sens_high_ad") * 25
-                )
             if self.event_code in [SelSensCodes["temp_ext"], SelSensCodes["temp_int"]]:
                 self.event_arg1 = self.sign2u7(
                     self.automation.get_sel(form_data, "sens_low_temp")

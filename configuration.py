@@ -47,6 +47,8 @@ class ModuleSettings:
         self.get_settings()
         self.get_descriptions()
         self.automtns_def = AutomationsSet(self)
+        self.sim_pin: str = ""
+        self.sim_pin_changed = False
 
     def get_io_interfaces(self):
         """Parse config files to extract names, etc."""
@@ -173,10 +175,6 @@ class ModuleSettings:
                 self.covers[c_idx] = IfDescriptor(cname.strip(), c_idx + 1, pol)
                 self.outputs[o_idx].type = -10  # disable light output
                 self.outputs[o_idx + 1].type = -10
-        if self.typ == b"\x1e\x03":  # Smart GSM
-            self.sim_pin = self.get_pin()  # from smg
-            self.sim_pin_changed = False
-            self.logger.info(f"Found SIM Pin: {self.sim_pin}")
         return True
 
     def get_pin(self) -> str:
@@ -357,7 +355,7 @@ class ModuleSettings:
             )
         if self.typ == b"\x1e\x03":  # Smart GSM
             self.logger.info(f"SIM Pin: {self.sim_pin}")
-            # self.set_pin()  # to smg
+            self.set_pin()  # to smg
         return status
 
     def get_names(self) -> bool:
@@ -411,64 +409,63 @@ class ModuleSettings:
                             self.gsm_messages.append(
                                 IfDescriptor(text, arg_code, line[4])
                             )
-                        else:
-                            if arg_code in range(10, 18):
-                                if self.type == "Smart Controller Mini":
-                                    if arg_code in range(10, 12):
-                                        self.buttons[arg_code - 10] = IfDescriptor(
-                                            text, arg_code - 9, 1
-                                        )
-                                elif self.type[:16] == "Smart Controller":
-                                    # Description of module buttons
+                        elif arg_code in range(10, 18):
+                            if self.type == "Smart Controller Mini":
+                                if arg_code in range(10, 12):
                                     self.buttons[arg_code - 10] = IfDescriptor(
                                         text, arg_code - 9, 1
                                     )
-                                else:
-                                    self.inputs[arg_code - 10].name = text
-                                    self.inputs[arg_code - 10].nmbr = arg_code - 9
-                            elif arg_code in range(18, 26):
-                                # Description of module LEDs
-                                self.leds[arg_code - 17] = IfDescriptor(
-                                    text, arg_code - 17, 0
-                                )
-                            elif arg_code in range(40, 50):
-                                # Description of Inputs
-                                if self.type == "Smart Controller Mini":
-                                    if arg_code in range(44, 48):
-                                        self.inputs[arg_code - 44].name = text
-                                        self.inputs[arg_code - 44].nmbr = arg_code - 43
-                                else:  # sc inputs 24V
-                                    self.inputs[arg_code - 40].name = text
-                                    self.inputs[arg_code - 40].nmbr = arg_code - 39
-                            elif arg_code in range(110, 120):
-                                # Description of counters
-                                for cnt in self.counters:
-                                    if cnt.nmbr == arg_code - 109:
-                                        cnt.name = text
-                                        break
-                                # Description of logic units
-                                for lgc in self.logic:
-                                    if lgc.nmbr == arg_code - 109:
-                                        lgc.name = text
-                                        break
-                            elif arg_code in range(120, 136):
-                                # Description of flags
-                                self.flags.append(IfDescriptor(text, arg_code - 119, 0))
-                            elif arg_code in range(140, 173):
-                                # Description of vis commands (max 32)
-                                self.vis_cmds.append(
-                                    IfDescriptor(
-                                        text[2:], ord(text[1]) * 256 + ord(text[0]), 0
-                                    )
-                                )
-                            elif self.type[0:9] == "Smart Out":
-                                # Description of outputs in Out modules
-                                self.outputs[arg_code - 60] = IfDescriptor(
-                                    text, arg_code - 59, 1
+                            elif self.type[:16] == "Smart Controller":
+                                # Description of module buttons
+                                self.buttons[arg_code - 10] = IfDescriptor(
+                                    text, arg_code - 9, 1
                                 )
                             else:
-                                # Description of outputs
-                                self.outputs[arg_code - 60].name = text
+                                self.inputs[arg_code - 10].name = text
+                                self.inputs[arg_code - 10].nmbr = arg_code - 9
+                        elif arg_code in range(18, 26):
+                            # Description of module LEDs
+                            self.leds[arg_code - 17] = IfDescriptor(
+                                text, arg_code - 17, 0
+                            )
+                        elif arg_code in range(40, 50):
+                            # Description of Inputs
+                            if self.type == "Smart Controller Mini":
+                                if arg_code in range(44, 48):
+                                    self.inputs[arg_code - 44].name = text
+                                    self.inputs[arg_code - 44].nmbr = arg_code - 43
+                            else:  # sc inputs 24V
+                                self.inputs[arg_code - 40].name = text
+                                self.inputs[arg_code - 40].nmbr = arg_code - 39
+                        elif arg_code in range(110, 120):
+                            # Description of counters
+                            for cnt in self.counters:
+                                if cnt.nmbr == arg_code - 109:
+                                    cnt.name = text
+                                    break
+                            # Description of logic units
+                            for lgc in self.logic:
+                                if lgc.nmbr == arg_code - 109:
+                                    lgc.name = text
+                                    break
+                        elif arg_code in range(120, 136):
+                            # Description of flags
+                            self.flags.append(IfDescriptor(text, arg_code - 119, 0))
+                        elif arg_code in range(140, 173):
+                            # Description of vis commands (max 32)
+                            self.vis_cmds.append(
+                                IfDescriptor(
+                                    text[2:], ord(text[1]) * 256 + ord(text[0]), 0
+                                )
+                            )
+                        elif self.type[0:9] == "Smart Out":
+                            # Description of outputs in Out modules
+                            self.outputs[arg_code - 60] = IfDescriptor(
+                                text, arg_code - 59, 1
+                            )
+                        else:
+                            # Description of outputs
+                            self.outputs[arg_code - 60].name = text
                     except Exception as err_msg:
                         self.logger.error(
                             f"Parsing of names for module {self.name} failed: {err_msg}: Code {arg_code}, Text {text}"
@@ -769,7 +766,7 @@ class ModuleSettings:
         for line in list_lines[1:]:
             if len(line) > 0:
                 tok = line.split(";")
-                if (tok[0] == "252") or (tok[0] == "253") or (tok[0] == "255"):
+                if tok[0] in ["252", "253", "254", "255"]:
                     new_line = ""
                     for lchr in line.split(";")[:-1]:
                         new_line += chr(int(lchr))
@@ -791,7 +788,8 @@ class ModuleSettings:
         for line in list_lines[1:]:
             if len(line) > 0:
                 tok = line.split(";")
-                if (tok[0] != "252") and (tok[0] != "253") and (tok[0] != "255"):
+                if tok[0] not in ["252", "253", "254", "255"]:
+                    # copy other lines
                     new_line = ""
                     for lchr in line.split(";")[:-1]:
                         new_line += chr(int(lchr))
@@ -945,6 +943,14 @@ class ModuleSettings:
             if exist_unit.nmbr == entry_no:
                 return False
         return True
+
+    def get_interf_name(self, interfs: list[IfDescriptor], nmbr: int) -> str:
+        """Return name of interface given its number."""
+
+        for interf in interfs:
+            if interf.nmbr == nmbr:
+                return interf.name
+        return ""
 
 
 class RouterSettings:

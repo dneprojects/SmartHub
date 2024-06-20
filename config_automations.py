@@ -69,7 +69,7 @@ class ConfigAutomationsServer:
                         success_msg = "Änderungen übernommen"
                     except Exception as err_msg:
                         success_msg = (
-                            f"Error while saving module automations: {err_msg}"
+                            f"Error while saving module automations:<br>{err_msg}"
                         )
                         main_app.logger.error(success_msg)
                     await main_app["api_srv"].block_network_if(module.rt_id, False)
@@ -203,11 +203,14 @@ def show_automations(main_app, step) -> web.Response:
     title_str = f"Modul '{main_app['settings'].name}'"
     if step == 0:
         subtitle = "Lokale Automatisierungen"
+        subtext = "Auslöser der Aktion sind Ereignisse in demselben Modul.<br>(Externe Automatisierungen auf der nächsten Seite)"
     elif step == 1:
         subtitle = "Externe Automatisierungen"
+        subtext = "Auslöser der Aktion sind Ereignisse in einem anderen Modul.<br>(Interne Automatisierungen auf der vorherigen Seite)"
     else:
         subtitle = "Weiterleitungsautomatisierungen"
-    page = fill_automations_template(main_app, title_str, subtitle, step)
+        subtext = "Auslöser der Aktion werden von einem anderen Router weitergeleitet.<br>(Andere Automatisierungen auf den vorherigen Seiten)"
+    page = fill_automations_template(main_app, title_str, subtitle, subtext, step)
     return web.Response(text=page, content_type="text/html")
 
 
@@ -254,7 +257,9 @@ def show_edit_automation(main_app, sel_automtn, sel, mode, step) -> web.Response
     return web.Response(text=page, content_type="text/html")
 
 
-def fill_automations_template(main_app, title, subtitle, step) -> str:
+def fill_automations_template(
+    main_app, title: str, subtitle: str, subtext: str, step: int
+) -> str:
     """Return automations page."""
     with open(
         WEB_FILES_DIR + AUTOMATIONS_TEMPLATE_FILE, mode="r", encoding="utf-8"
@@ -264,6 +269,7 @@ def fill_automations_template(main_app, title, subtitle, step) -> str:
     page = (
         page.replace("ContentTitle", title)
         .replace("ContentSubtitle", subtitle)
+        .replace("ContentSubtext", subtext)
         .replace("controller.jpg", mod_image)
         .replace("ModAddress", f'{main_app["settings"].id}-{step}')
     )
@@ -376,7 +382,7 @@ def prepare_automations_list(main_app, step):
             + f"<td>{evnt_desc}</td><td>{cond_desc}</td><td align=center>&nbsp;&nbsp;&rArr;&nbsp;&nbsp;</td>\n"
         )
         tbl += indent(7) + f"<td>{actn_desc}</td>\n"
-        tbl += f'<td><input type="radio" name="{id_name}" id="{id_name}" value="{at_i}" {sel_chkd}></td>'
+        tbl += f'<td><input title="Auswahl zum Ändern oder Löschen oder als Voreinstellung für neue Automatisierungsregel" type="radio" name="{id_name}" id="{id_name}" value="{at_i}" {sel_chkd}></td>'
         tbl += indent(6) + "</tr>\n"
     tbl += indent(6) + "</tbody>\n"
     tbl += indent(5) + "</table>\n"

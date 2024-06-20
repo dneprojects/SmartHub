@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import datetime
 from copy import deepcopy as dpcopy
@@ -174,13 +175,15 @@ class HbtnModule:
             "Smart GSM",
             "FanM-Bus",
             "Smart In 8/24V",
-            "Smart In 8/24V-1",
             "Smart In 8/230V",
             "Fanekey",
         ]:
             pass  # Don't track update changes for these modules
         else:
-            if self._type in [
+            if self._type in ["Smart In 8/24V-1"]:
+                i0 = MirrIdx.AD_1
+                i1 = MirrIdx.DISPL_CONTR + 1
+            elif self._type in [
                 "Smart Detect 180",
                 "Smart Detect 180-2",
                 "Smart Detect 360",
@@ -210,6 +213,8 @@ class HbtnModule:
                     MirrIdx.TEMP_PWR,
                     MirrIdx.TEMP_EXT,
                 ]
+                ia0 = MirrIdx.AD_1
+                ia1 = MirrIdx.AD_2 + 1
                 im0 = MirrIdx.MODE
                 im1 = MirrIdx.MODE + 1
                 i0 = MirrIdx.DIM_1
@@ -221,6 +226,9 @@ class HbtnModule:
                 )
                 i_diff = self.compare_status(
                     self.status[im0:im1], new_status[im0:im1], i_diff, im0
+                )
+                i_diff = self.compare_status(
+                    self.status[ia0:ia1], new_status[ia0:ia1], i_diff, ia0
                 )
             i_diff = self.compare_status(
                 self.status[i0:i1], new_status[i0:i1], i_diff, i0
@@ -276,6 +284,20 @@ class HbtnModule:
                         ev_type = HA_EVENTS.CNT_VAL
                         idv = int((i_d - MirrIdx.COUNTER_VAL) / 3)
                         ev_str = f"Counter {idv + 1}"
+                    elif i_d in range(MirrIdx.AD_1, MirrIdx.AD_2 + 1):
+                        ev_type = HA_EVENTS.ANLG_VAL
+                        idv = i_d - MirrIdx.AD_1
+                        ev_str = f"Analog in {idv + 1}"
+                    elif i_d in range(MirrIdx.GEN_1, MirrIdx.GEN_2 + 1):
+                        if self._typ == b"\x0b\x1f":
+                            ev_type = HA_EVENTS.ANLG_VAL
+                            idv = i_d - MirrIdx.GEN_1 + 2
+                            ev_str = f"Analog in {idv + 1}"
+                    elif i_d in range(MirrIdx.GEN_3, MirrIdx.GEN_4 + 1):
+                        if self._typ == b"\x0b\x1f":
+                            ev_type = HA_EVENTS.ANLG_VAL
+                            idv = i_d - MirrIdx.GEN_3 + 4
+                            ev_str = f"Analog in {idv + 1}"
                     if ev_type > 0:
                         update_info.append(
                             [
@@ -451,9 +473,9 @@ class HbtnModule:
         if not self.api_srv.is_offline:
             await self.hdlr.send_module_smg(self._id)
             await self.hdlr.send_module_list(self._id)
-            await self.hdlr.get_module_status(self._id)
         self.comp_status = self.get_status(False)
         self.calc_SMG_crc(self.build_smg())
+        self.calc_SMC_crc(self.list)
         self._name = (
             self.status[MirrIdx.MOD_NAME : MirrIdx.MOD_NAME + 32]
             .decode("iso8859-1")
@@ -461,8 +483,6 @@ class HbtnModule:
         )
         self.settings.status = self.status
         self.settings.list = self.list
-        # self.list = await self.hdlr.get_module_list(self._id)
-        self.calc_SMC_crc(self.list)
 
     async def set_automations(self, settings: ModuleSettings):
         """Restore changed automations from config server into module."""

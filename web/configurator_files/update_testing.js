@@ -89,6 +89,7 @@ function setEventStatus(jsonString) {
     dirStat = eventStat.Direct_command;
     modeStat = eventStat.Mode;
     flagStat = eventStat.Flag;
+    analogStat = eventStat.Analog_value;
     if (outputStat) {
         for (let i = 0; i < outputStat.length; i++) {
             row = outTable.rows[outputStat[i][0]];
@@ -150,6 +151,11 @@ function setEventStatus(jsonString) {
         msg2 = fingerStat[fingerStat.length - 1][1].toString();
         logEvent(msg1, msg2)
     }
+    if (analogStat) {
+        msg1 = "Analogeingang " + (analogStat[analogStat.length - 1][0] + 1).toString();
+        msg2 = analogStat[analogStat.length - 1][1].toString();
+        logEvent(msg1, msg2)
+    }
     if (irStat) {
         msg1 = "IR Befehl";
         msg2 = irStat[irStat.length - 1][0].toString() + ", " + irStat[irStat.length - 1][1].toString();
@@ -179,7 +185,7 @@ function logEvent(msg1, msg2) {
 
     const d = new Date();
     let time = d.toLocaleString();
-    const log_len = 5
+    const log_len = 8
     for (let r = log_len; r > 1; r--) {
         for (let c = 0; c < 3; c++) {
             evntTable.rows[r].cells[c].innerHTML = evntTable.rows[r - 1].cells[c].innerHTML;

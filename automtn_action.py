@@ -587,7 +587,7 @@ class AutomationAction:
             page = page.replace(
                 '<option value="">-- Telefonnummer wählen --</option>', opt_str
             )
-        elif SelActCodes["msg"] in self.actions_dict.keys():
+        elif self.automation.settings.typ == b"\x1e\x03":
             page = page.replace(
                 f'<option value="{SelActCodes["call"]}">{self.actions_dict[SelActCodes["call"]]}',
                 f'<option value="{SelActCodes["call"]}" disabled>{self.actions_dict[SelActCodes["call"]]}',

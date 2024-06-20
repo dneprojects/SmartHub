@@ -370,7 +370,47 @@ class ActionsHdlr(HdlrBase):
                 # self.logger.debug(
                 #     f"Router {rt}, module {mod}, led {inp_code}: turn LED to R:{self._args[1]} G:{self._args[2]} B:{self._args[3]}"
                 # )
-
+            case spec.MSG_RESET | spec.MSG_SET | spec.MSG_TIME:
+                self.check_router_module_no(rt, mod)
+                if self.args_err:
+                    return
+                if self._spec == spec.MSG_TIME:
+                    settings = (
+                        self.api_srv.routers[rt - 1]
+                        .get_module(mod)
+                        .get_module_settings()
+                    )
+                    msg_time = self._args[0]
+                    if len(self._args) > 2:
+                        msg_txt = self._args[1:].decode("iso8859-1")
+                    else:
+                        msg_txt = settings.get_interf_name(
+                            settings.messages, self._args[1]
+                        )
+                    self.logger.info(
+                        f"Meldung an Module '{settings.name}' senden: '{msg_txt}'"
+                    )
+                    self.logger.info("Meldung auf Zeit setzen noch nicht implementiert")
+                else:
+                    self.logger.info(
+                        "Meldung setzen oder rücksetzen noch nicht implementiert"
+                    )
+            case spec.MSG_SMS:
+                self.check_router_module_no(rt, mod)
+                if self.args_err:
+                    return
+                settings = (
+                    self.api_srv.routers[rt - 1].get_module(mod).get_module_settings()
+                )
+                sms_no = settings.get_interf_name(settings.gsm_numbers, self._args[0])
+                if len(self._args) > 2:
+                    sms_txt = self._args[1:].decode("iso8859-1")
+                else:
+                    sms_txt = settings.get_interf_name(
+                        settings.gsm_messages, self._args[1]
+                    )
+                self.logger.info(f"SMS an {sms_no} senden: '{sms_txt}'")
+                self.logger.info("SMS senden noch nicht implementiert")
             case _:
                 self.response = f"Unknown API data command: {self.msg._cmd_grp} {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"
                 self.logger.warning(self.response)

@@ -225,7 +225,7 @@ async def build_status_table(app, mod_addr: int, update: bool) -> str:
             if inp.type == 2:
                 table_str += td_line.replace(
                     "><",
-                    f'><input type="checkbox" class="inp_chk" name="inp-{inp_nmbr}" {sel_chkd}><',
+                    f' title="Zeigt den Schalterzustand an"><input type="checkbox" class="inp_chk" name="inp-{inp_nmbr}" {sel_chkd}><',
                 )
             elif inp.type == 3:
                 table_str += td_line.replace(
@@ -275,7 +275,7 @@ async def build_status_table(app, mod_addr: int, update: bool) -> str:
                 sel_chkd = ""
             table_str += td_line.replace(
                 "><",
-                f'><input type="checkbox" class="out_chk" name="out-{outp.nmbr}" {sel_chkd}><',
+                f' title="Auswahl um Ausgang einzuschalten"><input type="checkbox" class="out_chk" name="out-{outp.nmbr}" {sel_chkd}><',
             )
             table_str += tre_line
         table_str += tbl_end_line
@@ -286,7 +286,7 @@ async def build_status_table(app, mod_addr: int, update: bool) -> str:
         .replace("Typ", "Wert")
         .replace("Aktiv", "")
     )
-    for line in range(5):
+    for line in range(8):
         table_str += tr_line
         table_str += td_line.replace("><", ">&nbsp;<")
         table_str += td_line.replace("><", ">&nbsp;<")
