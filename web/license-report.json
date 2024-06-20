@@ -4,7 +4,7 @@ idna:3.7                            BSD License                                 
 multidict:6.0.5                     Apache Software License                                 Permissive                                                   
 pip-licenses:4.4.0                  MIT License                                             Permissive                                                   
 prettytable:3.10.0                  BSD License                                             Permissive                                                   
-psutil:5.9.8                        BSD License                                             Permissive                                                   
+psutil:6.0.0                        BSD License                                             Permissive                                                   
 py-cpuinfo:9.0.0                    MIT License                                             Permissive                                                   
 pyserial:3.5                        BSD License                                             Permissive                                                   
 pyserial-asyncio:0.6                BSD License                                             Permissive                                                   
