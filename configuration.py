@@ -392,7 +392,7 @@ class ModuleSettings:
                     for fi in range(10):
                         if f_map & (1 << fi):
                             self.all_fingers[user_id].append(
-                                IfDescriptor(FingerNames[fi], fi + 1, user_id)
+                                IfDescriptor(FingerNames[fi + 1], fi + 1, user_id)
                             )
                 elif int(line[0]) == 253:
                     # Description of commands
@@ -913,7 +913,7 @@ class ModuleSettings:
         res = await settings.module.hdlr.set_ekey_teach_mode(user_id, finger_id, 30)
         if res == "OK":
             settings.all_fingers[user_id].append(
-                IfDescriptor(FingerNames[finger_id - 1], finger_id, user_id)
+                IfDescriptor(FingerNames[finger_id], finger_id, user_id)
             )
             app["settings"] = settings
 
@@ -944,13 +944,15 @@ class ModuleSettings:
                 return False
         return True
 
-    def get_interf_name(self, interfs: list[IfDescriptor], nmbr: int) -> str:
+    def get_interf_name(
+        self, interfs: list[IfDescriptor], nmbr: int, default: str = ""
+    ) -> str:
         """Return name of interface given its number."""
 
         for interf in interfs:
             if interf.nmbr == nmbr:
                 return interf.name
-        return ""
+        return default
 
 
 class RouterSettings:

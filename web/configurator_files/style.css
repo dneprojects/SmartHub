@@ -808,16 +808,7 @@ div#setup-buttons {
 
 
 
-#automtns_button {
-   height: 22px;
-   width: 140px;
-   margin-left: 0px;
-   margin-right: 40px;
-   font-family: "Lucida Sans", Arial, Verdana, Helvetica, sans-serif;
-   font: 11px arial, helvetica, clean, sans-serif;
-}
-
-#updates_button {
+#automtns_button, #showlogs_button, #updates_button {
    height: 22px;
    width: 140px;
    margin-left: 0px;

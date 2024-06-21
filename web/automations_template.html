@@ -38,6 +38,7 @@
   <!--[if lte IE 7]><link rel="stylesheet" href="system/iefixes.css" type="text/css" media="screen" /><![endif]-->
   <link rel="stylesheet" href="configurator_files/tinymce.css" type="text/css" media="screen">
   <script type="text/javascript" src="configurator_files/tablesort.js"></script>
+  <script type="text/javascript" src="configurator_files/tablesort.number.min.js"></script>
 </head>
 
 <body id="top" class="modules">
@@ -196,40 +197,45 @@
     const atm_desc = document.getElementById("automtn_desc")
     const atm_tbl = document.getElementById("atm-table")
     var tbl_row
-    for (let l = 0; l < frm.length; l++) {
-      if (frm[l].checked) {
-        sel = l;
-      }
-    }
-    del_automtn.value = "del_automtn-" + sel;
-    tbl_row = atm_tbl.rows[sel+1];
-    var header_rows = []
-    var header_positions = []
-    var autom_rows = []
-    var hr = 0
-    var sel_position = 0
-    if (atm_tbl.rows[0].cells[0].innerText.search("Modul") > 0) {
-      for (let r = 0; r < atm_tbl.rows.length; r++) {
-        if (atm_tbl.rows[r].id == "atm-th") {
-          header_rows.push(r);
-          header_positions.push(atm_tbl.rows[r].offsetTop);
-        }
-        else {
-          autom_rows.push(r)
+    if (frm != null) {
+      for (let l = 0; l < frm.length; l++) {
+        if (frm[l].checked) {
+          sel = l;
         }
       }
-      tbl_row = atm_tbl.rows[autom_rows[sel]];
-      sel_position = tbl_row.offsetTop;
-      for (hr = 0; hr < header_rows.length; hr++) {
-        if (sel_position < header_positions[hr])
-          break
+      del_automtn.value = "del_automtn-" + sel;
+      tbl_row = atm_tbl.rows[sel+1];
+      var header_rows = []
+      var header_positions = []
+      var autom_rows = []
+      var hr = 0
+      var sel_position = 0
+      if (atm_tbl.rows[0].cells[0].innerText.search("Modul") > 0) {
+        for (let r = 0; r < atm_tbl.rows.length; r++) {
+          if (atm_tbl.rows[r].id == "atm-th") {
+            header_rows.push(r);
+            header_positions.push(atm_tbl.rows[r].offsetTop);
+          }
+          else {
+            autom_rows.push(r)
+          }
+        }
+        tbl_row = atm_tbl.rows[autom_rows[sel]];
+        sel_position = tbl_row.offsetTop;
+        for (hr = 0; hr < header_rows.length; hr++) {
+          if (sel_position < header_positions[hr])
+            break
+        }
+        desc_txt = atm_tbl.rows[header_rows[hr - 1]].cells[0].innerText + ":<br>";
       }
-      desc_txt = atm_tbl.rows[header_rows[hr - 1]].cells[0].innerText + ":<br>";
+      else {
+        desc_txt = "";
+      }
+      desc_txt += tbl_row.cells[0].innerText + "&nbsp;(" + tbl_row.cells[1].innerText + ")<br>" + tbl_row.cells[2].innerText + tbl_row.cells[3].innerText
     }
     else {
-      desc_txt = "";
+      desc_txt = ""
     }
-    desc_txt += tbl_row.cells[0].innerText + "&nbsp;(" + tbl_row.cells[1].innerText + ")<br>" + tbl_row.cells[2].innerText + tbl_row.cells[3].innerText
     atm_desc.innerHTML = desc_txt;
     automtn_del_popup.classList.add("show");
   };

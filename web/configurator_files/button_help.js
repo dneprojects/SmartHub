@@ -25,6 +25,10 @@ button_help_dict["Ändern"] = "Ausgewählte Automatisierungsregel ändern";
 button_help_dict["Löschen"] = "Ausgewählte Automatisierungsregel löschen";
 button_help_dict["Übernehmen"] = "Alle Änderungen von Modulen, Adressen und Kanälen im Configurator intern ablegen";
 button_help_dict["Übertragen"] = "Alle Änderungen von Modulen, Adressen und Kanälen ins System übertragen";
+button_help_dict["Protokoll"] = "Zugangsprotokoll anzeigen und verwalten";
+button_help_dict["Protokoll löschen"] = "Zugangsprotokoll im Smart Key löschen";
+button_help_dict["Protokoll sichern"] = "Protokoll als Download speichern";
+button_help_dict["Beenden"] = "Zurück zur Modulübersicht";
 
 var button_acceskey_dict = {};
 button_acceskey_dict["Neu"] = "n";
@@ -36,6 +40,7 @@ button_acceskey_dict["weiter"] = "w";
 button_acceskey_dict["Weiter"] = "w";
 button_acceskey_dict["Abbruch"] = "a";
 button_acceskey_dict["anlegen"] = "a";
+button_acceskey_dict["Beenden"] = "b";
 
 const buttons = document.getElementsByTagName("button")
 for (let i = 0; i < buttons.length; i++) {

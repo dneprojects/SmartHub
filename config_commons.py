@@ -395,8 +395,26 @@ def adjust_automations_button(page: str) -> str:
     return page
 
 
+def adjust_ekeylog_button(page: str) -> str:
+    """Enable edit automations button."""
+    page = (
+        page.replace(
+            '<!--<button name="EditAutomtns" id="automtns_button"',
+            '<button name="ShowLogs" id="showlogs_button"',
+        )
+        .replace("Automatisierungen</button>-->", "Protokoll</button>")
+        .replace('action="automations/list"', 'action="settings/show_logs"')
+        .replace('"msg_popup_txt">Upload<', '"msg_popup_txt">Lade Protokoll<')
+    )
+    return page
+
+
 def disable_button(key: str, page) -> str:
     return page.replace(f">{key}<", f" disabled>{key}<")
+
+
+def hide_button(key: str, page) -> str:
+    return page.replace(f">{key}<", f' style="visibility: hidden;">{key}<')
 
 
 def client_not_authorized(request) -> bool:

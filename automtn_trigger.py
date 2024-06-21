@@ -582,7 +582,7 @@ class AutomationTrigger:
                 else:
                     user = self.autmn_dict["users"].get(id, "unbekannter Nutzer")
                     trig_command = (
-                        f"{FingerNames[self.event_arg2 - 1]} von '{user}' erkannt"
+                        f"{FingerNames[self.event_arg2]} von '{user}' erkannt"
                     )
                 event_desc = ""
             elif self.event_code == 30:

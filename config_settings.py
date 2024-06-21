@@ -1,23 +1,27 @@
 from math import copysign
 from aiohttp import web
+from datetime import datetime
 from urllib.parse import parse_qs
 from automtn_trigger import Weekdays
 from configuration import RouterSettings
 from config_commons import (
     activate_side_menu,
     adjust_automations_button,
+    adjust_ekeylog_button,
     adjust_settings_button,
     adjust_side_menu,
     fill_page_template,
     indent,
     get_module_image,
     disable_button,
+    hide_button,
     client_not_authorized,
     show_not_authorized,
 )
 from const import (
     LGC_TYPES,
     WEB_FILES_DIR,
+    AUTOMATIONS_TEMPLATE_FILE,
     SETTINGS_TEMPLATE_FILE,
     CONF_PORT,
     SYS_MODES,
@@ -29,6 +33,7 @@ from const import (
     DAY_NIGHT_MODES_HELP,
 )
 from configuration import set_cover_name, set_cover_output_name
+from multidict import MultiDict
 
 routes = web.RouteTableDef()
 
@@ -109,6 +114,29 @@ class ConfigSettingsServer:
             return show_not_authorized(request.app)
         args = request.query_string.split("=")
         return await show_next_prev(request.app["parent"], args[1])
+
+    @routes.get("/show_logs")
+    async def show_logs(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
+        args = request.query_string.split("=")
+        return await show_ekey_logs(request.app["parent"], args[1])
+
+    @routes.get("/ekey_log_table")
+    async def ekey_logs(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
+        args = request.query_string.split("=")
+        if args[0] == "":
+            module = request.app["parent"]["module"]
+            await module.hdlr.ekey_log_delete()
+            return show_module_overview(request.app["parent"], module._id)
+        cmd = args[1].split("-")[0]
+        mod_addr = int(args[1].split("-")[1])
+        if cmd == "save":
+            return log_download(request.app["parent"])
+        else:
+            return show_module_overview(request.app["parent"], mod_addr)
 
 
 def show_router_overview(main_app, popup_msg="") -> web.Response:
@@ -221,6 +249,8 @@ def show_module_overview(main_app, mod_addr, popup_msg="") -> web.Response:
     page = adjust_settings_button(page, "mod", f"{mod_addr}")
     if module.has_automations():
         page = adjust_automations_button(page)
+    elif module._typ == b"\x1e\x01":
+        page = adjust_ekeylog_button(page)
     if len(popup_msg):
         page = page.replace(
             '<h3 id="resp_popup_txt">response_message</h3>',
@@ -365,7 +395,7 @@ def fill_settings_template(main_app, title, subtitle, step, settings, key: str) 
     if key == "fingers":
         finger_dict_str = "var fngrNames = {\n"
         for f_i in range(10):
-            finger_dict_str += f'  {f_i+1}: "{FingerNames[f_i]}",\n'
+            finger_dict_str += f'  {f_i+1}: "{FingerNames[f_i + 1]}",\n'
         finger_dict_str += "}\n"
         page = page.replace("var fngrNames = {}", finger_dict_str)
         if main_app["api_srv"].is_offline:
@@ -1045,7 +1075,7 @@ def parse_response_form(main_app, form_data):
                 if key == "fingers":
                     settings.__getattribute__(key).append(
                         IfDescriptor(
-                            FingerNames[int(form_data[form_key][0]) - 1],
+                            FingerNames[int(form_data[form_key][0])],
                             int(form_data[form_key][0]),
                             settings.users[settings.users_sel].nmbr,
                         )
@@ -1352,3 +1382,122 @@ def get_property_kind(main_app, step) -> tuple[str, str, str]:
             header = "Einstellungen Gruppen"
             prompt = "Gruppe"
     return key, header, prompt
+
+
+async def show_ekey_logs(main_app, mod_addr) -> web.Response:
+    """Upload and show ekey logging protocol."""
+
+    module = main_app["module"]
+    with open(
+        WEB_FILES_DIR + AUTOMATIONS_TEMPLATE_FILE, mode="r", encoding="utf-8"
+    ) as tplf_id:
+        page = tplf_id.read()
+    mod_image, mod_type = get_module_image(module._typ)
+    page = (
+        page.replace("ContentTitle", f"Modul '{module._name}'")
+        .replace("ContentSubtitle", "Protokoll der Ereignisse")
+        .replace("ContentSubtext", "")
+        .replace("controller.jpg", mod_image)
+        .replace('form="automations_table"', 'form="log_table"')
+        .replace('value="cancel-ModAddress">Abbruch<','value="cancel-ModAddress">Beenden<')
+        .replace(">Neu<", ">Protokoll sichern<")
+        .replace("ModAddress", f"{mod_addr}")
+        .replace('value="new"', f'value="save-{mod_addr}"')
+        .replace(">Löschen<", ">Protokoll löschen<")
+        .replace("Löschen der ausgewählten Automatisierung","Löschen des Zugangsprotokolls im Smart Key")
+    )
+    page = hide_button("zurück", page)
+    page = hide_button("weiter", page)
+    page = hide_button("Speichern", page)
+    page = hide_button("Ändern", page)
+    settings_form = await prepare_log_list(main_app)
+    # page = disable_chg_del_button(main_app, step, page)
+    page = page.replace("<p>ContentText</p>", settings_form)
+    return web.Response(text=page, content_type="text/html")
+
+
+async def prepare_log_list(main_app):
+    ekey_protocol: list[dict[str,str]] = []
+    module = main_app["module"]
+    settings = module.get_module_settings()
+    log_list = await module.hdlr.ekey_log_read()
+    ll_len = int.from_bytes(log_list[1:3], "little") >> 3  # 8 bytes per entry
+    for line_idx in range(ll_len):
+        entry: dict[str,str] = {}
+        log_line = log_list[line_idx * 8 + 3 : line_idx * 8 + 3 + 8]
+        user = settings.get_interf_name(settings.users, log_line[2], "Unbekannt")
+        finger = log_line[3]
+        if finger in range(128, 139):
+            finger -= 128
+            user = "Nicht freigeben: " + user
+        
+        time_stamp = int.from_bytes(log_line[4:], "little") 
+        entry["no"] = f"{line_idx + 1}"
+        if time_stamp:
+            dt = convert_to_daytime(log_line)
+            entry["date"] = dt.strftime("%d. %m. %Y")
+            entry["time"] = dt.strftime("%H:%M:%S")
+        else:
+            entry["date"] = "-"
+            entry["time"] = "-"
+        entry["user"] = user
+        entry["finger"] = FingerNames[finger]
+        ekey_protocol.append(entry)
+    main_app["ekey_log"] = ekey_protocol
+    return prepare_log_table(ekey_protocol)
+
+def convert_to_daytime(log_line) -> datetime:
+    """Convert special timestamp format."""
+    if log_line[6] & 0x01 == 1:
+        sd = 65536 + (log_line[5] * 256) + log_line[4]
+    else:
+        sd = log_line[5] * 256 + log_line[4]
+    hr = int(sd / 3600)
+    me = int((sd - (hr * 3600)) / 60)
+    sd = int(sd - (hr * 3600) - (me * 60))
+
+    dy = int((log_line[6] & 62) / 2)
+    mh = int((log_line[7] * 256 + log_line[6] & 960) / 64)
+    yr = int((log_line[7] * 256 + log_line[6] & 64512) / 1024) + 2000
+                    
+    return datetime(yr, mh, dy, hr, me, sd)
+
+def prepare_log_table(log_list) -> str:
+    """Return html table."""
+    
+    tbl = indent(4) + '<form id="log_table" action="settings/ekey_log_table">\n'
+    tbl += indent(5) + '<table id="atm-table">\n'
+    tbl += indent(6) + "<thead>\n"
+    tbl += (
+        indent(6)
+        + '<tr id="atm-th"><th data-sort-method="number">Nr.</th><th data-sort-method="none"><b>Datum</b></th><th data-sort-method="none"><b>Uhrzeit</b></th><th><b>Benutzer</b></th><th>Finger</th></tr>\n'
+    )
+    tbl += indent(6) + "</thead>\n"
+    tbl += indent(6) + "<tbody>\n"
+    for entry in log_list:
+        tbl += indent(6) + '<tr id="atm-tr">\n'
+        tbl += indent(7) + f"<td>{entry["no"]}</td>\n"
+        tbl += indent(7) + f"<td>{entry["date"]}</td>\n"
+        tbl += indent(7) + f"<td>{entry["time"]}</td>\n"
+        tbl += indent(7) + f"<td>{entry["user"]}</td>\n"
+        tbl += indent(7) + f"<td>{entry["finger"]}</td>"
+        tbl += indent(6) + "</tr>\n"
+    tbl += indent(6) + "</tbody>\n"
+    tbl += indent(5) + "</table>\n"
+    tbl += indent(4) + "</form>\n"
+    return tbl
+
+def log_download(main_app):
+    """Download ekey logging protocol."""
+    date = datetime.now().strftime("%Y-%m-%d")
+    file_name = f"ekey_protocol_{date}.csv"
+    str_data = ""
+    ekey_protocol = main_app["ekey_log"]
+    for entry in ekey_protocol:
+        str_data += f'{entry["no"]},{entry["date"]},{entry["time"]},{entry["user"]},{entry["finger"]}\n'
+    return web.Response(
+            headers=MultiDict(
+                {"Content-Disposition": f"Attachment; filename = {file_name}"}
+            ),
+            body=str_data,
+        )

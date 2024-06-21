@@ -418,7 +418,7 @@ class ActionsHdlr(HdlrBase):
 
         # Send command to router
         await self.handle_router_cmd(rt, self._rt_command)
-        await asyncio.sleep(0.12)
+        # await asyncio.sleep(0.12)
         self.logger.debug(
             f"Action finished: {self.msg._cmd_grp} {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]} : Module {self._p5};  Arguments: {self._args}"
         )

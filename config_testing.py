@@ -94,7 +94,6 @@ def show_modules_overview(app) -> web.Response:
     side_menu = activate_side_menu(side_menu, ">Module testen<", app["is_offline"])
     page = get_html("modules.html").replace("<!-- SideMenu -->", side_menu)
     page = page.replace("<h1>Module", "<h1>Module testen")
-    page = page.replace("Übersicht", "Mögliche Module")
     images = ""
     for mod in rtr.modules:
         m_type = mod._typ
