@@ -1399,12 +1399,17 @@ async def show_ekey_logs(main_app, mod_addr) -> web.Response:
         .replace("ContentSubtext", "")
         .replace("controller.jpg", mod_image)
         .replace('form="automations_table"', 'form="log_table"')
-        .replace('value="cancel-ModAddress">Abbruch<','value="cancel-ModAddress">Beenden<')
+        .replace(
+            'value="cancel-ModAddress">Abbruch<', 'value="cancel-ModAddress">Beenden<'
+        )
         .replace(">Neu<", ">Protokoll sichern<")
         .replace("ModAddress", f"{mod_addr}")
         .replace('value="new"', f'value="save-{mod_addr}"')
         .replace(">Löschen<", ">Protokoll löschen<")
-        .replace("Löschen der ausgewählten Automatisierung","Löschen des Zugangsprotokolls im Smart Key")
+        .replace(
+            "Löschen der ausgewählten Automatisierung",
+            "Löschen des Zugangsprotokolls im Smart Key",
+        )
     )
     page = hide_button("zurück", page)
     page = hide_button("weiter", page)
@@ -1417,21 +1422,21 @@ async def show_ekey_logs(main_app, mod_addr) -> web.Response:
 
 
 async def prepare_log_list(main_app):
-    ekey_protocol: list[dict[str,str]] = []
+    ekey_protocol: list[dict[str, str]] = []
     module = main_app["module"]
     settings = module.get_module_settings()
     log_list = await module.hdlr.ekey_log_read()
     ll_len = int.from_bytes(log_list[1:3], "little") >> 3  # 8 bytes per entry
     for line_idx in range(ll_len):
-        entry: dict[str,str] = {}
+        entry: dict[str, str] = {}
         log_line = log_list[line_idx * 8 + 3 : line_idx * 8 + 3 + 8]
         user = settings.get_interf_name(settings.users, log_line[2], "Unbekannt")
         finger = log_line[3]
         if finger in range(128, 139):
             finger -= 128
             user = "Nicht freigeben: " + user
-        
-        time_stamp = int.from_bytes(log_line[4:], "little") 
+
+        time_stamp = int.from_bytes(log_line[4:], "little")
         entry["no"] = f"{line_idx + 1}"
         if time_stamp:
             dt = convert_to_daytime(log_line)
@@ -1446,6 +1451,7 @@ async def prepare_log_list(main_app):
     main_app["ekey_log"] = ekey_protocol
     return prepare_log_table(ekey_protocol)
 
+
 def convert_to_daytime(log_line) -> datetime:
     """Convert special timestamp format."""
     if log_line[6] & 0x01 == 1:
@@ -1459,12 +1465,13 @@ def convert_to_daytime(log_line) -> datetime:
     dy = int((log_line[6] & 62) / 2)
     mh = int((log_line[7] * 256 + log_line[6] & 960) / 64)
     yr = int((log_line[7] * 256 + log_line[6] & 64512) / 1024) + 2000
-                    
+
     return datetime(yr, mh, dy, hr, me, sd)
+
 
 def prepare_log_table(log_list) -> str:
     """Return html table."""
-    
+
     tbl = indent(4) + '<form id="log_table" action="settings/ekey_log_table">\n'
     tbl += indent(5) + '<table id="atm-table">\n'
     tbl += indent(6) + "<thead>\n"
@@ -1476,16 +1483,17 @@ def prepare_log_table(log_list) -> str:
     tbl += indent(6) + "<tbody>\n"
     for entry in log_list:
         tbl += indent(6) + '<tr id="atm-tr">\n'
-        tbl += indent(7) + f"<td>{entry["no"]}</td>\n"
-        tbl += indent(7) + f"<td>{entry["date"]}</td>\n"
-        tbl += indent(7) + f"<td>{entry["time"]}</td>\n"
-        tbl += indent(7) + f"<td>{entry["user"]}</td>\n"
-        tbl += indent(7) + f"<td>{entry["finger"]}</td>"
+        tbl += indent(7) + f'<td>{entry["no"]}</td>\n'
+        tbl += indent(7) + f'<td>{entry["date"]}</td>\n'
+        tbl += indent(7) + f'<td>{entry["time"]}</td>\n'
+        tbl += indent(7) + f'<td>{entry["user"]}</td>\n'
+        tbl += indent(7) + f'<td>{entry["finger"]}</td>\n'
         tbl += indent(6) + "</tr>\n"
     tbl += indent(6) + "</tbody>\n"
     tbl += indent(5) + "</table>\n"
     tbl += indent(4) + "</form>\n"
     return tbl
+
 
 def log_download(main_app):
     """Download ekey logging protocol."""
@@ -1496,8 +1504,8 @@ def log_download(main_app):
     for entry in ekey_protocol:
         str_data += f'{entry["no"]},{entry["date"]},{entry["time"]},{entry["user"]},{entry["finger"]}\n'
     return web.Response(
-            headers=MultiDict(
-                {"Content-Disposition": f"Attachment; filename = {file_name}"}
-            ),
-            body=str_data,
-        )
+        headers=MultiDict(
+            {"Content-Disposition": f"Attachment; filename = {file_name}"}
+        ),
+        body=str_data,
+    )
