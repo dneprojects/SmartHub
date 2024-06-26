@@ -1,6 +1,5 @@
 ings.setrequirements.txt
 *.code-workspace
-*.bin
 *.pem
 *.log
 *.set

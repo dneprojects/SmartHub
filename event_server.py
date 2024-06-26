@@ -536,6 +536,9 @@ class EventServer:
         if self.api_srv._netw_blocked:
             # First run, don't start websocket, HA is not ready
             return False
+        if self.api_srv._init_mode:
+            # Initialization, don't start websocket, HA is not ready
+            return False
 
         if self.api_srv.is_addon:
             # SmartHub running with Home Assistant, use internal websocket
@@ -676,7 +679,8 @@ class EventServer:
                 self.ev_srv_task.cancel()
                 self.logger.debug(f"EventSrv stoppped after {t_max} sec")
             self.ev_srv_task_running = False
-            # await self.close_websocket()
+            # if not self.api_srv.is_addon:
+            #     await self.close_websocket()
 
     def running(self) -> bool:
         """Check status of event server task, set and retrun status flag."""

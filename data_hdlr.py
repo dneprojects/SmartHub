@@ -128,7 +128,7 @@ class DataHdlr(HdlrBase):
                     # use compacted module status
                     blk_len = chr(MStatIdx.END).encode("iso8859-1")
                 for md in mod_list:
-                    stat_buf += blk_len
+                    stat_buf += blk_len  # type: ignore
                     module = self.api_srv.routers[rt - 1].get_module(md)
                     stat_buf += module.get_status(self._spec == spec.MOD_STAT_PCREAD)
                 self.response = stat_buf
@@ -166,6 +166,30 @@ class DataHdlr(HdlrBase):
             case spec.DESC_PCREAD:
                 self.response = self.api_srv.routers[rt - 1].descriptions
 
+            case spec.RT_FW_FILE_VS:
+                self.check_router_no(rt)
+                if self.args_err:
+                    return
+                rtr = self.api_srv.routers[rt - 1]
+                rtr.check_firmware()
+                if rtr.update_available:
+                    self.response = rtr.get_version() + "\n" + rtr.update_version
+                else:
+                    self.response = rtr.get_version() + "\n" + rtr.get_version()
+            case spec.MOD_FW_FILE_VS:
+                self.check_router_module_no(rt, mod)
+                if self.args_err:
+                    return
+                module = self.api_srv.routers[rt - 1].get_module(mod)
+                module.check_firmware()
+                if module.update_available:
+                    self.response = (
+                        module.get_sw_version() + "\n" + module.update_version
+                    )
+                else:
+                    self.response = (
+                        module.get_sw_version() + "\n" + module.get_sw_version()
+                    )
             case _:
                 self.response = f"Unknown API data command: {self.msg._cmd_grp} {struct.pack('<h', self._spec)[1]} {struct.pack('<h', self._spec)[0]}"
                 self.logger.warning(self.response)

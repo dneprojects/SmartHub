@@ -259,7 +259,26 @@ class AdminHdlr(HdlrBase):
                     )
                 self.response = self.rt_msg._resp_msg
                 return
-
+            case spec.DO_FW_UPDATE:
+                rtr = self.api_srv.routers[rt - 1]
+                if mod == 0:
+                    self.check_router_no(rt)
+                    if self.args_err:
+                        return
+                    self.logger.info("Firmware update for router starting")
+                    await rtr.update_firmware()
+                    rtr.update_available = False
+                    self.response = rtr.get_version()
+                else:
+                    self.check_router_module_no(rt, mod)
+                    if self.args_err:
+                        return
+                    module = rtr.get_module(mod)
+                    self.logger.info(f"Firmware update starting for module {mod}")
+                    await module.update_firmware()
+                    module.update_available = False
+                    self.response = module.get_sw_version()
+                return
             case spec.MD_RESTART:
                 self.check_router_no(rt)
                 self.check_arg(

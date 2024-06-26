@@ -39,6 +39,7 @@
   <link rel="stylesheet" href="configurator_files/tinymce.css" type="text/css" media="screen">
   <script>
       const reserved_numbers = [];
+      const fngrNames = {}
   </script>
 </head>
 
@@ -182,16 +183,22 @@
         <h1>ContentTitle</h1>
         <h3>Finger einlernen</h3>
         <form id="teach_finger" action="settings/teach">
-          <div style="position: relative;">
+          <div style="position: relative; margin-bottom: 3px;">
             <input id="fngr_nmbr_2_teach" name="Anlernen" type="text" disabled value="<fngr>" />
-            <button name="FngrTeach" id="teach_start" type="submit" value="new_finger-ModAddress">Start</button>
+            <div>
+            <label for="fngr_nmbr_2_teach-time" style="vertical-align: sub;" title="Für die eingestellte Zeit bleibt der Einlernmodus aktiv">
+              Einlernen aktiv [s]: </label>
+            <input id="fngr_nmbr_2_teach-time" name="teach_time" type="number" min="5" max="60" value="15" 
+              title="Für die eingestellte Zeit bleibt der Einlernmodus aktiv" style="width:40px; float:inline-end;"/>
+              </div>
           </div>
-        </form>
-        <div>
-          <button id="close_popup">
+        <div style="padding:2px;">
+          <button name="FngrTeach" id="teach_start" type="submit" value="new_finger-ModAddress">Start</button>
+          <button id="close_popup" type="button">
             Abbruch
           </button>
         </div>
+        </form>
       </div>
     </div>
 

@@ -1,9 +1,18 @@
-import asyncio
-import logging
 import datetime
+from glob import glob
+import logging
 from copy import deepcopy as dpcopy
-from const import MirrIdx, SMGIdx, MODULE_CODES, CStatBlkIdx, HA_EVENTS
+from const import (
+    MirrIdx,
+    SMGIdx,
+    MODULE_CODES,
+    CStatBlkIdx,
+    HA_EVENTS,
+    FW_FILES_DIR,
+    MODULE_FIRMWARE,
+)
 from configuration import ModuleSettings, ModuleSettingsLight
+from config_commons import is_outdated
 from messages import calc_crc
 
 
@@ -29,6 +38,8 @@ class HbtnModule:
         self.list: bytes = b""  # SMC information: labels, commands
         self.list_upload: bytes = b""  # buffer for SMC upload
         self.settings = None
+        self.update_available = False
+        self.update_version = ""
 
     async def initialize(self):
         """Get full module status"""
@@ -51,12 +62,12 @@ class HbtnModule:
         if sw_vers[:8] == "SC2 V4.6":
             self._typ = b"\x01\x03"
         self._type = MODULE_CODES[self._typ.decode("iso8859-1")]
-
         self.list = await self.hdlr.get_module_list(self._id)
         self.calc_SMC_crc(self.list)
         self.io_properties, self.io_prop_keys = self.get_io_properties()
         self._serial = await self.get_serial()
         await self.cleanup_descriptions()
+        self.check_firmware()
 
         self.logger.debug(f"Module {self._name} at {self._id} initialized")
 
@@ -139,6 +150,50 @@ class HbtnModule:
             or (self._typ == b"\x32\x01")
             or (self._typ == b"\x1e\x03")
         )
+
+    def check_firmware(self) -> None:
+        """Check local update files and set flag."""
+        fw_files = FW_FILES_DIR + MODULE_FIRMWARE[self._typ] + "*.bin"
+        file_found = False
+        # uploaded_fw_file = (
+        #     DATA_FILES_DIR + f"Firmware_{self._typ[0]:02d}_{self._typ[1]:02d}.bin"
+        # )
+        curr_fw = self.get_sw_version()
+        for fw_file in glob(fw_files):
+            file_found = True
+            with open(fw_file, "rb") as fid:
+                fw_bytes = fid.read()
+            new_fw = fw_bytes[-27:-5].decode().strip()
+        if file_found and is_outdated(curr_fw, new_fw):
+            self.update_available = True
+            self.update_fw_file = fw_file
+            self.update_version = new_fw
+            self.logger.info(
+                f"     Found new firmware file for {self._type}: version {new_fw}"
+            )
+        else:
+            self.update_available = False
+            self.update_fw_file = ""
+            self.update_version = curr_fw
+
+    async def update_firmware(self) -> None:
+        """Use internal firmware file for update service."""
+        rtr = self.get_rtr()
+        with open(self.update_fw_file, "rb") as fid:
+            fw_bytes = fid.read()
+        rtr.fw_upload = fw_bytes
+        await self.api_srv.block_network_if(rtr._id, True)
+        if await rtr.hdlr.upload_module_firmware(
+            self._typ, rtr.hdlr.log_mod_fw_upload_protocol
+        ):
+            self.logger.info("Firmware uploaded to router successfully")
+            await rtr.hdlr.flash_module_firmware(
+                [self._id], rtr.hdlr.log_mod_fw_update_protocol
+            )
+            self.logger.info("Firmware update finished successfully")
+        else:
+            self.logger.info("Firmware upload to router failed, update terminated")
+        await self.api_srv.block_network_if(rtr._id, False)
 
     def swap_mirr_cover_idx(self, mirr_idx: int) -> int:
         """Return cover index from mirror index (0..2 -> 2..4)."""

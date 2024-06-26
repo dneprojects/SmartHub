@@ -120,7 +120,7 @@ def show_update_router(rtr, new_fw: str) -> web.Response:
     images += "</form>"
     page = page.replace("<!-- ImageGrid -->", images)
     page = page.replace("<h1>Module</h1>", "<h1>Firmware Update</h1>")
-    page = page.replace("Overview", f"Version {new_fw} für Smart Router")
+    page = page.replace("Übersicht", f"Version {new_fw} für Smart Router")
     page = page.replace("Wählen Sie ein Modul aus", "")
     page = page.replace('action="update_modules"', 'action="update_router"')
     return web.Response(text=page, content_type="text/html", charset="utf-8")

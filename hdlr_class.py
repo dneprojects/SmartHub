@@ -102,7 +102,12 @@ class HdlrBase:
     async def handle_router_resp(self, rt_no: int) -> None:
         """Waits for router response without sending."""
         self.rt_msg = RtMessage(self, rt_no, "")
-        await self.rt_msg.rt_recv()
+        self.rt_msg._resp_msg = b"\0"
+        self.rt_msg._resp_buffer = b"\0\0"
+        try:
+            await asyncio.wait_for(self.rt_msg.rt_recv(), timeout=1.5)
+        except TimeoutError:
+            self.logger.warning("Timeout receiving router response, returning 0 0")
         return
 
     async def send_api_response(self, msg: str, flag: int):

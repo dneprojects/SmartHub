@@ -21,6 +21,7 @@ DATA_FILES_DIR = "./"
 DATA_FILES_ADDON_DIR = "/config/"
 FWD_TABLE_FILE = "ip_table.fwd"
 WEB_FILES_DIR = "./web/"
+FW_FILES_DIR = "./firmware/"
 LOGGING_DEF_FILE = "logging_def.yaml"
 HOMEPAGE = "configurator.html"
 HUB_HOMEPAGE = "hub.html"
@@ -85,9 +86,11 @@ class API_DATA:
     SMR_PCREAD = 256 * 4 + 3
     RSTAT_PCREAD = 256 * 4 + 4
     RT_NAME_FW_NM_PCREAD = 256 * 4 + 5
+    RT_FW_FILE_VS = 256 * 4 + 10
 
     MOD_STAT_PCREAD = 256 * 5 + 1
     MOD_CSTAT_PCREAD = 256 * 5 + 2  # compact status
+    MOD_FW_FILE_VS = 256 * 5 + 10
 
     SMHUB_BOOTQUEST = 256 * 6 + 1
     SMHUB_GETINFO = 256 * 6 + 2
@@ -267,6 +270,7 @@ class API_ADMIN:
     RT_FWD_DELALL = 256 * 1 + 15
     RT_SYS_RESTART = 256 * 1 + 16
     RT_BOOT_STAT = 256 * 1 + 17
+    DO_FW_UPDATE = 256 * 1 + 20
 
     MD_RESTART = 256 * 3 + 1
     MD_CHAN_SET = 256 * 3 + 6
@@ -786,6 +790,31 @@ MODULE_TYPES: Final[dict[str, str]] = {
     "\x1e\x03": "Smart GSM",
     "\x50\x66": "Smart Detect 180-2",
     "\x50\x65": "Smart Detect 360",
+}
+
+MODULE_FIRMWARE: Final[dict[bytes, str]] = {
+    b"\x00\x01": "scvmv30",
+    b"\x01\x02": "scrmgv45",
+    b"\x01\x03": "scrmgv46",
+    # b"\x01\x0a": "Smart Controller X",
+    b"\x32\x01": "scrmkv45",
+    b"\x0a\x01": "scout230relais",
+    b"\x0a\x02": "scout230tronic",
+    b"\x0a\x14": "sdmpab",
+    b"\x0a\x15": "sdmpab",
+    b"\x0a\x16": "sdmpab",
+    b"\x0a\x1e": "scsmartio2",
+    b"\x0a\x32": "scout230relais",
+    b"\x0a\x33": "screlaisspv2",
+    b"\x0b\x01": "scem230",
+    b"\x0b\x1e": "scem24",
+    b"\x0b\x1f": "scem25",
+    b"\x14\x01": "scasm",
+    b"\x1e\x01": "SCfan232",
+    b"\x1e\x03": "SCfangsm",
+    b"\x50\x64": "scbws180",
+    b"\x50\x65": "scbs360",
+    b"\x50\x66": "scbws2180",
 }
 
 

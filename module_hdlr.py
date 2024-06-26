@@ -591,7 +591,10 @@ class ModHdlr(HdlrBase):
             .replace("<fgr>", chr(finger))
             .replace("<tim>", chr(time))
         )
-        await self.handle_router_cmd(self.rt_id, cmd)
+        await self.api_srv.block_network_if(self.rt_id, True)
+        await self.handle_router_cmd_resp(self.rt_id, cmd)
+        await asyncio.sleep(time)
+        await self.api_srv.block_network_if(self.rt_id, False)
         return "OK"
 
     async def ekey_db_read(self):

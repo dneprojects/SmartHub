@@ -197,6 +197,9 @@ class ApiServer:
                 )
             await self.set_server_mode(rt_no)
             self.logger.debug("Block API mode")
+        elif set_block:
+            self._netw_blocked = True
+            self.logger.debug("Block API mode")
         if not set_block:
             self._netw_blocked = False
             await self.set_operate_mode(rt_no)
@@ -277,6 +280,7 @@ class ApiServer:
         await self.hdlr.handle_router_cmd(rt_no, RT_CMDS.SET_SRV_MODE)
         await self.evnt_srv.stop()
         self._opr_mode = False
+        await asyncio.sleep(1)
         await self.ensure_empty_response()
         self.logger.info("--- Switched to Client/Server mode")
         return not self._opr_mode

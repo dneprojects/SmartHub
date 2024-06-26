@@ -113,7 +113,7 @@ class ConfigSettingsServer:
         if client_not_authorized(request):
             return show_not_authorized(request.app)
         args = request.query_string.split("=")
-        return await show_next_prev(request.app["parent"], args[1])
+        return await show_next_prev(request.app["parent"], args)
 
     @routes.get("/show_logs")
     async def show_logs(request: web.Request) -> web.Response:  # type: ignore
@@ -137,6 +137,14 @@ class ConfigSettingsServer:
             return log_download(request.app["parent"])
         else:
             return show_module_overview(request.app["parent"], mod_addr)
+
+    @routes.get("/pair")
+    async def ekey_pair(request: web.Request) -> web.Response:  # type: ignore
+        if client_not_authorized(request):
+            return show_not_authorized(request.app)
+        module = request.app["parent"]["module"]
+        await module.set_ekey_pairing()
+        return web.HTTPNoContent()
 
 
 def show_router_overview(main_app, popup_msg="") -> web.Response:
@@ -262,17 +270,21 @@ def show_module_overview(main_app, mod_addr, popup_msg="") -> web.Response:
 async def show_next_prev(main_app, args):
     """Do the step logic and prepare next page."""
 
-    args1 = args.split("-")
-    button = args1[0]
-    mod_addr = int(args1[1])
     settings = main_app["settings"]
-    if button == "new_finger":
+    if isinstance(args, list):
+        time = int(args[1].split("&")[0])
+        args1 = args[2].split("-")
+        button = args1[0]
+        mod_addr = int(args1[1])
         step = 2
         user_id = settings.users_sel + 1
         finger_id = int(args1[2])
-        await settings.teach_new_finger(main_app, user_id, finger_id)
+        await settings.teach_new_finger(main_app, user_id, finger_id, time)
         return show_setting_step(main_app, mod_addr, step)
     else:
+        args1 = args.split("-")
+        button = args1[0]
+        mod_addr = int(args1[1])
         step = int(args1[2])
     if button == "cancel":
         if mod_addr > 0:
@@ -393,11 +405,11 @@ def fill_settings_template(main_app, title, subtitle, step, settings, key: str) 
         .replace("ModAddress", f"{mod_addr}-{step}")
     )
     if key == "fingers":
-        finger_dict_str = "var fngrNames = {\n"
+        finger_dict_str = "const fngrNames = {\n"
         for f_i in range(10):
             finger_dict_str += f'  {f_i+1}: "{FingerNames[f_i + 1]}",\n'
         finger_dict_str += "}\n"
-        page = page.replace("var fngrNames = {}", finger_dict_str)
+        page = page.replace("const fngrNames = {}", finger_dict_str)
         if main_app["api_srv"].is_offline:
             page = disable_button("Start", page)
     if step == 0:

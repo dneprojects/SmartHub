@@ -325,7 +325,9 @@ class ConfigServer:
             "success": "OK",
         }
         await api_srv.block_network_if(rtr._id, True)
-        await rtr.hdlr.upload_router_firmware(None, rtr.hdlr.log_rtr_fw_update_protocol)
+        await rtr.hdlr.upload_router_firmware(
+            None, rtr.hdlr.stat_rtr_fw_update_protocol
+        )
         await api_srv.block_network_if(rtr._id, False)
         return show_hub_overview(app)
 
@@ -358,11 +360,11 @@ class ConfigServer:
         app.logger.info(f"Update of Modules {mod_list}")
         await api_srv.block_network_if(rtr._id, True)
         if await rtr.hdlr.upload_module_firmware(
-            mod_type, rtr.hdlr.log_mod_fw_upload_protocol
+            mod_type, rtr.hdlr.stat_mod_fw_upload_protocol
         ):
             app.logger.info("Firmware uploaded to router successfully")
             await rtr.hdlr.flash_module_firmware(
-                mod_list, rtr.hdlr.log_mod_fw_update_protocol
+                mod_list, rtr.hdlr.stat_mod_fw_update_protocol
             )
             for mod in mod_list:
                 await rtr.get_module(mod).initialize()

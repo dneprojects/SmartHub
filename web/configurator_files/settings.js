@@ -95,7 +95,6 @@ function controlDelButton() {
     }
 }
 
-var fngrNames = {}
 if (save_btn != null) {
     save_btn.addEventListener("click", function () {
         openMsgPopup();
@@ -118,7 +117,14 @@ function openTeachPopup() {
     fngr_nmbr_2_teach.value = fngrNmbr + ' ' + fngrNames[fngrNmbr];
     teach_start.value = teach_start.value.slice(0, -1) + fngrNmbr;
     teach_popup.classList.add("show");
+    document.getElementById("teach_start").addEventListener("click", function () {
+        disableTeachButtons();
+    });
 };
+function disableTeachButtons() {
+    document.getElementById("teach_start").innerHTML = "aktiv";
+    document.getElementById("close_popup").disabled = true;
+}
 function getCounterOptions() {
     if (new_addr.value != "")
         count_popup.classList.add("show");

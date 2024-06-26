@@ -1,9 +1,12 @@
+from glob import glob
 from messages import calc_crc
 from os.path import isfile
+from config_commons import is_outdated
 from const import (
     RT_STAT_CODES,
     DATA_FILES_DIR,
     DATA_FILES_ADDON_DIR,
+    FW_FILES_DIR,
     MODULE_CODES,
     RT_CMDS,
     MirrIdx,
@@ -53,6 +56,8 @@ class HbtnRouter:
         self.date: bytes = b""
         self.settings: RouterSettings
         self.properties, self.prop_keys = self.get_properties()
+        self.update_available = False
+        self.update_version = ""
 
     def mirror_running(self) -> bool:
         """Return mirror status based on chan_status."""
@@ -60,12 +65,54 @@ class HbtnRouter:
             return self.chan_status[-1] == RT_STAT_CODES.MIRROR_ACTIVE
         return False
 
+    def get_version(self) -> str:
+        """Return firmware version"""
+        return self.version[1:].decode("iso8859-1").strip()
+
+    def check_firmware(self) -> None:
+        """Check local update files and set flag."""
+        fw_files = FW_FILES_DIR + "*.rbin"
+        file_found = False
+        # uploaded_fw_file = (
+        #     DATA_FILES_DIR + f"Firmware_{self._typ[0]:02d}_{self._typ[1]:02d}.bin"
+        # )
+        curr_fw = self.get_version()
+        for fw_file in glob(fw_files):
+            file_found = True
+            with open(fw_file, "rb") as fid:
+                fw_bytes = fid.read()
+            new_fw = fw_bytes[-27:-5].decode().strip()
+        if file_found and is_outdated(curr_fw, new_fw):
+            self.update_available = True
+            self.update_fw_file = fw_file
+            self.update_version = new_fw
+            self.logger.info(f"     Found new router firmware file: version {new_fw}")
+        else:
+            self.update_available = False
+            self.update_fw_file = ""
+            self.update_version = curr_fw
+
+    async def update_firmware(self) -> None:
+        """Use internal firmware file for update service."""
+        with open(self.update_fw_file, "rb") as fid:
+            fw_bytes = fid.read()
+        self.fw_upload = fw_bytes
+        new_fw = fw_bytes[-27:-5]
+
+        await self.api_srv.block_network_if(self._id, True)
+        await self.hdlr.upload_router_firmware(
+            None, self.hdlr.log_rtr_fw_update_protocol
+        )
+        self.version: bytes = b"\x16" + new_fw
+        await self.api_srv.block_network_if(self._id, False)
+
     async def get_full_status(self):
         """Load full router status."""
         await self.set_config_mode(True)
         self.status = await self.hdlr.get_rt_full_status()
         self.chan_status = await self.hdlr.get_rt_status()
         self.build_smr()
+        self.check_firmware()
         self.logger.info("Router initialized")
         modules = await self.hdlr.get_rt_modules()
         return modules

@@ -295,4 +295,20 @@ async def build_status_table(app, mod_addr: int, update: bool) -> str:
     table_str += tbl_end_line
     table_str += form_end_line
 
+    if mod._typ == b"\x1e\x01":
+        # Ekey-Modul
+        table_str += "<h3>SmartKey koppeln</h3>"
+        table_str += '  <form id="pair_ekey" action="settings/pair">'
+        table_str += (
+            thead_lines.replace("<tbl_id>", "mod-outputs-table")
+            .replace('            <th style="width: 10%;">Nr.</th>\n', "")
+            .replace('            <th style="width: 15%;">Typ</th>\n', "")
+            .replace(">Name<", ">Kopplung starten<")
+        ).replace(
+            '<th style="width: 10%;">Aktiv<',
+            '<th style="width: 25%;"><button form="pair_ekey" style="width:90%; margin-left:5%;" title="Betätigen, um Kopplung zwischen FanSer und Ekey zu starten (nur einmalig nötig)" class="ekey_pair" name="ekey_pair">Koppeln<',
+        )
+        table_str += tbl_end_line
+        table_str += "  </form>"
+
     return table_str

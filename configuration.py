@@ -907,10 +907,10 @@ class ModuleSettings:
         list_bytes = list_bytes.encode("iso8859-1")
         return list_bytes
 
-    async def teach_new_finger(self, app, user_id, finger_id):
+    async def teach_new_finger(self, app, user_id: int, finger_id: int, time: int):
         """Teach new finger and add to fingers."""
         settings = app["settings"]
-        res = await settings.module.hdlr.set_ekey_teach_mode(user_id, finger_id, 30)
+        res = await settings.module.hdlr.set_ekey_teach_mode(user_id, finger_id, time)
         if res == "OK":
             settings.all_fingers[user_id].append(
                 IfDescriptor(FingerNames[finger_id], finger_id, user_id)

@@ -24,7 +24,7 @@ class RtHdlr(HdlrBase):
         self.logger = logging.getLogger(__name__)
         self.rt_msg = RtMessage(self, 0, "   ")  # initialize empty object
         self.protocol = ""
-        self.upd_stat_dict: dict
+        self.upd_stat_dict: dict = {}
 
     async def rt_reboot(self):
         """Initiates a router reboot"""
@@ -477,7 +477,10 @@ class RtHdlr(HdlrBase):
         self, rt_type, progress_fun: Callable[[int, int, int], Awaitable[None]]
     ) -> str:
         """Upload router firmware to router, returns True for success."""
+
         fw_buf = self.rtr.fw_upload
+        self._last_progress = 0
+        new_fw = fw_buf[-27:-5]
         fw_len = len(fw_buf)
         if fw_len == 0:
             self.logger.error("Failed to upload / flash router")
@@ -567,6 +570,7 @@ class RtHdlr(HdlrBase):
                 return "ERROR"
             await asyncio.sleep(0.01)
         self.logger.info("Successfully uploaded and flashed router firmware")
+        self.rtr.version = b"\x16" + new_fw
         await self.handle_router_cmd_resp(self.rt_id, RT_CMDS.SYSTEM_RESTART)
         self.logger.info("Router restarted")
         return "OK"
@@ -591,16 +595,26 @@ class RtHdlr(HdlrBase):
     ) -> None:
         """Log firmware upload counter."""
         cur_pkg = pkg_high * 256 + pkg_low
+        progress = int(100 * cur_pkg / max_count)
+        if progress > self._last_progress:
+            self.logger.info(
+                f"Router update progress: {cur_pkg} of {max_count +1} : {progress} %"
+            )
+            self._last_progress = progress
+
+    async def stat_rtr_fw_update_protocol(
+        self, pkg_low: int, pkg_high: int, max_count: int
+    ) -> None:
+        """Prepare firmware upload counter status."""
+        cur_pkg = pkg_high * 256 + pkg_low
         self.upd_stat_dict["cur_mod"] = 0
         self.upd_stat_dict["mod_0"]["progress"] = round(100 * cur_pkg / max_count)
-        # self.logger.info(
-        #     f"Router update progress: {cur_pkg} of {max_count +1} : {100 * cur_pkg / max_count} %"
-        # )
 
     async def upload_module_firmware(
         self, mod_type: bytes, progress_fun: Callable[[int, int, int], Awaitable[None]]
     ) -> bool:
         """Upload firmware to router, returns True for success."""
+
         fw_buf = self.rtr.fw_upload
         fw_len = len(fw_buf)
         cmd_org = RT_CMDS.UPDATE_MOD_PKG
@@ -661,16 +675,24 @@ class RtHdlr(HdlrBase):
         )
         await self.api_srv.hdlr.send_api_response(stat_msg, code)
 
+    async def stat_mod_fw_upload_protocol(
+        self, pckg: int, no_pkgs: int, code: int
+    ) -> None:
+        """Prepare firmware upload status protocol."""
+        if code == RT_STAT_CODES.PKG_OK:
+            self.upd_stat_dict["cur_mod"] = -1
+            self.upd_stat_dict["upload"] = round(pckg * 100 / no_pkgs)
+        else:
+            self.logger.error(f"Firmware upload package {pckg} of {no_pkgs} : failed")
+
     async def log_mod_fw_upload_protocol(
         self, pckg: int, no_pkgs: int, code: int
     ) -> None:
         """Log firmware upload status protocol."""
         if code == RT_STAT_CODES.PKG_OK:
-            self.upd_stat_dict["cur_mod"] = -1
-            self.upd_stat_dict["upload"] = round(pckg * 100 / no_pkgs)
-            # self.logger.info(
-            #     f"Firmware upload package {pckg} of {no_pkgs} : {round(pckg * 100 / no_pkgs)}%"
-            # )
+            self.logger.info(
+                f"Firmware upload package {pckg} of {no_pkgs} : {round(pckg * 100 / no_pkgs)}%"
+            )
         else:
             self.logger.error(f"Firmware upload package {pckg} of {no_pkgs} : failed")
 
@@ -707,8 +729,8 @@ class RtHdlr(HdlrBase):
         )
         await self.api_srv.hdlr.send_api_response(stat_msg, 1)
 
-    async def log_mod_fw_update_protocol(self, mod: int, protocol: str) -> None:
-        """Log update status protocol."""
+    async def stat_mod_fw_update_protocol(self, mod: int, protocol: str) -> None:
+        """Prepare update status protocol."""
         cmod = ord(protocol[0])
         if not cmod:
             # Ignore first responses, update not started
@@ -721,7 +743,6 @@ class RtHdlr(HdlrBase):
         perc = ord(protocol[1])
         self.upd_stat_dict["cur_mod"] = mod
         self.upd_stat_dict["mod_" + str(mod)]["progress"] = perc
-        log_info = f"Update status for modules: Cur. mod: {cmod}: {perc}%"
         for mod_rdy_i in range(ord(protocol[2])):
             md = ord(protocol[3 + 3 * mod_rdy_i])
             if ord(protocol[5 + 3 * mod_rdy_i]) == 85:
@@ -733,8 +754,30 @@ class RtHdlr(HdlrBase):
             no_errs = ord(protocol[4 + 3 * mod_rdy_i])
             self.upd_stat_dict["mod_" + str(md)]["errors"] = no_errs
             self.upd_stat_dict["mod_" + str(md)]["success"] = md_stat
+
+    async def log_mod_fw_update_protocol(self, mod: int, protocol: str) -> None:
+        """Log update status protocol."""
+        cmod = ord(protocol[0])
+        if not cmod:
+            # Ignore first responses, update not started
+            self.protocol = protocol
+            return
+        if protocol == self.protocol:
+            # Ignore unchanged status responses
+            return
+        self.protocol = protocol
+        perc = ord(protocol[1])
+        log_info = f"Update status for modules: Cur. mod: {cmod}: {perc}%"
+
+        for mod_rdy_i in range(ord(protocol[2])):
+            if ord(protocol[5 + 3 * mod_rdy_i]) == 85:
+                md_stat = "OK"
+            elif ord(protocol[5 + 3 * mod_rdy_i]) == 70:
+                md_stat = "failed"
+            else:
+                md_stat = "skipped"
             log_info += f"  Mod {ord(protocol[3 + 3 * mod_rdy_i])}: {md_stat}"
-        # self.logger.info(log_info)
+        self.logger.info(log_info)
 
     async def forward_message(self, src_rt: int, fwd_cmd: bytes) -> bytes:
         """Forward message from other router."""
