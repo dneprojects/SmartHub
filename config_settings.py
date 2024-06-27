@@ -508,6 +508,7 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
     if settings.type in [
         "Smart Controller XL-1",
         "Smart Controller XL-2",
+        "Smart Controller XL-2 (LE2)",
         "Smart Controller Mini",
     ]:
         id_name = "displ_contr"
@@ -543,6 +544,7 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
     if settings.type in [
         "Smart Controller XL-1",
         "Smart Controller XL-2",
+        "Smart Controller XL-2 (LE2)",
         "Smart Dimm",
         "Smart Dimm-1",
         "Smart Dimm-2",
@@ -557,6 +559,7 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
     if settings.type in [
         "Smart Controller XL-1",
         "Smart Controller XL-2",
+        "Smart Controller XL-2 (LE2)",
         "Smart Controller Mini",
     ]:
         id_name = "temp_ctl"
@@ -609,7 +612,7 @@ def prepare_basic_settings(main_app, mod_addr, mod_type):
             + f'<div><label for="{id_name}_s2">Sensor 2</label><input type="radio" '
             + f'name="{id_name}" id="{id_name}_s2" value="2" {s2_checked}></div></td></tr>\n'
         )
-    if settings.type in ["Smart Controller XL-1", "Smart Controller XL-2"]:
+    if settings.type in ["Smart Controller XL-1" , "Smart Controller XL-2", "Smart Controller XL-2 (LE2)"]:
         id_name = "supply_prio"
         prompt = "Versorgungspriorität"
         if len(settings.status) == 0:
