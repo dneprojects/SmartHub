@@ -254,7 +254,12 @@ def adjust_side_menu(modules, is_offline: bool, is_install: bool) -> str:
                     + "  </ul>\n"
                     + "</li>"
                 )
-            side_menu.append("</ul>")
+            side_menu.append("</ul>\n")
+            side_menu.append('<ul class="level_2">\n')
+            side_menu.append(
+                '<li class="submenu modules last"><a href="/setup_doc" title="Einrichten" class="submenu modules last">Setup Guide</a></li>\n'
+            )
+            side_menu.append("</ul></ul>\n")
         else:
             side_menu = smf_id.read().splitlines(keepends=True)
     for sub_line in side_menu:

@@ -34,11 +34,14 @@ import asyncio
 import logging
 import pathlib
 from const import (
+    DOC_FILE,
+    SETUP_DOC_FILE,
     MODULE_CODES,
     LICENSE_PAGE,
     OWN_INGRESS_IP,
     CONF_PORT,
     INGRESS_PORT,
+    WEB_FILES_DIR,
     MirrIdx,
 )
 
@@ -380,6 +383,22 @@ class ConfigServer:
         return web.Response(
             text=json.dumps(stat), content_type="text/plain", charset="utf-8"
         )
+
+    @routes.get(path="/doc")
+    async def show_doc(request: web.Request) -> web.Response:  # type: ignore
+        with open(WEB_FILES_DIR + DOC_FILE, "rb") as doc_file:
+            pdf_content = doc_file.read()
+        return web.Response(body=pdf_content, content_type="application/pdf")
+
+    @routes.get(path="/{key:.*}.txt")
+    async def get_license_text(request: web.Request) -> web.Response:  # type: ignore
+        return show_license_text(request)
+
+    @routes.get(path="/setup_doc")
+    async def show_setup_doc(request: web.Request) -> web.Response:  # type: ignore
+        with open(WEB_FILES_DIR + SETUP_DOC_FILE, "rb") as doc_file:
+            pdf_content = doc_file.read()
+        return web.Response(body=pdf_content, content_type="application/pdf")
 
     @routes.get(path="/{key:.*}.txt")
     async def get_license_text(request: web.Request) -> web.Response:  # type: ignore

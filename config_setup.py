@@ -48,6 +48,7 @@ class ConfigSetupServer:
         rtr = api_srv.routers[0]
         if len(rtr.modules) == 0:
             rtr._name = "NewRouter"
+            rtr.get_router_settings()
         if client_not_authorized(request):
             return show_not_authorized(main_app)
         mod_type = int(request.match_info["mod_cat"])

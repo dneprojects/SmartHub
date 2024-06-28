@@ -50,7 +50,8 @@ class HbtnRouter:
         self.user_modes: bytes = b""
         self.serial: bytes = (chr(16) + "0010010824000010").encode("iso8859-1")
         self.day_night: bytes = (
-            "\x08\x00\1\1\0\x08\x00\1\1\0\x08\x00\1\1\0\x08\x00\1\1\0\x08\x00\1\1\0\x0a\x00\1\1\0\x09\x0f\1\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0"
+            chr(70)
+            + "\x08\x00\0\1\0\x08\x00\0\1\0\x08\x00\0\1\0\x08\x00\0\1\0\x08\x00\0\1\0\x08\x00\0\1\0\x00\x00\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0\x17\x1e\0\1\0"
         ).encode("iso8859-1")
         self.version: bytes = (chr(22) + "VM V3.5310 12/2023    ").encode("iso8859-1")
         self.date: bytes = b""

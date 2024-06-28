@@ -35,12 +35,14 @@ CONFIG_TEMPLATE_FILE = "config_template.html"
 SETTINGS_TEMPLATE_FILE = "settings_template.html"
 AUTOMATIONS_TEMPLATE_FILE = "automations_template.html"
 AUTOMATIONEDIT_TEMPLATE_FILE = "automation_edit_template.html"
+DOC_FILE = "documentation.pdf"
+SETUP_DOC_FILE = "setup.pdf"
 
 
 class SMHUB_INFO:
     """Holds information."""
 
-    SW_VERSION = "1.5.0"
+    SW_VERSION = "1.5.1"
     TYPE = "Smart Hub"
     TYPE_CODE = "20"
     SERIAL = "RBPI"

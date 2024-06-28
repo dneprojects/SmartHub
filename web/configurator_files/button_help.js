@@ -30,6 +30,7 @@ button_help_dict["Protokoll"] = "Zugangsprotokoll anzeigen und verwalten";
 button_help_dict["Protokoll löschen"] = "Zugangsprotokoll im Smart Key löschen";
 button_help_dict["Protokoll sichern"] = "Protokoll als Download speichern";
 button_help_dict["Beenden"] = "Zurück zur Modulübersicht";
+button_help_dict["Exit"] = "Beenden des Programms";
 
 var button_acceskey_dict = {};
 button_acceskey_dict["Neu"] = "n";
