@@ -400,10 +400,6 @@ class ConfigServer:
             pdf_content = doc_file.read()
         return web.Response(body=pdf_content, content_type="application/pdf")
 
-    @routes.get(path="/{key:.*}.txt")
-    async def get_license_text(request: web.Request) -> web.Response:  # type: ignore
-        return show_license_text(request)
-
 
 @routes.get(path="/{key:.*}")
 async def _(request):
