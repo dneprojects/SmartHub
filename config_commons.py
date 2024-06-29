@@ -253,7 +253,7 @@ def adjust_side_menu(modules, is_offline: bool, is_install: bool) -> str:
                     '    <li class="setup sub"><a href="test/modules" title="Module testen" class="setup sub">Module testen</a></li>\n'
                 )
             side_menu.append(
-                '<li class="setup sub"><a href="setup_doc" title="Einrichten" class="submenu modules last">Setup Guide</a></li>\n'
+                '<li class="setup sub"><a href="show_setup_doc" title="Anleitung zur Einrichtung" class="submenu modules last">Setup Guide</a></li>\n'
             )
             side_menu.append("</ul></li></ul>\n")
         else:

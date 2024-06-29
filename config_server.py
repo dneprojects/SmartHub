@@ -38,6 +38,7 @@ from const import (
     SETUP_DOC_FILE,
     MODULE_CODES,
     LICENSE_PAGE,
+    PDF_PAGE,
     OWN_INGRESS_IP,
     CONF_PORT,
     INGRESS_PORT,
@@ -77,7 +78,7 @@ class ConfigServer:
         """Initialize config server."""
 
         @web.middleware
-        async def ingress_middleware(request: web.Request, handler) -> web.Response:  # type: ignore
+        async def ingress_middleware(request: web.Request, handler) -> web.Response:
 
             response = await handler(request)
             if (
@@ -384,23 +385,42 @@ class ConfigServer:
             text=json.dumps(stat), content_type="text/plain", charset="utf-8"
         )
 
-    @routes.get(path="/doc")
+    @routes.get(path="/show_doc")
     async def show_doc(request: web.Request) -> web.Response:  # type: ignore
+        with open(WEB_FILES_DIR + PDF_PAGE, "r") as fid:
+            page = fid.read()
+        page = page.replace("<mypdf>", "doc")
+        return web.Response(text=page, content_type="text/html", charset="utf-8")
+
+    @routes.get(path="/show_setup_doc")
+    async def show_setup_doc(request: web.Request) -> web.Response:  # type: ignore
+        with open(WEB_FILES_DIR + PDF_PAGE, "r") as fid:
+            page = fid.read()
+        page = page.replace("<mypdf>", "setup_doc")
+        return web.Response(text=page, content_type="text/html", charset="utf-8")
+
+    @routes.get(path="/doc")
+    async def load_doc(request: web.Request) -> web.Response:  # type: ignore
         with open(WEB_FILES_DIR + DOC_FILE, "rb") as doc_file:
             pdf_content = doc_file.read()
-        request.app.logger.info(f"PDF-file {WEB_FILES_DIR + DOC_FILE} loaded")
+        request.app.logger.debug(f"PDF-file {WEB_FILES_DIR + DOC_FILE} loaded")
+        return web.Response(body=pdf_content, content_type="application/pdf")
+
+    @routes.get(path="/setup_doc")
+    async def load_setup_doc(request: web.Request) -> web.Response:  # type: ignore
+        with open(WEB_FILES_DIR + SETUP_DOC_FILE, "rb") as doc_file:
+            pdf_content = doc_file.read()
+        request.app.logger.debug(f"PDF-file {WEB_FILES_DIR + SETUP_DOC_FILE} loaded")
         return web.Response(body=pdf_content, content_type="application/pdf")
 
     @routes.get(path="/{key:.*}.txt")
     async def get_license_text(request: web.Request) -> web.Response:  # type: ignore
         return show_license_text(request)
 
-    @routes.get(path="/setup_doc")
-    async def show_setup_doc(request: web.Request) -> web.Response:  # type: ignore
-        with open(WEB_FILES_DIR + SETUP_DOC_FILE, "rb") as doc_file:
-            pdf_content = doc_file.read()
-        request.app.logger.info(f"PDF-file {WEB_FILES_DIR + SETUP_DOC_FILE} loaded")
-        return web.Response(body=pdf_content, content_type="application/pdf")
+
+@routes.get(path="/favicon.ico")
+async def do_nothing(request: web.Request) -> web.Response:
+    return web.HTTPNoContent()
 
 
 @routes.get(path="/{key:.*}")
