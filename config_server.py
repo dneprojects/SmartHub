@@ -388,6 +388,7 @@ class ConfigServer:
     async def show_doc(request: web.Request) -> web.Response:  # type: ignore
         with open(WEB_FILES_DIR + DOC_FILE, "rb") as doc_file:
             pdf_content = doc_file.read()
+        request.app.logger.info(f"PDF-file {WEB_FILES_DIR + DOC_FILE} loaded")
         return web.Response(body=pdf_content, content_type="application/pdf")
 
     @routes.get(path="/{key:.*}.txt")
@@ -398,6 +399,7 @@ class ConfigServer:
     async def show_setup_doc(request: web.Request) -> web.Response:  # type: ignore
         with open(WEB_FILES_DIR + SETUP_DOC_FILE, "rb") as doc_file:
             pdf_content = doc_file.read()
+        request.app.logger.info(f"PDF-file {WEB_FILES_DIR + SETUP_DOC_FILE} loaded")
         return web.Response(body=pdf_content, content_type="application/pdf")
 
 
